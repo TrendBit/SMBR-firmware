@@ -1,4 +1,3 @@
-
 if(false)
     file(GLOB FREERTOS_SOURCES
         "freertos/*.c"
