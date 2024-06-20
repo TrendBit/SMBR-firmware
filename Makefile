@@ -9,7 +9,7 @@ USER_ID = $(shell id -u)
 GROUP_ID = $(shell id -g)
 BUILD_DIR = build
 
-CONTAINER_RUN := docker run --rm --privileged -t -v /dev:/dev -v $(PWD):/project
+CONTAINER_RUN := docker run --rm --privileged -t -v /dev:/dev -v $(PWD):/project --network dbg-net
 ROOT_RUN := $(CONTAINER_RUN) $(IMAGE_NAME) /bin/sh -c
 USER_RUN := $(CONTAINER_RUN) --user "$(USER_ID):$(GROUP_ID)" $(IMAGE_NAME) /bin/sh -c
 
@@ -44,7 +44,10 @@ docker-openocd:
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"bindto 0.0.0.0\" -c \"reset_config srst_only\""
 
 docker-gdb:
-	$(ROOT_RUN) "gdb-multiarch -ex \"target remote localhost:3333\""
+	$(ROOT_RUN) "gdb-multiarch -ex \"target extended-remote :3333\""
+
+docker-debug:
+	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"bindto 0.0.0.0\" -c \"reset_config srst_only\" & gdb-multiarch -ex \"target extended-remote :3333\""
 
 firmware: $(BUILD_DIR)
 	$(USER_RUN) "cd $(BUILD_DIR) && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 && make firmware -j$(nproc)"
@@ -75,7 +78,6 @@ test: $(BUILD_DIR)
 
 flash: firmware
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"program build/source/firmware.elf verify reset exit\""
-	make reset
 
 reset:
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"init ; reset halt ; rp2040.core1 arp_reset assert 0 ; rp2040.core0 arp_reset assert 0 ; exit\""
