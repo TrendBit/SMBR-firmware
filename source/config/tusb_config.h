@@ -101,11 +101,11 @@
 #define CFG_TUD_VENDOR            0
 
 // CDC FIFO size of TX and RX
-#define CFG_TUD_CDC_RX_BUFSIZE   512
-#define CFG_TUD_CDC_TX_BUFSIZE   512
+#define CFG_TUD_CDC_RX_BUFSIZE   2048
+#define CFG_TUD_CDC_TX_BUFSIZE   2048
 
 // CDC Endpoint transfer buffer size, more is faster
-#define CFG_TUD_CDC_EP_BUFSIZE   512
+#define CFG_TUD_CDC_EP_BUFSIZE   2048
 
 #ifdef __cplusplus
  }

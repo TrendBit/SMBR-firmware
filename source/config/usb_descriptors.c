@@ -23,6 +23,7 @@
  *
  */
 
+#include "pico/unique_id.h"
 #include "tusb.h"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
@@ -92,9 +93,9 @@ enum {
 # define EPNUM_CDC_0_OUT   0x02
 # define EPNUM_CDC_0_IN    0x82
 
-# define EPNUM_CDC_1_NOTIF 0x84
-# define EPNUM_CDC_1_OUT   0x05
-# define EPNUM_CDC_1_IN    0x85
+# define EPNUM_CDC_1_NOTIF 0x83
+# define EPNUM_CDC_1_OUT   0x04
+# define EPNUM_CDC_1_IN    0x84
 
 #elif CFG_TUSB_MCU == OPT_MCU_SAMG || CFG_TUSB_MCU == OPT_MCU_SAMX7X
 // SAMG & SAME70 don't support a same endpoint number with different direction IN and OUT
@@ -216,9 +217,10 @@ char const *string_desc_arr [] =
 {
     (const char[]) { 0x09, 0x04 }, // 0: is supported language is English (0x0409)
     "TrendBit s.r.o.",             // 1: Manufacturer
-    "BBX-mini II - Mainboard",     // 2: Product
+    "Phenobottle - TestBed",       // 2: Product
     "00000000",                    // 3: Serials, should use chip ID
-    "TinyUSB CDC",                 // 4: CDC Interface
+    "Command_line_interface",      // 4: CDC Interface 0
+    "Log_output",                  // 5: CDC Interface 1
 };
 
 static uint16_t _desc_str[32];
@@ -230,10 +232,23 @@ uint16_t const * tud_descriptor_string_cb(uint8_t index, uint16_t langid){
 
     uint8_t chr_count;
 
-    if (index == 0) {
+    if (index == 0) {   // Supported language
         memcpy(&_desc_str[1], string_desc_arr[0], 2);
         chr_count = 1;
-    } else {
+    } else if (index == 3) {    // Unique ID / Serial number
+        pico_unique_board_id_t id;
+        pico_get_unique_board_id(&id);
+        const uint8_t *str = id.id;
+        for (uint8_t len = 0; len < 16; ++len) {
+            uint8_t c = str[len >> 1];
+            c = ((c >> (((len & 1) ^ 1) << 2)) & 0x0F) + '0';
+            if (c > '9'){
+                c += 39;
+            }
+            _desc_str[1 + len] = c;
+            chr_count = 16;
+        }
+    } else {    // Other copied from string_desc_arr
         // Note: the 0xEE index string is a Microsoft OS 1.0 Descriptors.
         // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/microsoft-defined-usb-descriptors
 
