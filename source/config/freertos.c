@@ -5,8 +5,15 @@
 #include "task.h"
 #include "timers.h"
 
-void configureTimerForRunTimeStats(void){
+#ifdef __GNUC__
+#define USED __attribute__((used))
+#else
+#define USED
+#endif
 
+const int USED uxTopUsedPriority = configMAX_PRIORITIES - 1;
+
+void configureTimerForRunTimeStats(void){
 }
 
 volatile unsigned long getRunTimeCounterValue(void){
