@@ -48,14 +48,16 @@ target_compile_definitions(${TARGET} PRIVATE PICO_CXX_DISABLE_ALLOCATION_OVERRID
 
 target_include_directories(${TARGET} PUBLIC .)
 
+
 pico_add_extra_outputs(${TARGET})
 
-target_link_libraries(${TARGET} pico_stdlib pico_multicore)
+target_link_libraries(${TARGET} can2040)
+target_link_libraries(${TARGET} cmsis_core pico_stdlib pico_multicore pico_unique_id)
 target_link_libraries(${TARGET} hardware_pwm hardware_pio hardware_i2c hardware_dma hardware_spi hardware_adc)
 target_link_libraries(${TARGET} pico-lib)
 target_link_libraries(${TARGET} tinyusb_device)
 target_link_libraries(${TARGET} emio )
-target_link_libraries(${TARGET} etl )
+target_link_libraries(${TARGET} etl)
 target_link_libraries(${TARGET} embedded-cli )
 target_link_libraries(${TARGET} freertos)
 target_link_libraries(${TARGET} freertos-addons)
