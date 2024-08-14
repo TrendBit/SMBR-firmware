@@ -20,7 +20,7 @@
 #include "pico/unique_id.h"
 #include "hardware/watchdog.h"
 
-#define DEVICE_NAME "Phenobottle - TestBed"
+#define DEVICE_NAME "SMBR - TestBed"
 #define VENDOR_NAME "TrendBit s.r.o."
 #ifndef FW_VERSION
     #define FW_VERSION "unknown"
