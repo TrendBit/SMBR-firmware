@@ -18,7 +18,7 @@ pico_sdk_init()
 set(MCU_FLAGS "-mcpu=cortex-m0plus")
 set(COMMON_FLAGS "-Wall -Wextra -Wshadow -Wformat=2 -Wformat-truncation")
 set(CMAKE_C_FLAGS "${COMMON_FLAGS} ${MCU_FLAGS}")
-set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} ${MCU_FLAGS} -fno-rtti -fno-exceptions -fno-threadsafe-statics -Wno-volatile")
+set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} ${MCU_FLAGS} -fno-rtti -fno-exceptions -Wno-packed-bitfield-compat -fno-threadsafe-statics -Wno-volatile")
 
 set(CONFIG_DIR ${CMAKE_SOURCE_DIR}/source/config)
 
