@@ -1,6 +1,13 @@
 #include "can_message.hpp"
 #include <algorithm>
 
+CAN::Message::Message(uint32_t id, bool extended, bool remote_request)
+    :
+    id(id),
+    extended(extended),
+    remote_request(remote_request),
+    data(etl::vector<uint8_t, 8>(0, 0)){ }
+
 CAN::Message::Message(uint32_t id, uint8_t length, bool extended, bool remote_request)
     :
     id(id),
