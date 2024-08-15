@@ -12,5 +12,7 @@
 #include "threads/usb_thread.hpp"
 #include "threads/test_thread.hpp"
 
+#include "modules/control_module.hpp"
+
 #include "cli.hpp"
 #include "logger.hpp"

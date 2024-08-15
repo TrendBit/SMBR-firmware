@@ -1,7 +1,6 @@
 #include "main.hpp"
 #include "threads/test_thread.hpp"
 
-
 namespace fra = cpp_freertos;
 
 int main(){
@@ -9,11 +8,11 @@ int main(){
 
     Logger::Init_UART();
 
-    CAN_thread * can_thread = new CAN_thread();
     new LED_heartbeat_thread(12, 500);
     new USB_thread();
     new CLI_service();
-    new Test_thread(can_thread);
+
+    new Control_module();
 
     fra::Thread::StartScheduler();
 
