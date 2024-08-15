@@ -9,7 +9,7 @@ USER_ID = $(shell id -u)
 GROUP_ID = $(shell id -g)
 BUILD_DIR = build
 
-CONTAINER_RUN := docker run --rm --privileged -t -v /dev:/dev -v $(PWD):/project --network dbg-net
+CONTAINER_RUN := docker run --rm --privileged -t -v /dev:/dev -v $(PWD):/project
 ROOT_RUN := $(CONTAINER_RUN) $(IMAGE_NAME) /bin/sh -c
 USER_RUN := $(CONTAINER_RUN) --user "$(USER_ID):$(GROUP_ID)" $(IMAGE_NAME) /bin/sh -c
 
