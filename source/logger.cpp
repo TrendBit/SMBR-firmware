@@ -31,5 +31,5 @@ void Logger::Print_to_UART(const std::string &message){
 }
 
 std::string Logger::Timestamp(){
-    return emio::format("[{:09.4f}] ", time_us_64()/1000000.0f);
+    return emio::format("[{:09.3f}] ", time_us_64()/1000000.0f);
 }
