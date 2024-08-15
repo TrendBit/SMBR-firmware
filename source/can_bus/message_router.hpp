@@ -7,40 +7,51 @@
 
 #pragma once
 
-#include "codes.hpp"
+#include <unordered_map>
+
+#include "codes/codes.hpp"
+#include "logger.hpp"
+#include "modules/base_module.hpp"
 #include "can_bus/message_receiver.hpp"
+#include "can_bus/routing_table.hpp"
+#include "can_bus/app_message.hpp"
+#include "can_bus/can_message.hpp"
 
 #include "etl/unordered_map.h"
 
+/**
+ * @brief  Main hub for routing messages from CAN bus to correct receiver components of device
+ *         Contains record book of registered components and their instances
+ *         When CAN bus message if supplied to it it will determine if this module is received and pass
+ *              it to corresponding component for processing.
+ *         Routing rules (which component should receive which message) are defined in Routing_table
+ */
 class Message_router {
 private:
-    static etl::unordered_map<Command, Component> Command_receivers = {
-        { Command::Serial_probe,             Component::CAN_serial },
-        { Command::Serial_ID_respond,        Component::CAN_serial },
-        { Command::Serial_port_confirmation, Component::CAN_serial },
-        { Command::Discover_probe,           Component::Core },
-        { Command::Discover_respond,         Component::Core },
-    };
-
-    static etl::unordered_map<Component, CAN::Message_receiver *> Component_instances = {
-        { Component::CAN_serial, null_ptr},
+    /**
+     * @brief Map of device components and their instances
+     *        Based on this map is determined on which received of component should be invoked
+     */
+    inline static etl::unordered_map<Codes::Component, Message_receiver *, 32> Component_instances = {
+        { Codes::Component::CAN_serial, nullptr},
+        { Codes::Component::Common_core, nullptr},
     };
 
 public:
-    Message_router() = default;
+    /**
+     * @brief   If message is determined for this module then will route this message to correct component for processing
+     *
+     * @param message   Message for routing
+     * @return true     Message was routed to correct component
+     * @return false    Message cannot be routed to any component (this module is not receiver of this message, or component is not registered in router)
+     */
+    static bool Route(CAN::Message message);
 
-    bool Route(CAN::Message message){
-        auto receiver = Command_receivers.find(message.id);
-        if (receiver != Command_receivers.end()){
-            return Component_instances[receiver->second]->Receive(message);
-        }
-        return false;
-    }
-
-    void Register_receiver(Component component, *CAN::Message_receiver receiver){
-        CAN::Message_receiver = Component_instances[component];
-        if (receiver != nullptr){
-            Component_instances[component] = receiver;
-        }
-    }
+    /**
+     * @brief   Register instance of component into router as receiver for message types defined in Routing_table
+     *
+     * @param component    Component which will be registered
+     * @param receiver     Instance of component (Message_receiver) which will receive messages
+     */
+    static void Register_receiver(Codes::Component component, Message_receiver * receiver);
 };
