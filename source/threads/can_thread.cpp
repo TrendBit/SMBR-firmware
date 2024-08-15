@@ -70,7 +70,7 @@ void CAN_thread::Receive(CAN::Message const &message){
 
 uint8_t CAN_thread::Retransmit(){
     uint8_t retransmitted = 0;
-    while(can_bus.Transmit_available()){
+    while((can_bus.Transmit_available()) and (not tx_queue.empty())){
         CAN::Message message = tx_queue.front();
         tx_queue.pop();
         can_bus.Transmit(message);
@@ -78,4 +78,21 @@ uint8_t CAN_thread::Retransmit(){
     }
     Logger::Print(emio::format("CAN retransmitted: {}", retransmitted));
     return retransmitted;
+};
+
+uint32_t CAN_thread::Received_messages(){
+    return rx_queue.size();
+};
+
+bool CAN_thread::Message_available() const{
+    return not rx_queue.empty();
+};
+
+std::optional<CAN::Message> CAN_thread::Read_message(){
+    if (rx_queue.empty()) {
+        return {};
+    }
+    CAN::Message message = rx_queue.front();
+    rx_queue.pop();
+    return message;
 };
