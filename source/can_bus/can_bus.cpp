@@ -18,29 +18,25 @@ CAN::Bus::Bus(unsigned int gpio_rx, unsigned int gpio_tx, unsigned int bitrate, 
     can2040_start(&handler, sys_clock, bitrate, gpio_rx, gpio_tx);
 }
 
-void CAN::Bus::Callback(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg){
-    UNUSED(cd);
+void CAN::Bus::Callback( uint32_t notify, struct can2040_msg *msg){
     IRQ_type type;
     if (notify == CAN2040_NOTIFY_RX) {
         type     = IRQ_type::RX;
+        last_received = Message(msg);
     } else if (notify == CAN2040_NOTIFY_TX) {
         type     = IRQ_type::TX;
     } else {
         type     = IRQ_type::Error;
     }
-    last_received = Message(msg);
     Emit(type);
 }
 
 void CAN::Bus::Callback_handler(struct can2040 *cd, uint32_t notify, struct can2040_msg *msg){
     if (instances.find(cd->pio_num) != instances.end()) {
-        instances[cd->pio_num]->Callback(cd, notify, msg);
+        instances[cd->pio_num]->Callback(notify, msg);
     }
 }
 
-/**
- * @brief  Callback to handle IRQs when happens and emit signals
- */
 void CAN::Bus::Handle_PIO_IRQ(){
     can2040_pio_irq_handler(&handler);
 }
