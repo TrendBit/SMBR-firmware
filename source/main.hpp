@@ -13,6 +13,9 @@
 #include "threads/test_thread.hpp"
 
 #include "modules/control_module.hpp"
+#include "modules/sensor_module.hpp"
 
 #include "cli.hpp"
 #include "logger.hpp"
+
+#include "config.hpp"

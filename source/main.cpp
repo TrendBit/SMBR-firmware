@@ -1,5 +1,4 @@
 #include "main.hpp"
-#include "threads/test_thread.hpp"
 
 namespace fra = cpp_freertos;
 
@@ -12,7 +11,13 @@ int main(){
     new USB_thread();
     new CLI_service();
 
-    new Control_module();
+    #ifdef CONFIG_CONTROL_MODULE
+        new Control_module();
+    #elifdef CONFIG_SENSOR_MODULE
+        new Sensor_module();
+    #else
+        #error "No module defined, use 'make menuconfig' to select module"
+    #endif
 
     fra::Thread::StartScheduler();
 
