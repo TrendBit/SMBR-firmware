@@ -12,13 +12,19 @@ git clone git@github.com:TrendBit/SMBR-firmware.git
 cd SMBR-firmware  
 git submodule update --init --recursive  
 make docker-build  
+make menuconfig # select correct module from selection  
 make  
 ```  
+
+## Configuration  
+Since the source codes in this repository are partially shared for all modules, it is necessary to build a firmware variant for a specific module. For this purpose, `Kconfig` is used to select the desired module type. The definition of Kconfig is stored in the `config/` folder, where the selected configuration (`.config`) is written, then based on it is generated `source/config.hpp`, according to which the firmware compilation is modified.  
+
+To select the target module run: `make menuconfig`  
 
 ## Flashing  
 Update of board firmware can be done via debugger(SWD) or via USB bootloader. Debugger method (`make flash`) required special hardware probe (BlackMagicProve, PicoProbe, etc), but also enables debugging. Bootloader method is more user friendly for non-developers.  
 
-### USB bootloader update  
+#### USB bootloader update  
 Connect board on which you want to upgrade firmware to computer via USB-C connector on board which you want perform firmware upgrade. Locate two silver buttons on board marked with BOOT and RST labels.  
 - Press and hold Bootloader (BOOT) button  
 - Pres and release Reset button (RST) button  
