@@ -12,6 +12,7 @@ BUILD_DIR = build
 CONTAINER_RUN := docker run --rm --privileged -t -v /dev:/dev -v $(PWD):/project
 ROOT_RUN := $(CONTAINER_RUN) $(IMAGE_NAME) /bin/sh -c
 USER_RUN := $(CONTAINER_RUN) --user "$(USER_ID):$(GROUP_ID)" $(IMAGE_NAME) /bin/sh -c
+USER_RUN_IT := $(CONTAINER_RUN) -it --user "$(USER_ID):$(GROUP_ID)" $(IMAGE_NAME) /bin/sh -c
 
 all: firmware #test run_test
 
@@ -87,6 +88,10 @@ picotool-flash: build
 
 picotool-bootsel: build
 	$(ROOT_RUN) "picotool reboot -u -f"
+
+menuconfig:
+	$(USER_RUN_IT) "cd config && menuconfig Kconfig"
+	$(USER_RUN) "cd config && genconfig --header-path ../source/config.hpp"
 
 clean:
 	rm -rf build

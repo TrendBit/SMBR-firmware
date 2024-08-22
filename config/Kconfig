@@ -1,0 +1,11 @@
+mainmenu "Wearing time configuration"
+
+choice
+    prompt "Module type"
+    help
+        Type of module for which will be firmware build
+    config CONTROL_MODULE
+        bool "Control_module"
+    config SENSOR_MODULE
+        bool "Sensor_module"
+endchoice

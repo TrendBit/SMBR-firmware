@@ -25,7 +25,7 @@ RUN apk update && \
             bash \
             ninja
 
-#RUN apt -y install pkg-config libusb-1.0-0-dev gcc-12
+RUN pip install --break-system-packages kconfiglib
 
 RUN cd /usr/share/ &&\
     git clone https://github.com/linux-test-project/lcov.git --branch v1.16 lcov/ && \
