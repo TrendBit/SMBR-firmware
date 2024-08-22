@@ -13,6 +13,8 @@
 #include "hal/gpio/gpio.hpp"
 #include "components/common_sensors/RP_internal_temperature.hpp"
 
+#include "pico/unique_id.h"
+
 #include "logger.hpp"
 
 /**
@@ -83,4 +85,13 @@ public:
      * @return false    Core temperature response cannot be sent
      */
     bool Core_temperature();
+
+    /**
+     * @brief   Respond to request for module discovery, send response with unique ID of module (MCU UID)
+     *
+     * @param message   Received request for module discovery
+     * @return true     Response with module ID was sent
+     * @return false    Response with module ID cannot be sent
+     */
+    bool Probe_modules(Application_message message);
 };

@@ -20,22 +20,17 @@ bool Common_core::Receive(Application_message message){
 
     switch (message.Message_type()){
         case Codes::Message_type::Ping_request:
-            command_name = "Ping";
-            Ping(message);
-            break;
+            return Ping(message);
 
         case Codes::Message_type::Core_temperature_request:
-            command_name = "MCU_temp";
-            Core_temperature();
-            break;
+            return Core_temperature();
+
+        case Codes::Message_type::Probe_modules_request:
+            return Probe_modules(message);
 
         default:
             return false;
     }
-
-    Logger::Print("Device core received message: " + command_name);
-
-    return true;
 }
 
 bool Common_core::Ping(Application_message message){
@@ -59,5 +54,14 @@ bool Common_core::Core_temperature(){
         temp_message.data[i] = temp_bytes[i];
     }
     can_thread->Send(temp_message);
+    return true;
+}
+
+bool Common_core::Probe_modules(Application_message message){
+    UNUSED(message);
+    etl::vector<uint8_t, 8> uid(8);
+    pico_get_unique_board_id((pico_unique_board_id_t*)uid.data());
+    CAN::Message response = Application_message(Codes::Message_type::Probe_modules_response, uid);
+    can_thread->Send(response);
     return true;
 }
