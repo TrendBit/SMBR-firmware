@@ -9,6 +9,11 @@
 #include "logger.hpp"
 #include "codes/codes.hpp"
 
+#include "threads/test_thread.hpp"
+
+#include "components/led/led_pwm.hpp"
+#include "components/led_illumination.hpp"
+
 /**
  * @brief Control module shield used for:
  *          - Temperature control
@@ -21,6 +26,9 @@
  *        Exclusive module (only one instance in system)
  */
 class Control_module: public Base_module {
+private:
+    LED_illumination * led_illumination = nullptr;
+
 public:
     /**
      * @brief Construct a new Control_module object, calls constructor of Base_module with type of module
@@ -32,4 +40,7 @@ public:
      * @brief Perform setup of all components of module
      */
     virtual void Setup_components() override final;
+
+    void Setup_LEDs();
+
 };
