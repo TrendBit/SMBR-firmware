@@ -28,3 +28,6 @@
 [submodule "source/codes"]
 	path = source/codes
 	url = git@github.com:TrendBit/SMBR-CANBUS-Codes.git
+[submodule "library/fast-hash"]
+	path = library/fast-hash
+	url = git@github.com:ztanml/fast-hash.git
