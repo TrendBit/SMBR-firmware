@@ -11,6 +11,10 @@
 #include "codes/codes.hpp"
 #include "can_message.hpp"
 
+#ifndef UNUSED
+    #define UNUSED(x) (void)(x)
+#endif
+
 /**
  * @brief   Abstract class representing object which can receive CAN messages from router
  *          Register itself when created into Message router

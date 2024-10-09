@@ -27,7 +27,7 @@ bool Message_router::Route(CAN::Message message){
         auto receiver = Routing_table.find(message_type);
         if (receiver != Routing_table.end()){
             Codes::Component component = receiver->second;
-            Message_receiver * instance = Component_instances[component];
+            Message_receiver * instance = component_instances[component];
             if (instance) {
                 instance->Receive(app_message);
                 return true;
@@ -41,7 +41,7 @@ bool Message_router::Route(CAN::Message message){
         auto receiver = Admin_routing_table.find(cmd);
         if (receiver != Admin_routing_table.end()){
             Codes::Component component = receiver->second;
-            Message_receiver * instance = Component_instances[component];
+            Message_receiver * instance = component_instances[component];
             if (instance) {
                 instance->Receive(message);
                 return true;
@@ -55,8 +55,12 @@ bool Message_router::Route(CAN::Message message){
 }
 
 void Message_router::Register_receiver(Codes::Component component, Message_receiver * receiver){
-    auto record = Component_instances.find(component);
-    if (record != Component_instances.end()){
+    auto record = component_instances.find(component);
+    // Overwrite existing record
+    if (record != component_instances.end()){
+        Logger::Print("Component already registered, overwriting");
         record->second = receiver;
+    } else {
+        component_instances[component] = receiver;
     }
 }

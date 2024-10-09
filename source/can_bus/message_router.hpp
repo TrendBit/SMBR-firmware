@@ -28,16 +28,15 @@
  */
 class Message_router {
 private:
+
     /**
      * @brief Map of device components and their instances
      *        Based on this map is determined on which received of component should be invoked
      */
-    inline static etl::unordered_map<Codes::Component, Message_receiver *, 32> Component_instances = {
-        { Codes::Component::CAN_serial, nullptr},
-        { Codes::Component::Common_core, nullptr},
-    };
+    inline static etl::unordered_map<Codes::Component, Message_receiver *, 32> component_instances = {};
 
 public:
+
     /**
      * @brief   If message is determined for this module then will route this message to correct component for processing
      *
@@ -53,5 +52,5 @@ public:
      * @param component    Component which will be registered
      * @param receiver     Instance of component (Message_receiver) which will receive messages
      */
-    static void Register_receiver(Codes::Component component, Message_receiver * receiver);
+    static void Register_receiver(Codes::Component component, Message_receiver *receiver);
 };
