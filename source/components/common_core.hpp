@@ -13,9 +13,20 @@
 #include "hal/gpio/gpio.hpp"
 #include "components/common_sensors/RP_internal_temperature.hpp"
 
+#include "codes/messages/ping_request.hpp"
+#include "codes/messages/ping_response.hpp"
+#include "codes/messages/probe_modules_response.hpp"
+#include "codes/messages/core_temp_response.hpp"
+
 #include "pico/unique_id.h"
 
+#include "fasthash.h"
+
 #include "logger.hpp"
+
+#define KATAPULT_HASH_SEED 0xA16231A7
+#define CANBUS_UUID_LEN 6
+#define PICO_UUID_LEN   8
 
 /**
  * @brief  This is component which is present in all modules and is responsible
@@ -89,9 +100,32 @@ public:
     /**
      * @brief   Respond to request for module discovery, send response with unique ID of module (MCU UID)
      *
-     * @param message   Received request for module discovery
      * @return true     Response with module ID was sent
      * @return false    Response with module ID cannot be sent
      */
-    bool Probe_modules(Application_message message);
+    bool Probe_modules();
+
+private:
+    /**
+     * @brief   Calculate unique ID of module, this is based on PICO unique ID
+     *          Hashes pico uid using fash-hash and reduce it to 6 bytes in order to have same output as katapult
+     *              This is made in order to distinguish modules but has same ui in bootloader and normal mode
+     *
+     * @return etl::array<uint8_t, CANBUS_UUID_LEN> Unique ID of module, reduced to 6 bytes (CANBUS_UUID_LEN)
+     */
+    etl::array<uint8_t, CANBUS_UUID_LEN> UID();
+
+    /**
+     * @brief   Get current MCU core temperature
+     *
+     * @return float    Current MCU core temperature in Celsius
+     */
+    float MCU_core_temperature();
+
+    /**
+     * @brief   Get current MCU core load
+     *
+     * @return float    Current MCU core load in percentage (eq. percentage of idle task)
+     */
+    float MCU_core_load();
 };
