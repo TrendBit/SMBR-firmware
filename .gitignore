@@ -3,3 +3,4 @@ build/
 config/.config
 config/.config.old
 source/config.hpp
+.vscode/
