@@ -1,7 +1,7 @@
 #include "common_thread.hpp"
 
 Common_thread::Common_thread(CAN_thread * can_thread):
-    Thread("common_thread", 2048, 2),
+    Thread("common_thread", 2048, 9),
     can_thread(can_thread)
 {
     Logger::Print("Common thread created");
@@ -12,7 +12,7 @@ void Common_thread::Run(){
     Logger::Print("Common thread start");
 
     while (true) {
-        DelayUntil(fra::Ticks::MsToTicks(1000));
+        DelayUntil(fra::Ticks::MsToTicks(1));
 
         if (can_thread->Message_available()) {
             Logger::Print("Message available");
