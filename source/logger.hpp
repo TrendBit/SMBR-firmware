@@ -27,7 +27,13 @@ private:
     /**
      * @brief USb interface id which is used for printing to USB
      */
-    static uint8_t const usb_interface_id = 1;
+    inline static std::optional<uint8_t> usb_interface_id = {};
+
+    /**
+     * @brief UART instance which is used for printing to UART
+     */
+    inline static uart_inst_t * uart_instance = nullptr;
+
 public:
     /**
      * @brief Construct a new Logger object
@@ -35,24 +41,42 @@ public:
     Logger() = default;
 
     /**
-     * @brief Initialize uart peripheral for logging
+     * @brief   Initialize uart peripheral for logging
+     *
+     * @param uart_instance UART instance which will be used for logging
+     * @param tx_gpio       GPIO pin which will be used for TX
+     * @param rx_gpio       GPIO pin which will be used for RX
      */
-    static void Init_UART();
+    static void Init_UART(uart_inst_t * uart_instance, uint tx_gpio, uint rx_gpio, uint baudrate = 115200);
 
     /**
-     * @brief Print message to UART and USB
+     * @brief   Initialize USB peripheral for logging
+     *
+     * @param usb_interface_id  USB interface id which will be used for logging
+     */
+    static void Init_USB(uint usb_interface_id);
+
+    /**
+     * @brief Print message to UART and USB with timestamp
      *
      * @param message   Message which will be printed
      */
     static void Print(std::string message);
 
     /**
-     * @brief Print message to UART and USB with color
+     * @brief Print message to UART and USB with color and timestamp
      *
      * @param message   Message which will be printed
      * @param colorizer Function which will colorize message
      */
     static void Print(std::string message, std::function<std::string(const std::string&)> colorizer);
+
+    /**
+     * @brief   Print message into UART and USB without any formatting or timestamp
+     *
+     * @param message   Message which will be printed
+     */
+    static void Print_raw(std::string message);
 
 private:
     /**
