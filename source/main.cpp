@@ -5,9 +5,11 @@ namespace fra = cpp_freertos;
 int main(){
     timer_hw->dbgpause = 0; // Required for SWD debug otherwise timers are alway zero during debug
 
-    Logger::Init_UART();
+    #ifdef CONFIG_LOGGER
+        Logger::Init_UART(uart0, 0, 1, 115200);
+    #endif
 
-    new LED_heartbeat_thread(12, 500);
+    new LED_heartbeat_thread(24, 500);
     new USB_thread();
     new CLI_service();
 

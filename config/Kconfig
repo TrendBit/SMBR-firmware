@@ -1,4 +1,4 @@
-mainmenu "Wearing time configuration"
+mainmenu "Smart Modular BioReactor firmware configuration"
 
 choice
     prompt "Module type"
@@ -9,3 +9,7 @@ choice
     config SENSOR_MODULE
         bool "Sensor_module"
 endchoice
+
+config LOGGER
+    bool "Logger"
+    default n
