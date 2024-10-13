@@ -13,3 +13,7 @@ endchoice
 config LOGGER
     bool "Logger"
     default n
+
+config TEST_THREAD
+    bool "Test thread"
+    default n

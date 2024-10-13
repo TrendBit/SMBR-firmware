@@ -10,6 +10,10 @@ Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_typ
 {
     this->instance = this;
     this->instance_enumeration = instance_type;
+
+    #ifdef CONFIG_TEST_THREAD
+        new Test_thread();
+    #endif
 }
 
 Codes::Module Base_module::Module_type() {

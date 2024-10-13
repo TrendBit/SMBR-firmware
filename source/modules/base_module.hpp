@@ -67,6 +67,14 @@ public:
     Base_module(Codes::Module module_type, Codes::Instance instance_type);
 
     /**
+     * @brief Construct a new Base_module object, must be called from constructor of derived class
+     *
+     * @param module_type   Type of module which is derived from this class
+     * @param instance_type Instance enumeration of module which is derived from this class
+     */
+    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin);
+
+    /**
      * @brief Method implemented by derived class, which should setup all module specific components and functionality
      */
     virtual void Setup_components() = 0;
