@@ -9,6 +9,13 @@
 
 #include "can_bus/can_bus.hpp"
 #include "threads/can_thread.hpp"
+#include "hal/gpio/gpio.hpp"
+#include "hal/pwm/pwm.hpp"
+#include "components/common_sensors/thermistor.hpp"
+#include "hal/adc/adc_channel.hpp"
+#include "components/common_core.hpp"
+
+#include "components/common_sensors/rpm_counter_pio.hpp"
 
 #include "thread.hpp"
 
@@ -19,7 +26,9 @@ private:
     CAN_thread * can_thread;
 
 public:
-    Test_thread(CAN_thread * can_thread);
+    explicit Test_thread(CAN_thread * can_thread);
+
+    Test_thread();
 
 protected:
     virtual void Run();
