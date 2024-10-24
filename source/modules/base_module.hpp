@@ -11,6 +11,8 @@
 #include "logger.hpp"
 #include "threads/can_thread.hpp"
 #include "components/common_core.hpp"
+#include "threads/test_thread.hpp"
+#include "config.hpp"
 
 class Common_thread;
 
