@@ -9,7 +9,7 @@ void USB_thread::Run(){
     tusb_init();
 
     while (true) {
+        DelayUntil(fra::Ticks::MsToTicks(1));
         tud_task();
-        Yield();
     }
 };

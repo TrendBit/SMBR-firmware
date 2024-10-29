@@ -16,7 +16,6 @@ void Common_thread::Run(){
 
         if (can_thread->Message_available()) {
             Logger::Print("Message available");
-            //can_thread->Read_message().value();
             CAN::Message message_in = can_thread->Read_message().value();
             Message_router::Route(message_in);
         }

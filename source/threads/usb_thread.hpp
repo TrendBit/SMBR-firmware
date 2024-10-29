@@ -8,6 +8,7 @@
 #pragma once
 
 #include "thread.hpp"
+#include "ticks.hpp"
 #include "rtos/wrappers.hpp"
 #include "tusb.h"
 #include "usb_descriptors.h"
