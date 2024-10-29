@@ -80,6 +80,9 @@ test: $(BUILD_DIR)
 flash: firmware
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"program build/source/firmware.elf verify reset exit\""
 
+flash_katapult:
+	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"program bootloader/katapult/out/katapult.elf verify reset exit\""
+
 reset:
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"init ; reset halt ; rp2040.core1 arp_reset assert 0 ; rp2040.core0 arp_reset assert 0 ; exit\""
 
