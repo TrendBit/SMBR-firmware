@@ -8,8 +8,13 @@
 #pragma once
 
 #include "can_message.hpp"
-
 #include "codes/codes.hpp"
+
+#ifndef CAN_DATA_TYPE
+    #define CAN_DATA_TYPE etl::vector<uint8_t, 8>
+#endif
+
+#include "codes/messages/base_message.hpp"
 
 /**
  * @brief  Subset of CAN message, which is used for application communication
@@ -73,6 +78,8 @@ public:
      * @param data          Data which are used to initialize data section of message, up to 8 bytes
      */
     Application_message(Codes::Message_type message_type, etl::vector<uint8_t, 8> data);
+
+    Application_message(App_messages::Base_message &message);
 
     /**
      * @brief   Construct a new Application_message object, subset of CAN message with extended frame format with data based on existing can message

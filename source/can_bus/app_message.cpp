@@ -18,6 +18,10 @@ Application_message::Application_message(Codes::Message_type message_type, etl::
     Application_message(Base_module::Module_type(), Base_module::Instance_enumeration(), message_type, data)
 { }
 
+Application_message::Application_message(App_messages::Base_message &message) :
+    Application_message(Base_module::Module_type(), Base_module::Instance_enumeration(), message.Type(), message.Export_data())
+{ }
+
 Application_message::Application_message(CAN::Message message) :
     CAN::Message(message){ }
 
