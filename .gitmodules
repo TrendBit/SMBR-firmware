@@ -22,9 +22,6 @@
 [submodule "library/freertos"]
 	path = library/freertos
 	url = git@github.com:FreeRTOS/FreeRTOS-Kernel.git
-[submodule "bootloader"]
-	path = bootloader
-	url = git@github.com:Arksine/katapult.git
 [submodule "source/codes"]
 	path = source/codes
 	url = git@github.com:TrendBit/SMBR-CANBUS-Codes.git
