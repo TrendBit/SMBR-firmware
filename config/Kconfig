@@ -9,11 +9,39 @@ choice
     config SENSOR_MODULE
         bool "Sensor_module"
 endchoice
+config MODULE_TYPE
+    string
+    default "Control_module" if CONTROL_MODULE
+    default "Sensor_module" if SENSOR_MODULE
+
+choice
+    prompt "Bootloader offset"
+    config BOOTLOADER_OFFSET_16K
+        bool "16KiB bootloader"
+    config BOOTLOADER_OFFSET_0K
+        bool "No bootloader"
+endchoice
+
+config BOOTLOADER
+    bool
+    default n if BOOTLOADER_OFFSET_0K
+    default y
+
+config BOOTLOADER_OFFSET
+    hex
+    default 0x10004000 if BOOTLOADER_OFFSET_16K
+    default 0x10000100
+
+comment "Development configurations"
 
 config LOGGER
-    bool "Logger"
+    bool "Logger output"
     default n
+    help
+        Enable debug output to serial line (baudrate: 115200)
 
 config TEST_THREAD
-    bool "Test thread"
+    bool "Test thread execution"
     default n
+    help
+        Enable testing thread for development experiments

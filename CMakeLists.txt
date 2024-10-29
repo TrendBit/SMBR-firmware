@@ -22,6 +22,9 @@ set(CMAKE_CXX_FLAGS "${COMMON_FLAGS} ${MCU_FLAGS} -fno-rtti -fno-exceptions -Wno
 
 set(CONFIG_DIR ${CMAKE_SOURCE_DIR}/source/config)
 
+include(config/import_kconfig.cmake)
+import_kconfig(CONFIG "config/.config")
+
 add_subdirectory(library)
 
 add_subdirectory(source)

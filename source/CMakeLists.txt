@@ -44,12 +44,18 @@ add_definitions("-DCOMPILER_NAME=\"${COMPILER}gcc\"")
 add_executable(${TARGET} ${SOURCE_FILES} )
 
 target_compile_options(${TARGET} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -Wall -Wextra -Wno-volatile>)
-target_compile_definitions(${TARGET} PRIVATE PICO_CXX_DISABLE_ALLOCATION_OVERRIDES=1 PICO_STDIO_UART=0)
+target_compile_definitions(${TARGET} PRIVATE PICO_CXX_DISABLE_ALLOCATION_OVERRIDES=1 PICO_NO_BINARY_INFO=1 PICO_STDIO_UART=0)
 
 target_include_directories(${TARGET} PUBLIC .)
 
-
 pico_add_extra_outputs(${TARGET})
+
+if(DEFINED CONFIG_BOOTLOADER)
+    message(STATUS "Bootloader offset enabled: ${CONFIG_BOOTLOADER_OFFSET}")
+    pico_set_linker_script(${TARGET} ${CMAKE_SOURCE_DIR}/bootloader/memmap_default.ld)
+else()
+    message(STATUS "Bootloader offset disabled")
+endif()
 
 target_link_libraries(${TARGET} can2040)
 target_link_libraries(${TARGET} cmsis_core pico_stdlib pico_multicore pico_unique_id)
