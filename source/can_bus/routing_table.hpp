@@ -25,8 +25,12 @@ inline static const std::unordered_map<Codes::Command_admin, Codes::Component> A
  *          STL version of unordered_map is used because ETL is not placed into flash memory
  */
 inline static const std::unordered_map<Codes::Message_type, Codes::Component> Routing_table = {
+    { Codes::Message_type::Device_reset,             Codes::Component::Common_core      },
+    { Codes::Message_type::Device_usb_bootloader,    Codes::Component::Common_core      },
+    { Codes::Message_type::Device_can_bootloader,    Codes::Component::Common_core      },
     { Codes::Message_type::Probe_modules_request,    Codes::Component::Common_core      },
     { Codes::Message_type::Ping_request,             Codes::Component::Common_core      },
     { Codes::Message_type::Core_temperature_request, Codes::Component::Common_core      },
+    { Codes::Message_type::Core_load_request,        Codes::Component::Common_core      },
     { Codes::Message_type::LED_set_intensity,        Codes::Component::LED_illumination }
 };
