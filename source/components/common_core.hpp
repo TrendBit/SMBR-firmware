@@ -19,44 +19,50 @@
 #include "codes/messages/core_temp_response.hpp"
 
 #include "pico/unique_id.h"
+#include "pico/bootrom.h"
+#include "hardware/watchdog.h"
 
 #include "fasthash.h"
 
 #include "logger.hpp"
 
-#define KATAPULT_HASH_SEED 0xA16231A7
-#define CANBUS_UUID_LEN 6
-#define PICO_UUID_LEN   8
+#define KATAPULT_BOOT_ADDRESS 0x5984E3FA6CA1589B
+#define KATAPULT_REQUEST      0x5984E3FA6CA1589B
+#define KATAPULT_HASH_SEED    0xA16231A7
+#define CANBUS_UUID_LEN       6
+#define PICO_UUID_LEN         8
 
 /**
  * @brief  This is component which is present in all modules and is responsible
  *              for processing of messages which must be supported by all modules
  *         Handles request like ping, mcu core temperature, load,  module discovery.
  */
-class Common_core : public Message_receiver{
+class Common_core : public Message_receiver {
 private:
+
     /**
      * @brief CAN periphery manager thread which is responsible for sending and receiving of CAN messages
      */
-    CAN_thread * can_thread;
+    CAN_thread *can_thread;
 
     /**
      * @brief Green on board LED used for signalization
      */
-    GPIO * const green_led;
+    GPIO *const green_led;
 
     /**
      * @brief Temperature sensor for measuring internal temperature of MCU
      */
-    RP_internal_temperature * mcu_internal_temp;
+    RP_internal_temperature *mcu_internal_temp;
 
 public:
+
     /**
      * @brief Construct a new Common_core component, this includes registration to message router via Message_receiver interface
      *
      * @param can_thread    CAN periphery manager thread which is responsible for sending and receiving of CAN messages
      */
-    explicit Common_core(CAN_thread * can_thread);
+    explicit Common_core(CAN_thread *can_thread);
 
     /**
      * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)
@@ -106,6 +112,7 @@ public:
     bool Probe_modules();
 
 private:
+
     /**
      * @brief   Calculate unique ID of module, this is based on PICO unique ID
      *          Hashes pico uid using fash-hash and reduce it to 6 bytes in order to have same output as katapult
@@ -113,7 +120,7 @@ private:
      *
      * @return etl::array<uint8_t, CANBUS_UUID_LEN> Unique ID of module, reduced to 6 bytes (CANBUS_UUID_LEN)
      */
-    etl::array<uint8_t, CANBUS_UUID_LEN> UID();
+    std::array<uint8_t, CANBUS_UUID_LEN> UID();
 
     /**
      * @brief   Get current MCU core temperature
@@ -128,4 +135,28 @@ private:
      * @return float    Current MCU core load in percentage (eq. percentage of idle task)
      */
     float MCU_core_load();
+
+    /**
+     * @brief   Device will enter RP2040 built-in USB bootloader
+     *
+     * @return true     Request is valid MCU will reset and enter bootloader
+     * @return false    Request is invalid, MCU will continue operation
+     */
+    bool Enter_USB_bootloader();
+
+    /**
+     * @brief   Device will enter CAN bootloader (Katapult)
+     *
+     * @return true     Request is valid MCU will reset and enter Katapult bootloader
+     * @return false    Request is invalid, MCU will continue operation
+     */
+    bool Enter_CAN_bootloader();
+
+    /**
+     * @brief   Reset MCU
+     *
+     * @return true     Request is valid MCU will reset
+     * @return false    Request is invalid, MCU will continue operation
+     */
+    bool Reset_MCU();
 };
