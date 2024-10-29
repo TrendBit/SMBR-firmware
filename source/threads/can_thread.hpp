@@ -14,6 +14,14 @@
 
 #include "can_bus/can_bus.hpp"
 #include "can_bus/can_message.hpp"
+#include "can_bus/app_message.hpp"
+
+#ifndef CAN_DATA_TYPE
+    #define CAN_DATA_TYPE etl::vector<uint8_t, 8>
+#endif
+#include "codes/messages/base_message.hpp"
+
+
 #include "logger.hpp"
 
 #include "etl/queue.h"
@@ -93,6 +101,14 @@ public:
      * @return uint     Number of messages in queue, if 0 then was send immediately
      */
     uint Send(CAN::Message const &message);
+
+    /**
+     * @brief If peripheral is available for transmitting new message, it is sent, otherwise message is queued
+     *
+     * @param message   Message to be sent
+     * @return uint     Number of messages in queue, if 0 then was send immediately
+     */
+    uint Send(App_messages::Base_message &message);
 
     /**
      * @brief   Number of received messages in rx queue

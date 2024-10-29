@@ -4,7 +4,7 @@
 
 CAN_thread::CAN_thread()
     : Thread("can_thread", 1000, 8),
-    can_bus(CAN::Bus(5, 4, 100000, 0))
+    can_bus(CAN::Bus(5, 4, 500000, 0))
 {
     Start();
 };
@@ -58,6 +58,11 @@ uint CAN_thread::Send(CAN::Message const &message){
     }
     return tx_queue.available();
 };
+
+uint CAN_thread::Send(App_messages::Base_message &message){
+    Application_message app_message(message);
+    return Send(app_message);
+}
 
 void CAN_thread::Receive(CAN::Message const &message){
     if(rx_queue.full()){
