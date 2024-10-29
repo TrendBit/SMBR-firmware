@@ -14,6 +14,10 @@ config MODULE_TYPE
     default "Control_module" if CONTROL_MODULE
     default "Sensor_module" if SENSOR_MODULE
 
+config CANBUS_SPEED
+    int "CAN bus speed"
+    default 500000
+
 choice
     prompt "Bootloader offset"
     config BOOTLOADER_OFFSET_16K

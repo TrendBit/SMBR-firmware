@@ -1,10 +1,11 @@
 #include "can_thread.hpp"
 #include "can_bus/can_bus.hpp"
 #include "logger.hpp"
+#include "config.hpp"
 
 CAN_thread::CAN_thread()
     : Thread("can_thread", 1000, 8),
-    can_bus(CAN::Bus(5, 4, 500000, 0))
+    can_bus(CAN::Bus(5, 4, CONFIG_CANBUS_SPEED, 0))
 {
     Start();
 };
