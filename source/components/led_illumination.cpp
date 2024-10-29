@@ -17,7 +17,7 @@ bool LED_illumination::Receive(Application_message message){
     switch (message.Message_type()){
         case Codes::Message_type::LED_set_intensity:{
             App_messages::LED_set_intensity led_set_intensity;
-            if (!led_set_intensity.Interpret_app_message(message)){
+            if (!led_set_intensity.Interpret_data(message.data)){
                 Logger::Print("LED_set_intensity interpretation failed");
                 return false;
             }
