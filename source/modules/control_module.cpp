@@ -36,4 +36,6 @@ void Control_module::Setup_LEDs(){
     std::vector<LED_intensity *> led_channels = {led_r, led_g, led_b, led_w};
 
     led_illumination = new LED_illumination(led_channels, temp_0, 10.0);
+
+    led_illumination_global = led_illumination;
 }

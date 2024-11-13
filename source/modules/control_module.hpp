@@ -16,6 +16,8 @@
 #include "components/led/led_pwm.hpp"
 #include "components/led_illumination.hpp"
 
+inline LED_illumination * led_illumination_global = nullptr;
+
 /**
  * @brief Control module shield used for:
  *          - Temperature control
