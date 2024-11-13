@@ -18,7 +18,7 @@ namespace fra = cpp_freertos;
 /**
  * @brief Yellow LED hearth-beat thread signaling that device is alive
  */
-class LED_heartbeat_thread : public fra::Thread {
+class Heartbeat_thread : public fra::Thread {
 public:
     /**
      * @brief Construct a new led heartbeat thread and starts is
@@ -26,7 +26,7 @@ public:
      * @param gpio_led_number   Number of GPIO pin where LED is connected
      * @param delay             Delay between LED state change
      */
-    explicit LED_heartbeat_thread(uint gpio_led_number, uint32_t delay);
+    explicit Heartbeat_thread(uint gpio_led_number, uint32_t delay);
 
 private:
     /**
