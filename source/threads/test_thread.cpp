@@ -16,6 +16,8 @@
 #include "logger.hpp"
 #include "emio/emio.hpp"
 
+
+
 Test_thread::Test_thread(CAN_thread * can_thread)
     : Thread("test_thread", 2048, 10),
     can_thread(can_thread)
@@ -39,11 +41,17 @@ void Test_thread::Run(){
     Fan_RPM * mix_fan = new Fan_RPM(mix_fan_pwm, mix_rpm_counter);
     mix_fan->Intensity(0.0);
 
-    PWM * case_fan_pwm = new PWM(12, 1000, 0.00, true);
+    PWM * case_fan_pwm = new PWM(12, 2000, 0.00, true);
     auto case_rpm_counter = new RPM_counter_PIO(PIO_machine(pio1,0),9, 10000.0,1.0,2);
 
     Fan_RPM * case_fan = new Fan_RPM(case_fan_pwm, case_rpm_counter);
-    case_fan->Intensity(0.0);
+    case_fan->Intensity(1.0);
+
+    PWM * heat_fan_pwm = new PWM(11, 2000, 0.00, true);
+    auto heat_rpm_counter = new RPM_counter_PIO(PIO_machine(pio1,0),8, 10000.0,1.0,2);
+
+    Fan_RPM * heat_fan = new Fan_RPM(heat_fan_pwm, heat_rpm_counter);
+    heat_fan->Intensity(1.0);
 
     PWM * pump_in1 = new PWM(22, 50, 0.00, true);
     PWM * pump_in2 = new PWM( 8, 50, 0.00, true);
@@ -57,10 +65,11 @@ void Test_thread::Run(){
     DC_HBridge * air = new DC_HBridge(air_in1, air_in2);
     air->Speed(0.0);
 
-    // GPIO * air_in1 = new GPIO(2, GPIO::Direction::Out);
-    // GPIO * air_in2 = new GPIO(3, GPIO::Direction::Out);
-    // air_in1->Set(true);
-    // air_in2->Set(false);s
+    PWM * heater_in1 = new PWM(23, 50, 0.00, true);
+    PWM * heater_in2 = new PWM(25, 50, 0.00, true);
+
+    DC_HBridge * heater = new DC_HBridge(heater_in1, heater_in2);
+    heater->Speed(0.0);
 
     auto temp_0_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_2, 3.30f);
     auto temp_0 = new Thermistor(temp_0_adc, 3950, 10000, 25, 5100);
@@ -70,10 +79,66 @@ void Test_thread::Run(){
 
     while (true) {
 
-        DelayUntil(fra::Ticks::MsToTicks(1000));
+        //DelayUntil(fra::Ticks::MsToTicks(1000));
+
+        rtos::Delay(5000);
+
+        air->Speed(1.0);
+
+        rtos::Delay(3000);
+
+        air->Speed(0.0);
+
+        rtos::Delay(500);
+
+        pump->Speed(1.0);
+
+        rtos::Delay(3000);
+
+        pump->Speed(0.0);
+
+        rtos::Delay(500);
+
+        mix_fan->Intensity(0.5);
+
+        rtos::Delay(3000);
+
+        mix_fan->Intensity(0.0);
+
+        for (int led_channel = 0; led_channel <= 3;  led_channel++) {
+
+            for(float led_intensity = 0.0f; led_intensity <= 1.0f; led_intensity += 0.1f){
+                if (led_illumination_global) {
+                    led_illumination_global->Set_intensity(led_channel, led_intensity);
+                }
+                rtos::Delay(250);
+            }
+
+            if (led_illumination_global) {
+                led_illumination_global->Set_intensity(led_channel, 0.0f);
+            }
+
+            rtos::Delay(1000);
+
+        }
+
+        for(float led_intensity = 0.0f; led_intensity <= 1.0f; led_intensity += 0.1f){
+            if (led_illumination_global) {
+                for (int led_channel = 0; led_channel <= 4;  led_channel++) {
+                    led_illumination_global->Set_intensity(led_channel, led_intensity);
+                }
+            }
+            rtos::Delay(250);
+        }
+
+        if (led_illumination_global) {
+            for (int led_channel = 0; led_channel <= 4;  led_channel++) {
+                led_illumination_global->Set_intensity(led_channel, 0.0);
+            }
+        }
 
         //Logger::Print(emio::format("RPM: {:.4f}", rpm_counter->RPM()));
-        Logger::Print(emio::format("TEMP0(LED): {:05.2f}°C, TEMP1:{:05.2f}°C, Fan: {:07.2f} RPM", temp_0->Temperature(), temp_1->Temperature(), mix_fan->RPM()));
+        // Logger::Print(emio::format("TEMP0(LED): {:05.2f}°C, TEMP1:{:05.2f}°C, Fan: {:07.2f} RPM", temp_0->Temperature(), temp_1->Temperature(), mix_fan->RPM()));
         //Logger::Print(emio::format("RPM: {}", std::numeric_limits<uint32_t>::max() - rpm_counter->Read_PIO_counter()));
     }
 

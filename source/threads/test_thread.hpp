@@ -14,10 +14,13 @@
 #include "components/common_sensors/thermistor.hpp"
 #include "hal/adc/adc_channel.hpp"
 #include "components/common_core.hpp"
+#include "components/led_illumination.hpp"
 
 #include "components/common_sensors/rpm_counter_pio.hpp"
 
 #include "thread.hpp"
+
+extern LED_illumination * led_illumination_global;
 
 namespace fra = cpp_freertos;
 
