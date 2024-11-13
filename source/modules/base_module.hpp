@@ -9,10 +9,12 @@
 
 #include "codes/codes.hpp"
 #include "logger.hpp"
-#include "threads/can_thread.hpp"
 #include "components/common_core.hpp"
+#include "threads/can_thread.hpp"
 #include "threads/test_thread.hpp"
+#include "threads/heartbeat_thread.hpp"
 #include "config.hpp"
+#include "hal/gpio/gpio.hpp"
 
 class Common_thread;
 
@@ -59,23 +61,48 @@ protected:
      */
     Common_core * const common_core;
 
-public:
     /**
-     * @brief Construct a new Base_module object, must be called from constructor of derived class
-     *
-     * @param module_type   Type of module which is derived from this class
-     * @param instance_type Instance enumeration of module which is derived from this class
+     * @brief   Pointer to heartbeat thread which is responsible for blinking of green LED
      */
-    Base_module(Codes::Module module_type, Codes::Instance instance_type);
+    Heartbeat_thread * const heartbeat_thread;
 
     /**
+     * @brief  Pointer to yellow LED GPIO pin, this LED is optional
+     */
+    const std::optional<GPIO * const> yellow_led = {};
+
+protected:
+    /**
      * @brief Construct a new Base_module object, must be called from constructor of derived class
      *
      * @param module_type   Type of module which is derived from this class
      * @param instance_type Instance enumeration of module which is derived from this class
+     * @param green_led_pin GPIO pin of green LED
      */
     Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin);
 
+    /**
+     * @brief Construct a new Base_module object, must be called from constructor of derived class
+     *
+     * @param module_type   Type of module which is derived from this class
+     * @param instance_type Instance enumeration of module which is derived from this class
+     * @param green_led_pin  GPIO pin of green LED
+     * @param yellow_led_pin GPIO pin of yellow LED
+     */
+    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint yellow_led_pin);
+
+private:
+    /**
+     * @brief Construct a new Base_module object, called internally from public constructors
+     *
+     * @param module_type   Type of module which is derived from this class
+     * @param instance_type Instance enumeration of module which is derived from this class
+     * @param green_led_pin GPIO pin number of green LED passed to heartbeat thread
+     * @param yellow_led    Optional pointer to GPIO object representing yellow LED
+     */
+    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, std::optional<GPIO * const> yellow_led);
+
+public:
     /**
      * @brief Method implemented by derived class, which should setup all module specific components and functionality
      */

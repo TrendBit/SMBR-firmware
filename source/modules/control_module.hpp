@@ -5,6 +5,8 @@
  * @date 14.08.2024
  */
 
+#pragma once
+
 #include "base_module.hpp"
 #include "logger.hpp"
 #include "codes/codes.hpp"
