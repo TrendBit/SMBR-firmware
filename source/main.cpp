@@ -9,7 +9,6 @@ int main(){
         Logger::Init_UART(uart0, 0, 1, 115200);
     #endif
 
-    new LED_heartbeat_thread(24, 500);
     new USB_thread();
     new CLI_service();
 

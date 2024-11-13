@@ -7,10 +7,8 @@
 #include "FreeRTOS.h"
 #include "thread.hpp"
 
-#include "threads/heartbeat_thread.hpp"
 #include "threads/can_thread.hpp"
 #include "threads/usb_thread.hpp"
-#include "threads/test_thread.hpp"
 
 #include "modules/control_module.hpp"
 #include "modules/sensor_module.hpp"
