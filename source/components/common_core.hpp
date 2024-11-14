@@ -26,9 +26,32 @@
 
 #include "logger.hpp"
 
-#define KATAPULT_BOOT_ADDRESS 0x5984E3FA6CA1589B
+/**
+ * @brief Address where Katapult bootloader is located in flash memory
+ */
+#define KATAPULT_BOOT_ADDRESS 0x10000100
+
+/**
+ * @brief Signature at the beginning of the bootloader determining that
+ */
+#define KATAPULT_SIGNATURE    0x21746f6f426e6143
+
+/**
+ * @brief Katapult command written to memory in order for Katapult to stay at bootloader after next reset
+ */
 #define KATAPULT_REQUEST      0x5984E3FA6CA1589B
+
+/**
+ * @brief Katapult command written to memory in order for Katapult to bypass and start application, default after power cycle
+ */
+#define KATAPULT_BYPASS       0x7b06ec45a9a8243d
+
+/**
+ * @brief   Seed for fast-hash algorithm used for hashing of PICO unique ID into device UUID
+ *          Should be same for katapult and for application to keep same UUID
+ */
 #define KATAPULT_HASH_SEED    0xA16231A7
+
 #define CANBUS_UUID_LEN       6
 #define PICO_UUID_LEN         8
 
