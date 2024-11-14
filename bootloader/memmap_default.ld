@@ -20,7 +20,7 @@
     __StackTop
     __stack (== StackTop)
 */
-INPUT(/project/bootloader/katapult/out/katapult.o)
+/* INPUT(/project/bootloader/katapult/out/katapult.o)*/
 
 MEMORY
 {
@@ -36,8 +36,9 @@ SECTIONS
     /* Section for bootloader, this section is only reserveed and currently not used */
 
     .bootloader : {
-        /project/bootloader/katapult/out/katapult.o (.data)
-        . = ALIGN(0x4);
+        /*/project/bootloader/katapult/out/katapult.o (.data)*/
+        KEEP(*(.bootloader))
+        . = ALIGN(4);
     } > BOOTLOADER
 
     /* Second stage bootloader is prepended to the image. It must be 256 bytes big
