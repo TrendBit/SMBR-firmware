@@ -13,10 +13,10 @@
 #include "hal/gpio/gpio.hpp"
 #include "components/common_sensors/RP_internal_temperature.hpp"
 
-#include "codes/messages/ping_request.hpp"
-#include "codes/messages/ping_response.hpp"
-#include "codes/messages/probe_modules_response.hpp"
-#include "codes/messages/core_temp_response.hpp"
+#include "codes/messages/common_core/ping_request.hpp"
+#include "codes/messages/common_core/ping_response.hpp"
+#include "codes/messages/common_core/probe_modules_response.hpp"
+#include "codes/messages/common_core/core_temp_response.hpp"
 
 #include "pico/unique_id.h"
 #include "pico/bootrom.h"

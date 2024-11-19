@@ -13,7 +13,7 @@
 #include "can_bus/message_receiver.hpp"
 
 #include "codes/codes.hpp"
-#include "codes/messages/led_set_intensity.hpp"
+#include "codes/messages/led_illumination/led_set_intensity.hpp"
 
 #include "components/led/led_intensity.hpp"
 #include "components/common_sensors/thermistor.hpp"
