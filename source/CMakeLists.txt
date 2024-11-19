@@ -47,6 +47,7 @@ target_compile_options(${TARGET} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -Wall -Wextr
 target_compile_definitions(${TARGET} PRIVATE PICO_CXX_DISABLE_ALLOCATION_OVERRIDES=1 PICO_NO_BINARY_INFO=1 PICO_STDIO_UART=0)
 
 target_include_directories(${TARGET} PUBLIC .)
+target_include_directories(${TARGET} PUBLIC codes/messages)
 
 pico_add_extra_outputs(${TARGET})
 
