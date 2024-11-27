@@ -1,13 +1,13 @@
 import can
 
 module_types = {
-    "Undefined"     : 0x00,
-    "All"           : 0x01,
-    "Any"           : 0x02,
-    "TestBed"       : 0x03,
-    "Core_device"   : 0x04,
-    "Control_board" : 0x05,
-    "Sensor_board"  : 0x06,
+    "Undefined"      : 0x00,
+    "All"            : 0x01,
+    "Any"            : 0x02,
+    "Test_module"    : 0x03,
+    "Core_module"    : 0x04,
+    "Control_module" : 0x05,
+    "Sensor_module"  : 0x06,
 }
 
 module_instances = {

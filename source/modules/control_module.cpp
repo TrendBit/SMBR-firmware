@@ -1,7 +1,7 @@
 #include "control_module.hpp"
 
 Control_module::Control_module():
-    Base_module(Codes::Module::Control_board, Codes::Instance::Exclusive, 24)
+    Base_module(Codes::Module::Control_module, Codes::Instance::Exclusive, 24)
 {
     Setup_components();
 }

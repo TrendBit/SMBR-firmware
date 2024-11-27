@@ -1,7 +1,7 @@
 #include "sensor_module.hpp"
 
 Sensor_module::Sensor_module():
-    Base_module(Codes::Module::Sensor_board, Codes::Instance::Exclusive, 12, 13)
+    Base_module(Codes::Module::Sensor_module, Codes::Instance::Exclusive, 12, 13)
 {
     Setup_components();
 }
