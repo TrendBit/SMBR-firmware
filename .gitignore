@@ -5,4 +5,4 @@ config/.config.old
 source/config.hpp
 .vscode/
 binaries/
-smbr_firmware.zip
+smpbr_firmware_v*.zip

@@ -57,13 +57,27 @@ build_bootloader
 
 echo "All firmware builds completed."
 
-# Pack files into deplay archive
-archive_name="smbr_firmware.zip"
+# Get version branch and commit
+version=$(git describe --tags)
+if [ $? -ne 0 ]; then
+  version="vx.x"
+fi
 
-git rev-parse HEAD > commit.txt
+branch=$(git rev-parse --abbrev-ref HEAD)
+commit=$(git describe --always --dirty)
+
+# Generate the version.txt file
+cat > version.txt <<EOF
+version: ${version}
+branch: ${branch}
+commit: ${commit}
+EOF
+
+# Pack files into deplay archive
+archive_name="smpbr_firmware_${version}.zip"
 
 rm -f ${archive_name}
 zip -r ${archive_name} binaries
-zip -j ${archive_name} scripts/*.py scripts/Readme.md commit.txt
+zip -j ${archive_name} scripts/*.py scripts/Readme.md version.txt
 
-rm -f commit.txt
+rm -f version.txt
