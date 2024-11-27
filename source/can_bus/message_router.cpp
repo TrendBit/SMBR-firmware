@@ -32,9 +32,12 @@ bool Message_router::Route(CAN::Message message){
                 instance->Receive(app_message);
                 return true;
             } else {
-                Logger::Print("Message receiver not found");
+                Logger::Print("Message receiver instance not found");
                 return false;
             }
+        } else {
+            Logger::Print("Message receiver component not found");
+            return false;
         }
     } else {
         Codes::Command_admin cmd = static_cast<Codes::Command_admin>(message.ID());
