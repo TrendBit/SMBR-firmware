@@ -43,6 +43,7 @@ void Logger::Print_to_USB(std::string &message){
 void Logger::Print_to_UART(const std::string &message){
     if (uart_instance) {
         uart_puts(uart_instance, message.c_str());
+        uart_tx_wait_blocking(uart_instance);
     }
 }
 

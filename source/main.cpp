@@ -7,10 +7,13 @@ int main(){
 
     #ifdef CONFIG_LOGGER
         Logger::Init_UART(uart0, 0, 1, 115200);
+        Logger::Print_raw("\r\n");
+        Logger::Print("Logger UART Initialized");
     #endif
 
     new USB_thread();
     new CLI_service();
+
 
     #ifdef CONFIG_CONTROL_MODULE
         new Control_module();
