@@ -13,8 +13,13 @@
 #include "can_bus/message_receiver.hpp"
 
 #include "codes/codes.hpp"
-#include "codes/messages/led_illumination/led_set_intensity.hpp"
+#include "codes/messages/led_panel/set_intensity.hpp"
+#include "codes/messages/led_panel/get_intensity_request.hpp"
+#include "codes/messages/led_panel/get_intensity_response.hpp"
+#include "codes/messages/led_panel/temperature_request.hpp"
+#include "codes/messages/led_panel/temperature_response.hpp"
 
+#include "components/component.hpp"
 #include "components/led/led_intensity.hpp"
 #include "components/common_sensors/thermistor.hpp"
 
@@ -26,7 +31,7 @@
  *          Can be controlled by CAN messages received from CAN message router
  *          LED_illumination can be limited by power budget or temperature of module
  */
-class LED_illumination : public Message_receiver{
+class LED_panel : public Component, Message_receiver{
 
     /**
      * @brief   Vector of pointers to LED_intensity objects, each representing one channel
@@ -36,7 +41,7 @@ class LED_illumination : public Message_receiver{
     /**
      * @brief   Pointer to temperature sensor object, which is used for temperature monitoring
      */
-    Thermistor const * temp_sensor = nullptr;
+    Thermistor * const temp_sensor = nullptr;
 
     /**
      * @brief   Threshold temperature for temperature limitation of module
@@ -57,7 +62,7 @@ public:
      * @param temp_sensor   Pointer to temperature sensor object, which is used for temperature monitoring
      * @param power_budget  Power budget of module, in watts
      */
-    LED_illumination(std::vector<LED_intensity *> &channels, Thermistor * temp_sensor, float power_budget_w = 0.0f);
+    LED_panel(std::vector<LED_intensity *> &channels, Thermistor * temp_sensor, float power_budget_w = 0.0f);
 
     /**
      * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)
@@ -92,6 +97,22 @@ public:
     bool Set_intensity(uint8_t channel, float intensity);
 
     /**
+     * @brief   Get intensity of LED channel
+     *
+     * @param channel   Channel number of LED
+     * @return float    Intensity of LED, value from 0 to 1.0
+     */
+    bool Get_intensity(uint8_t channel);
+
+    /**
+     * @brief  Response to request for temperature of LED panel
+     *
+     * @return true     Temperature was sent
+     * @return false    Temperature was not sent, sensor not available
+     */
+    bool Get_temperature();
+
+    /**
      * @brief   Detect if power of LED illumination is limited by power budget
      *
      * @return true     Power is limited
@@ -121,5 +142,5 @@ private:
      *
      * @return float    Temperature of module in Celsius
      */
-    float Temperature();
+    float Temperature() const;
 };

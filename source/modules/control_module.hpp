@@ -14,7 +14,7 @@
 #include "threads/test_thread.hpp"
 
 #include "components/led/led_pwm.hpp"
-#include "components/led_illumination.hpp"
+#include "components/led_panel.hpp"
 
 /**
  * @brief Control module shield used for:
@@ -29,7 +29,7 @@
  */
 class Control_module: public Base_module {
 private:
-    LED_illumination * led_illumination = nullptr;
+    LED_panel * led_panel = nullptr;
 
 public:
     /**

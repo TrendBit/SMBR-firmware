@@ -5,7 +5,7 @@
 #include "modules/control_module.hpp"
 
 #include "components/led/led_pwm.hpp"
-#include "components/led_illumination.hpp"
+#include "components/led_panel.hpp"
 #include "components/fan/fan_gpio.hpp"
 #include "components/fan/fan_pwm.hpp"
 #include "components/fan/fan_rpm.hpp"
