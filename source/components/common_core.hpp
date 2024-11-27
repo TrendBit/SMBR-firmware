@@ -19,6 +19,7 @@
 #include "codes/messages/common/ping_response.hpp"
 #include "codes/messages/common/probe_modules_response.hpp"
 #include "codes/messages/common/core_temp_response.hpp"
+#include "codes/messages/common/core_load_response.hpp"
 
 #include "pico/unique_id.h"
 #include "pico/bootrom.h"
@@ -132,6 +133,14 @@ public:
      */
     bool Probe_modules();
 
+    /**
+     * @brief Respond to request for MCU core load, response is based on idle tread utilization
+     *
+     * @return true     Response with core load was sent
+     * @return false    Response with core load cannot be sent
+     */
+    bool Core_load();
+
 private:
 
     /**
@@ -155,7 +164,7 @@ private:
      *
      * @return float    Current MCU core load in percentage (eq. percentage of idle task)
      */
-    float MCU_core_load();
+    float MCU_core_utilization();
 
     /**
      * @brief   Device will enter RP2040 built-in USB bootloader

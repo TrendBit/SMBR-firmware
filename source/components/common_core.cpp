@@ -25,7 +25,7 @@ bool Common_core::Receive(Application_message message){
             return Core_temperature();
 
         case Codes::Message_type::Core_load_request:
-            return MCU_core_load();
+            return Core_load();
 
         case Codes::Message_type::Probe_modules_request:
             return Probe_modules();
@@ -73,6 +73,13 @@ bool Common_core::Probe_modules(){
     return true;
 }
 
+bool Common_core::Core_load(){
+    float load = MCU_core_utilization();
+    auto load_response = App_messages::Common::Core_load_response(load);
+    Send_CAN_message(load_response);
+    return true;
+}
+
 std::array<uint8_t, CANBUS_UUID_LEN> Common_core::UID(){
     std::array<uint8_t, PICO_UUID_LEN> pico_uid;
     std::array<uint8_t, CANBUS_UUID_LEN> fast_hash_uid;
@@ -88,7 +95,7 @@ float Common_core::MCU_core_temperature(){
     return mcu_internal_temp->Temperature();
 }
 
-float Common_core::MCU_core_load(){
+float Common_core::MCU_core_utilization(){
     // Get the handle of the IDLE task
     TaskHandle_t idle_task = xTaskGetIdleTaskHandle();
 
@@ -102,7 +109,7 @@ float Common_core::MCU_core_load(){
     // Calculate the CPU load
     float cpuLoad = 100.0f * (1.0f - ((float)task_status.ulRunTimeCounter / (float)total_runtime));
 
-    Logger::Print(emio::format("CPU load: {:04.2f}%", cpuLoad));
+    Logger::Print(emio::format("CPU load: {:05.2f}%", cpuLoad));
 
     return cpuLoad;
 }
