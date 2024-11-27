@@ -48,8 +48,8 @@ if __name__ == "__main__":
     module_firmwares = {}
 
     for module in modules:
-        module_type = module.module_name()
-        if module_type in available_firmwares:
+        module_type = module.module_name().lower()
+        if module_type in (fw.lower() for fw in available_firmwares):
             module_firmwares[module] = module_type
         else:
             module_firmwares[module] = None
