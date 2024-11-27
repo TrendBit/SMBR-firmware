@@ -1,14 +1,13 @@
 #include "common_core.hpp"
 
-Common_core::Common_core(CAN_thread * can_thread):
+Common_core::Common_core():
+    Component(Codes::Component::Common_core),
     Message_receiver(Codes::Component::Common_core),
-    can_thread(can_thread),
     green_led(new GPIO(22, GPIO::Direction::Out))
 {
     green_led->Set(false);
     mcu_internal_temp = new RP_internal_temperature(3.30f);
 }
-
 
 bool Common_core::Receive(CAN::Message message){
     UNUSED(message);
@@ -46,31 +45,31 @@ bool Common_core::Receive(Application_message message){
 }
 
 bool Common_core::Ping(Application_message message){
-    App_messages::Ping_request ping_request;
+    App_messages::Common::Ping_request ping_request;
     if (!ping_request.Interpret_data(message.data)){
         Logger::Print("Ping_request interpretation failed");
         return false;
     }
 
     uint8_t sequence_number = ping_request.sequence_number;
-    App_messages::Ping_response ping_response(sequence_number);
-    can_thread->Send(ping_response);
+    App_messages::Common::Ping_response ping_response(sequence_number);
+    Send_CAN_message(ping_response);
     return true;
 }
 
 bool Common_core::Core_temperature(){
     float temp = mcu_internal_temp->Temperature();
     Logger::Print(emio::format("MCU_temp: {:05.2f}˚C", temp));
-    auto temp_response = App_messages::Core_temp_response(temp);
+    auto temp_response = App_messages::Common::Core_temp_response(temp);
 
-    can_thread->Send(temp_response);
+    Send_CAN_message(temp_response);
     return true;
 }
 
 bool Common_core::Probe_modules(){
     auto uid = UID();
-    auto probe_response = App_messages::Probe_modules_response(uid);
-    can_thread->Send(probe_response);
+    auto probe_response = App_messages::Common::Probe_modules_response(uid);
+    Send_CAN_message(probe_response);
     return true;
 }
 

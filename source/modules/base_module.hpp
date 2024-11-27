@@ -118,6 +118,22 @@ public:
      */
     static Codes::Instance Instance_enumeration();
 
+    /**
+     * @brief Wrapper function to send message to CAN bus via can_thread
+     *
+     * @param message  Message to be sent
+     * @return uint    Number of messages in queue, if 0 then was send immediately
+     */
+    static uint Send_CAN_message(App_messages::Base_message &message);
+
+    /**
+     * @brief Wrapper function to send message to CAN bus via can_thread
+     *
+     * @param message  Message to be sent
+     * @return uint    Number of messages in queue, if 0 then was send immediately
+     */
+    static uint Send_CAN_message(CAN::Message const &message);
+
 protected:
     /**
      * @brief Get pointer to this class instance using "singleton" pattern

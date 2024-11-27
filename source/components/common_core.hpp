@@ -9,18 +9,24 @@
 
 #include "can_bus/app_message.hpp"
 #include "can_bus/message_receiver.hpp"
-#include "threads/can_thread.hpp"
+#include "RP2040.h"
 #include "hal/gpio/gpio.hpp"
+
+#include "components/component.hpp"
 #include "components/common_sensors/RP_internal_temperature.hpp"
 
-#include "codes/messages/common_core/ping_request.hpp"
-#include "codes/messages/common_core/ping_response.hpp"
-#include "codes/messages/common_core/probe_modules_response.hpp"
-#include "codes/messages/common_core/core_temp_response.hpp"
+#include "codes/messages/common/ping_request.hpp"
+#include "codes/messages/common/ping_response.hpp"
+#include "codes/messages/common/probe_modules_response.hpp"
+#include "codes/messages/common/core_temp_response.hpp"
 
 #include "pico/unique_id.h"
 #include "pico/bootrom.h"
 #include "hardware/watchdog.h"
+
+#include "thread.hpp"
+#include "ticks.hpp"
+#include "rtos/wrappers.hpp"
 
 #include "fasthash.h"
 
@@ -60,14 +66,8 @@
  *              for processing of messages which must be supported by all modules
  *         Handles request like ping, mcu core temperature, load,  module discovery.
  */
-class Common_core : public Message_receiver {
+class Common_core : public Component, Message_receiver {
 private:
-
-    /**
-     * @brief CAN periphery manager thread which is responsible for sending and receiving of CAN messages
-     */
-    CAN_thread *can_thread;
-
     /**
      * @brief Green on board LED used for signalization
      */
@@ -82,10 +82,8 @@ public:
 
     /**
      * @brief Construct a new Common_core component, this includes registration to message router via Message_receiver interface
-     *
-     * @param can_thread    CAN periphery manager thread which is responsible for sending and receiving of CAN messages
      */
-    explicit Common_core(CAN_thread *can_thread);
+    explicit Common_core();
 
     /**
      * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)
