@@ -12,6 +12,7 @@ The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Ver
   - Allows to find out what components are available on the module
   - Provides access to shared resources such as sending a message via CAN
 - Extend deploy script to add version(tag), branch and dirty flash into version.txt file
+- Fix missing/hanging response when core load was requested
 - Fix `update_all_modules.py` to be case insensitive with firmware file naming
 
 # 0.2 (bootloader)  
