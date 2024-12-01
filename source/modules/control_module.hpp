@@ -15,6 +15,7 @@
 
 #include "components/led/led_pwm.hpp"
 #include "components/led_panel.hpp"
+#include "components/heater.hpp"
 
 /**
  * @brief Control module shield used for:
@@ -31,6 +32,8 @@ class Control_module: public Base_module {
 private:
     LED_panel * led_panel = nullptr;
 
+    Heater * heater = nullptr;
+
 public:
     /**
      * @brief Construct a new Control_module object, calls constructor of Base_module with type of module
@@ -43,6 +46,15 @@ public:
      */
     virtual void Setup_components() override final;
 
+private:
+    /**
+     * @brief   Configure LED panel with all channels and temperature sensor
+     */
     void Setup_LEDs();
+
+    /**
+     * @brief   Configure heater for temperature control
+     */
+    void Setup_heater();
 
 };
