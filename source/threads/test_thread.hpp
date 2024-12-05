@@ -16,6 +16,7 @@
 #include "components/common_core.hpp"
 
 #include "components/common_sensors/rpm_counter_pio.hpp"
+#include "threads/mini_display_thread.hpp"
 
 #include "thread.hpp"
 
@@ -32,6 +33,7 @@ public:
 
 protected:
     virtual void Run();
+<<<<<<< HEAD
 
     void Test_RPM();
 
@@ -40,5 +42,27 @@ protected:
     void Test_temps();
 
     void Test_motors();
+||||||| parent of 65d1efd (test_thread: add testing of sensor_module components)
+=======
+
+private:
+    void EEPROM_Test(I2C_bus &i2c);
+
+    void Thermopile_test(I2C_bus &i2c);
+
+    void Fluoro_buck_test();
+
+    void Fluoro_boost_test();
+
+    void Temp_sensor_test(I2C_bus &i2c);
+
+    void RGBW_sensor_test(I2C_bus &i2c);
+
+    void LED_test(I2C_bus &i2c);
+
+    void Gain_detector_test();
+
+    void OLED_test();
+>>>>>>> 65d1efd (test_thread: add testing of sensor_module components)
 };
 
