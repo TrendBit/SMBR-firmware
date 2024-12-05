@@ -31,3 +31,6 @@
 [submodule "bootloader/katapult"]
 	path = bootloader/katapult
 	url = git@github.com:Arksine/katapult.git
+[submodule "library/lvgl"]
+	path = library/lvgl
+	url = git@github.com:lvgl/lvgl.git
