@@ -33,6 +33,9 @@ void Test_thread::Run(){
 
     Logger::Print("Test thread init");
 
+    RP_internal_temperature * mcu_internal_temp = new RP_internal_temperature(3.30f);
+
+/*
     PWM * mix_fan_pwm = new PWM(13, 2000, 0.00, true);
     auto mix_rpm_counter = new RPM_counter_PIO(PIO_machine(pio1,1),7, 10000.0,1.0,2);
 
@@ -43,7 +46,7 @@ void Test_thread::Run(){
     auto case_rpm_counter = new RPM_counter_PIO(PIO_machine(pio1,0),9, 10000.0,1.0,2);
 
     Fan_RPM * case_fan = new Fan_RPM(case_fan_pwm, case_rpm_counter);
-    case_fan->Intensity(0.0);
+    case_fan->Intensity(0.0);*/
 
     PWM * pump_in1 = new PWM(22, 50, 0.00, true);
     PWM * pump_in2 = new PWM( 8, 50, 0.00, true);
@@ -62,6 +65,9 @@ void Test_thread::Run(){
     // air_in1->Set(true);
     // air_in2->Set(false);s
 
+    auto temp_b_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_1, 3.30f);
+    auto temp_b = new Thermistor(temp_b_adc, 3950, 10000, 25, 5100);
+
     auto temp_0_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_2, 3.30f);
     auto temp_0 = new Thermistor(temp_0_adc, 3950, 10000, 25, 5100);
 
@@ -73,7 +79,12 @@ void Test_thread::Run(){
         DelayUntil(fra::Ticks::MsToTicks(1000));
 
         //Logger::Print(emio::format("RPM: {:.4f}", rpm_counter->RPM()));
-        Logger::Print(emio::format("TEMP0(LED): {:05.2f}°C, TEMP1:{:05.2f}°C, Fan: {:07.2f} RPM", temp_0->Temperature(), temp_1->Temperature(), mix_fan->RPM()));
+        Logger::Print(emio::format("LED panel temperature: {:05.2f}°C", temp_0->Temperature()));
+        Logger::Print(emio::format("    Board temperature: {:05.2f}°C", temp_b->Temperature()));
+        Logger::Print(emio::format("      MCU temperature: {:05.2f}°C", mcu_internal_temp->Temperature()));
+        Logger::Print("-------");
+
+
         //Logger::Print(emio::format("RPM: {}", std::numeric_limits<uint32_t>::max() - rpm_counter->Read_PIO_counter()));
     }
 

@@ -11,7 +11,7 @@
 #include "threads/can_thread.hpp"
 #include "hal/gpio/gpio.hpp"
 #include "hal/pwm/pwm.hpp"
-#include "components/common_sensors/thermistor.hpp"
+#include "components/thermometers/thermistor.hpp"
 #include "hal/adc/adc_channel.hpp"
 #include "components/common_core.hpp"
 
