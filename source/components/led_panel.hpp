@@ -21,7 +21,7 @@
 
 #include "components/component.hpp"
 #include "components/led/led_intensity.hpp"
-#include "components/common_sensors/thermistor.hpp"
+#include "components/thermometers/thermistor.hpp"
 
 #include "logger.hpp"
 
