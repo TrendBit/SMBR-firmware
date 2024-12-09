@@ -40,11 +40,12 @@ Test_thread::Test_thread()
 };
 
 void Test_thread::Run(){
-    Logger::Print("Test thread init");
+    // Logger::Print("Test thread init");
 
     I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
 
-    Temp_sensor_test(*i2c);
+    //Transmissive_IR_test(*i2c);
+    Multi_OJIP();
 };
 
 void Test_thread::EEPROM_Test(I2C_bus &i2c){
@@ -52,87 +53,13 @@ void Test_thread::EEPROM_Test(I2C_bus &i2c){
 
     auto read = eeprom->Read(0, 2);
 
-        // Signal stretching in order to get clean RPM signal
-        mix_fan_pwm->Duty_cycle(1.0);
-        rtos::Delay(200);
-        Logger::Print(emio::format("RPM: {:.4f}", mix_rpm_counter->RPM()));
-        mix_fan_pwm->Duty_cycle(0.5);
-    }
-}
-
-void Test_thread::Test_heater(){
-    GPIO * heater_fan = new GPIO(11, GPIO::Direction::Out);
-    heater_fan->Set(true);
-
-    GPIO * heater_vref = new GPIO(20, GPIO::Direction::Out);
-    heater_vref->Set(true);
-
-    // 8W power (frequency 100 kHz): cooling -0.77
-    Heater * heater = new Heater(23, 25, 100000);
-    heater->Intensity(0.5);
-
-/*
-    float frequency = 100000;
-    float intensity = -0.7;
-
-    if (intensity > 0) {
-        new PWM(23, frequency, intensity, true);
-        new PWM(25, frequency, 0.0, true);
+    if (read.has_value()) {
+        Logger::Print(emio::format("EEPROM read: 0x{:02x} 0x{:02x}", read.value()[0], read.value()[1]));
     } else {
-        new PWM(23, frequency, 0.0, true);
-        new PWM(25, frequency, -intensity, true);
-    }*/
-}
-
-void Test_thread::Test_motors(){
-    PWM * pump_in1 = new PWM(22, 50, 0.00, true);
-    PWM * pump_in2 = new PWM( 8, 50, 0.00, true);
-
-    DC_HBridge * pump = new DC_HBridge(pump_in1, pump_in2);
-    pump->Speed(0.5);
-
-    PWM * air_in1 = new PWM(3, 50, 0.00, true);
-    PWM * air_in2 = new PWM(2, 50, 0.00, true);
-
-    DC_HBridge * air = new DC_HBridge(air_in1, air_in2);
-    air->Speed(0.25);
-
-    auto lambda = [pump](){
-        pump->Coast();
-    };
-
-    rtos::Delayed_execution *pump_stopper = new rtos::Delayed_execution(lambda);
-    pump_stopper->Execute(2000);
-}
-
-
-void Test_thread::Test_temps(){
-    RP_internal_temperature * mcu_internal_temp = new RP_internal_temperature(3.30f);
-
-    auto temp_b_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_1, 3.30f);
-    auto temp_b = new Thermistor(temp_b_adc, 3950, 10000, 25, 5100);
-
-    auto temp_0_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_2, 3.30f);
-    auto temp_0 = new Thermistor(temp_0_adc, 4190, 100000, 25, 5100);
-
-    auto temp_1_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_3, 3.30f);
-    auto temp_1 = new Thermistor(temp_1_adc, 3950, 100000, 25, 30000);
-
-    rtos::Delay(100);
-
-    while (true) {
-
-        DelayUntil(fra::Ticks::MsToTicks(1000));
-
-        Logger::Print(emio::format("   Bottle temperature: {:05.2f}°C", temp_0->Temperature()));
-        Logger::Print(emio::format("   Heater temperature: {:05.2f}°C", temp_1->Temperature()));
-        Logger::Print(emio::format("    Board temperature: {:05.2f}°C", temp_b->Temperature()));
-        Logger::Print(emio::format("      MCU temperature: {:05.2f}°C", mcu_internal_temp->Temperature()));
-        Logger::Print("-------");
-
+        Logger::Print("EEPROM read failed");
     }
 
-    if(eeprom->Write(0, {0x01, 0x02})){
+    if (eeprom->Write(0, { 0x01, 0x02 })) {
         Logger::Print("EEPROM write success");
     } else {
         Logger::Print("EEPROM write failed");
@@ -140,7 +67,7 @@ void Test_thread::Test_temps(){
 
     read = eeprom->Read(0, 2);
 
-    if(read.has_value()){
+    if (read.has_value()) {
         Logger::Print(emio::format("EEPROM read: 0x{:02x} 0x{:02x}", read.value()[0], read.value()[1]));
     } else {
         Logger::Print("EEPROM read failed");
@@ -148,7 +75,6 @@ void Test_thread::Test_temps(){
 }
 
 void Test_thread::Thermopile_test(I2C_bus &i2c){
-
     TLA2024 *adc = new TLA2024(i2c, 0x4b);
 
     TLA2024_channel *adc_ch0 = new TLA2024_channel(adc, TLA2024::Channels::AIN0_GND);
@@ -156,10 +82,10 @@ void Test_thread::Thermopile_test(I2C_bus &i2c){
     TLA2024_channel *adc_ch2 = new TLA2024_channel(adc, TLA2024::Channels::AIN2_GND);
     TLA2024_channel *adc_ch3 = new TLA2024_channel(adc, TLA2024::Channels::AIN3_GND);
 
-    Thermistor * thp_ntc   = new Thermistor(adc_ch0, 3960, 100000, 25, 100000, 3.3f);
+    Thermistor *thp_ntc = new Thermistor(adc_ch0, 3960, 100000, 25, 100000, 3.3f);
 
-    Thermopile * thermopile_top = new Thermopile(adc_ch1, adc_ch0, 0.95);
-    Thermopile * thermopile_bottom = new Thermopile(adc_ch3, adc_ch2, 0.95);
+    Thermopile *thermopile_top    = new Thermopile(adc_ch1, adc_ch0, 0.95);
+    Thermopile *thermopile_bottom = new Thermopile(adc_ch3, adc_ch2, 0.95);
 
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1000));
@@ -178,8 +104,7 @@ void Test_thread::Thermopile_test(I2C_bus &i2c){
 }
 
 void Test_thread::Fluoro_boost_test(){
-
-    GPIO *LED_en = new GPIO(22, GPIO::Direction::Out);
+    GPIO *LED_en  = new GPIO(22, GPIO::Direction::Out);
     GPIO *LED_pwm = new GPIO(25, GPIO::Direction::Out);
 
     LED_en->Set(true);
@@ -192,7 +117,6 @@ void Test_thread::Fluoro_boost_test(){
 }
 
 void Test_thread::Fluoro_buck_test(){
-
     auto led_pwm = new PWM(17, 100000, 0.0, true);
     led_pwm->Duty_cycle(1.0);
 
@@ -202,7 +126,7 @@ void Test_thread::Fluoro_buck_test(){
 }
 
 void Test_thread::RGBW_sensor_test(I2C_bus &i2c){
-    VEML6040 * rgb_sensor = new VEML6040(i2c, 0x10);
+    VEML6040 *rgb_sensor = new VEML6040(i2c, 0x10);
 
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1000));
@@ -218,7 +142,6 @@ void Test_thread::RGBW_sensor_test(I2C_bus &i2c){
 
         Logger::Print(emio::format("RGBW: {:5d} {:5d} {:5d} {:5d}", det_red, det_green, det_blue, det_white));
     }
-
 }
 
 void Test_thread::OLED_test(){
@@ -232,11 +155,11 @@ void Test_thread::Temp_sensor_test(I2C_bus &i2c){
     auto ntc_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_3, 3.30f);
     auto ntc     = new Thermistor(ntc_adc, 3950, 10000, 25, 5100);
 
-    RP_internal_temperature * mcu_internal_temp = new RP_internal_temperature(3.30f);
+    RP_internal_temperature *mcu_internal_temp = new RP_internal_temperature(3.30f);
 
-    TMP102 * temp_1 = new TMP102(i2c, 0x48);
-    TMP102 * temp_2 = new TMP102(i2c, 0x4a);
-    TMP102 * temp_3 = new TMP102(i2c, 0x49);
+    TMP102 *temp_1 = new TMP102(i2c, 0x48);
+    TMP102 *temp_2 = new TMP102(i2c, 0x4a);
+    TMP102 *temp_3 = new TMP102(i2c, 0x49);
 
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1000));
@@ -251,7 +174,7 @@ void Test_thread::Temp_sensor_test(I2C_bus &i2c){
 }
 
 void Test_thread::LED_test(I2C_bus &i2c){
-    KTD2026 * led_driver_0 = new KTD2026(i2c, 0x31);
+    KTD2026 *led_driver_0 = new KTD2026(i2c, 0x31);
     led_driver_0->Init();
     led_driver_0->Enable_channel(1);
     led_driver_0->Set_intensity(1, 20);
@@ -260,7 +183,7 @@ void Test_thread::LED_test(I2C_bus &i2c){
     led_driver_0->Enable_channel(3);
     led_driver_0->Set_intensity(3, 10);
 
-    KTD2026 * led_driver_1 = new KTD2026(i2c, 0x30);
+    KTD2026 *led_driver_1 = new KTD2026(i2c, 0x30);
     led_driver_1->Init();
     led_driver_1->Enable_channel(1);
     led_driver_1->Set_intensity(1, 10);
@@ -271,11 +194,11 @@ void Test_thread::LED_test(I2C_bus &i2c){
 }
 
 void Test_thread::Gain_detector_test(){
-    GPIO * es_gain = new GPIO(21, GPIO::Direction::Out);
+    GPIO *es_gain = new GPIO(21, GPIO::Direction::Out);
     es_gain->Set_pulls(false, false);
     es_gain->Set(true);
 
-    GPIO * ts_gain = new GPIO(9, GPIO::Direction::Out);
+    GPIO *ts_gain = new GPIO(9, GPIO::Direction::Out);
     ts_gain->Set_pulls(false, false);
     ts_gain->Set(true);
 
@@ -290,3 +213,441 @@ void Test_thread::Gain_detector_test(){
         Logger::Print("-------");
     }
 }
+
+void Test_thread::Transmissive_IR_test(I2C_bus &i2c){
+    KTD2026 *led_driver_1 = new KTD2026(i2c, 0x30);
+    led_driver_1->Init();
+    led_driver_1->Enable_channel(3);
+    led_driver_1->Set_intensity(3, 10);
+
+    GPIO *ts_gain = new GPIO(9, GPIO::Direction::In);
+    ts_gain->Set_pulls(false, false);
+
+    auto ts_det = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_2, 3.30f);
+
+    //Logger::Print(emio::format("Gain: {:3d}", 1));
+    Logger::Print_raw("\r\n\r\n");
+
+    for (uint16_t intensity = 0; intensity <= 0xff; intensity+= 0x5) {
+        led_driver_1->Set_intensity(3, intensity);
+        rtos::Delay(50);
+        //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
+        Logger::Print_raw(emio::format("{:3d}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
+    }
+
+    ts_gain->Set_direction(GPIO::Direction::Out);
+    ts_gain->Set(false);
+
+    //Logger::Print(emio::format("Gain: {:3d}", 10));
+    Logger::Print_raw("\r\n\r\n");
+
+    for (uint16_t intensity = 0; intensity <= 0xff; intensity+= 0x5) {
+        led_driver_1->Set_intensity(3, intensity);
+        rtos::Delay(50);
+        //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
+        Logger::Print_raw(emio::format("{:3d}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
+    }
+
+    ts_gain->Set(true);
+
+    //Logger::Print(emio::format("Gain: {:3d}", 50));
+    Logger::Print_raw("\r\n\r\n");
+
+    for (uint16_t intensity = 0; intensity <= 0xff; intensity+= 0x5) {
+        led_driver_1->Set_intensity(3, intensity);
+        rtos::Delay(50);
+        //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
+        Logger::Print_raw(emio::format("{:3d}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
+    }
+
+    while(true){
+        DelayUntil(fra::Ticks::MsToTicks(1000));
+    }
+
+}
+
+void Test_thread::Multi_OJIP(){
+    GPIO *es_gain = new GPIO(21, GPIO::Direction::Out);
+    es_gain->Set_pulls(true, true);
+    es_gain->Set(true);
+
+    // Compute logarithmic intervals
+    Sample_timing_generator(SAMPLE_COUNT, 0.5);
+
+    rtos::Delay(500);
+    Fluoro_sampler_test();
+    rtos::Delay(500);
+
+
+    es_gain->Set(false);
+
+    rtos::Delay(500);
+    Fluoro_sampler_test();
+    rtos::Delay(500);
+
+    es_gain->Set_direction(GPIO::Direction::In);
+
+    rtos::Delay(500);
+    Fluoro_sampler_test();
+    rtos::Delay(500);
+}
+
+void Test_thread::Sample_timing_generator(uint32_t sample_count, float total_duration){
+    // Calculate the maximum exponent for logarithmic spacing
+    double max_exponent = log10(total_duration * 1e6);
+
+    std::vector<float> timings(sample_count,0.0f);
+
+    // Generate sampling times in microseconds
+    timings[0] = 2.0; // Starting from 1.0 us
+    for (unsigned int i = 1; i < sample_count; ++i) {
+        double exponent = (i * max_exponent) / (sample_count - 1);
+        double current_time = pow(10, exponent);
+
+        // Apply the minimum time gap between samples
+        if ((current_time - timings[i - 1]) < minimal_time_us) {
+            double adjusted_time = timings[i - 1] + minimal_time_us;
+            timings[i] = pow(10, log10(adjusted_time));
+        } else {
+            timings[i] = current_time;
+        }
+    }
+
+    sample_intervals[0] = 2;
+    for (unsigned int i = 1; i < sample_count; ++i) {
+        sample_intervals[i] = static_cast<uint32_t>(timings[i]-timings[i-1]);
+    }
+
+    for (unsigned int i = 0; i < sample_count; ++i) {
+        //Logger::Print(emio::format("Timing: {:10.1f} {:10d}", timings[i] ,sample_intervals[i]));
+    }
+}
+
+void Test_thread::Fluoro_sampler_test(){
+    // Initialize ADC
+    const uint adc_input_channel = 1;
+    adc_init();
+    adc_gpio_init(26 + adc_input_channel);
+    adc_select_input(adc_input_channel);
+    adc_set_clkdiv(0);                          // 0.5 Msps
+    adc_fifo_setup(true, true, 1, false, false); // Enable FIFO, 1 sample threshold
+    adc_run(true);
+
+    Logger::Print_raw("\r\n\r\n");
+
+    int timestamp_dma_channel = dma_claim_unused_channel(true);
+    int wrap_dma_channel      = dma_claim_unused_channel(true);
+    int adc_dma_channel       = dma_claim_unused_channel(true);
+
+    const int samples = SAMPLE_COUNT;
+    const int slice   = 2;
+
+    pwm_config pwm_cfg = pwm_get_default_config();
+    pwm_set_counter(slice, 0);
+    pwm_config_set_clkdiv(&pwm_cfg, 125.0);
+    pwm_init(slice, &pwm_cfg, false);
+    pwm_set_wrap(slice, sample_intervals[0]);
+
+    dma_channel_config timestamp_dma_config = dma_channel_get_default_config(timestamp_dma_channel);
+    dma_channel_config wrap_dma_config      = dma_channel_get_default_config(wrap_dma_channel);
+    dma_channel_config adc_dma_config       = dma_channel_get_default_config(adc_dma_channel);
+
+    // Configure DMA for 32-bit transfers
+    channel_config_set_transfer_data_size(&timestamp_dma_config, DMA_SIZE_32); // 32-bit transfers
+    channel_config_set_read_increment(&timestamp_dma_config, false);           // Fixed source address
+    channel_config_set_write_increment(&timestamp_dma_config, true);           // Increment destination
+    channel_config_set_dreq(&timestamp_dma_config, pwm_get_dreq(slice));            // Trigger DMA by PWM wrap
+
+    channel_config_set_transfer_data_size(&wrap_dma_config, DMA_SIZE_16);      // 16-bit transfers
+    channel_config_set_read_increment(&wrap_dma_config, true);                 // Fixed source address
+    channel_config_set_write_increment(&wrap_dma_config, false);               // Increment destination
+    channel_config_set_dreq(&wrap_dma_config, pwm_get_dreq(slice));                 // Trigger DMA by PWM wrap
+
+    channel_config_set_transfer_data_size(&adc_dma_config, DMA_SIZE_16);       // 16-bit transfers
+    channel_config_set_read_increment(&adc_dma_config, false);                 // Fixed source address
+    channel_config_set_write_increment(&adc_dma_config, true);                 // Increment destination
+    channel_config_set_dreq(&adc_dma_config, pwm_get_dreq(slice));                  // Trigger DMA by PWM wrap
+
+    dma_channel_configure(
+        timestamp_dma_channel,
+        &timestamp_dma_config,
+        timestamp_buffer,    // Destination buffer
+        &timer_hw->timerawl, // Source: Timer counter (lower 32 bits), increments every 1 us
+        samples,             // Number of transfers
+        true                 // Start immediately
+    );
+
+    dma_channel_configure(
+        wrap_dma_channel,
+        &wrap_dma_config,
+        &pwm_hw->slice[slice].top, // Destination buffer
+        sample_intervals,                // Source: Timer counter (lower 32 bits)
+        samples,                   // Number of transfers
+        true                       // Start immediately
+    );
+
+    dma_channel_configure(
+        adc_dma_channel,
+        &adc_dma_config,
+        adc_buffer,    // Destination buffer
+        &adc_hw->fifo, // Source: ADC fifo
+        samples,       // Number of transfers
+        true           // Start immediately
+    );
+
+    uint64_t start_time = to_us_since_boot(get_absolute_time());
+
+    // GPIO *es_gain = new GPIO(21, GPIO::Direction::Out);
+    // es_gain->Set_pulls(false, false);
+    // es_gain->Set(false);
+
+    const bool boost = false;
+
+    auto led_pwm = new PWM(17, 10000000, 0.0, true);
+    //GPIO *led_pwm  = new GPIO(17, GPIO::Direction::Out);
+
+    GPIO *LED_en  = new GPIO(22, GPIO::Direction::Out);
+    GPIO *LED_pwm = new GPIO(25, GPIO::Direction::Out);
+
+    if (not boost) {
+        led_pwm->Duty_cycle(0.3);
+        //led_pwm->Set(true);
+    } else {
+        LED_en->Set(true);
+        LED_pwm->Set(true);
+    }
+
+    // Start timer generating request
+    pwm_set_enabled(slice, true);
+
+    // Wait until conversion is done
+    while (dma_channel_is_busy(timestamp_dma_channel)) {
+        rtos::Delay(10);
+    }
+
+    if (not boost) {
+        led_pwm->Duty_cycle(0.0);
+        led_pwm->Stop();
+        //led_pwm->Set(false);
+    } else {
+        LED_pwm->Set(false);
+        LED_en->Set(false);
+    }
+
+    // Stop timer
+    pwm_set_enabled(slice, false);
+
+    uint64_t stop_time = to_us_since_boot(get_absolute_time());
+    uint64_t duration  = stop_time - start_time;
+
+    // Logger::Print(emio::format("Start time: {:d} us", start_time));
+    // Logger::Print(emio::format("Stop time: {:d} us", stop_time));
+    // Logger::Print(emio::format("Duration: {:d} us", duration));
+
+    uint32_t start_timestamp = timestamp_buffer[0] - 3;
+    uint32_t start_offset_us    = 20;
+
+    // Print captured data
+    for (size_t i = 0; i < samples; i++) {
+        //Logger::Print(emio::format("Sample {:3d}: {:6d}, {:4d}", i, timestamp_buffer[i] - start_timestamp, adc_buffer[i]));
+        timestamp_buffer[i] = timestamp_buffer[i] - start_timestamp;
+        if(timestamp_buffer[i] < start_offset_us){
+            timestamp_buffer[i] = 0;
+        } else {
+            timestamp_buffer[i] -= start_offset_us;
+        }
+        Logger::Print_raw(emio::format("{:8.6f} \t{:4.3f}\r\n",static_cast<float>(timestamp_buffer[i]), adc_buffer[i]/4095.0f));
+    }
+
+    dma_channel_abort(timestamp_dma_channel);
+    dma_channel_abort(wrap_dma_channel);
+    dma_channel_abort(adc_dma_channel);
+
+    dma_channel_unclaim(timestamp_dma_channel);
+    dma_channel_unclaim(wrap_dma_channel);
+    dma_channel_unclaim(adc_dma_channel);
+
+    adc_run(false);
+}                                                     // Test_thread::Fluoro_sampler_test
+
+void Test_thread::Pacing_timestamp_fast_test(){
+    int dma_channel = dma_claim_unused_channel(true); // Claim a DMA channel
+    int timer       = dma_claim_unused_timer(true);
+    uint dreq       = dma_get_timer_dreq(timer);
+
+    uint32_t interval_us = 100;                             // Interval in microseconds
+
+    uint32_t clock_freq = clock_get_hz(clk_sys);            // Get system clock frequency (Hz)
+    // Calculate the interval in clock cycles (system clock ticks)
+    uint32_t cycles = (clock_freq * interval_us) / 1000000; // Convert microseconds to cycles
+
+    uint32_t numerator   = 1;
+    uint32_t denominator = 12500;
+
+    // Set the timer using dma_timer_set_fraction (ensuring it fits in uint16_t)
+    dma_timer_set_fraction(timer, (uint16_t) numerator, (uint16_t) denominator);
+
+
+    Logger::Print(emio::format("Clock frequency: {:d}", clock_freq));
+    Logger::Print(emio::format("Cycle period: {:d}", cycles));
+    Logger::Print(emio::format("Numerator: {:d}", numerator));
+    Logger::Print(emio::format("Denominator: {:d}", denominator));
+
+    dma_channel_config config = dma_channel_get_default_config(dma_channel);
+
+    // Configure DMA for 32-bit transfers
+    channel_config_set_transfer_data_size(&config, DMA_SIZE_32); // 32-bit transfers
+    channel_config_set_read_increment(&config, false);           // Fixed source address
+    channel_config_set_write_increment(&config, true);           // Increment destination
+
+    // Use the pacing timer for DMA requests
+    channel_config_set_dreq(&config, dreq);
+    // dma_channel_set_trigger(dma_adc_channel, DREQ_DMA_TIMER0);
+
+    uint64_t start_time = to_us_since_boot(get_absolute_time());
+
+    // Configure the DMA channel
+    dma_channel_configure(
+        dma_channel,
+        &config,
+        timestamp_buffer,    // Destination buffer
+        &timer_hw->timerawl, // Source: Timer counter (lower 32 bits)
+        BUFFER_SIZE,         // Number of transfers
+        true                 // Start immediately
+    );
+
+    while (dma_channel_is_busy(dma_channel)) {
+        // Busy-wait until the transfer completes
+        // You can optionally add a small delay here if desired
+    }
+
+    uint64_t stop_time = to_us_since_boot(get_absolute_time());
+    uint64_t duration  = stop_time - start_time;
+
+    Logger::Print(emio::format("Start time: {:d} us", start_time));
+    Logger::Print(emio::format("Stop time: {:d} us", stop_time));
+    Logger::Print(emio::format("Duration: {:d} us", duration));
+
+    // Print captured data
+    for (size_t i = 0; i < BUFFER_SIZE; i++) {
+        Logger::Print(emio::format("Sample {:3d}: {:5d}", i, timestamp_buffer[i]));
+    }
+}                                                     // Test_thread::Pacing_timestamp_fast_test
+
+void Test_thread::Pacing_timestamp_slow_test(){
+    int dma_channel = dma_claim_unused_channel(true); // Claim a DMA channel
+
+    int slice = 0;
+
+    pwm_config pwm_cfg = pwm_get_default_config();
+    pwm_config_set_clkdiv(&pwm_cfg, 1.250); // Fastest clock
+    pwm_init(slice, &pwm_cfg, false);
+    pwm_set_wrap(slice, 1000);              // Set initial delay
+    pwm_set_enabled(slice, true);
+
+    dma_channel_config config = dma_channel_get_default_config(dma_channel);
+
+    // Configure DMA for 32-bit transfers
+    channel_config_set_transfer_data_size(&config, DMA_SIZE_32); // 32-bit transfers
+    channel_config_set_read_increment(&config, false);           // Fixed source address
+    channel_config_set_write_increment(&config, true);           // Increment destination
+    channel_config_set_dreq(&config, DREQ_PWM_WRAP0);            // Trigger DMA by PWM wrap
+
+    uint64_t start_time = to_us_since_boot(get_absolute_time());
+
+    // Configure the DMA channel
+    dma_channel_configure(
+        dma_channel,
+        &config,
+        timestamp_buffer,    // Destination buffer
+        &timer_hw->timerawl, // Source: Timer counter (lower 32 bits)
+        BUFFER_SIZE,         // Number of transfers
+        true                 // Start immediately
+    );
+
+    while (dma_channel_is_busy(dma_channel)) {
+        // Busy-wait until the transfer completes
+        // You can optionally add a small delay here if desired
+    }
+
+    uint64_t stop_time = to_us_since_boot(get_absolute_time());
+    uint64_t duration  = stop_time - start_time;
+
+    Logger::Print(emio::format("Start time: {:d} us", start_time));
+    Logger::Print(emio::format("Stop time: {:d} us", stop_time));
+    Logger::Print(emio::format("Duration: {:d} us", duration));
+
+    // Print captured data
+    for (size_t i = 0; i < BUFFER_SIZE; i++) {
+        Logger::Print(emio::format("Sample {:3d}: {:5d}", i, timestamp_buffer[i]));
+    }
+}                                                               // Test_thread::Pacing_timestamp_slow_test
+
+void Test_thread::Pacing_timestamp_nonlinear_test(){
+    int dma_timestamp_channel = dma_claim_unused_channel(true); // Claim a DMA channel
+    int dma_wrap_channel      = dma_claim_unused_channel(true); // Claim a DMA channel
+
+    const int samples = 10;
+
+    const int slice = 0;
+
+    pwm_config pwm_cfg = pwm_get_default_config();
+    pwm_config_set_clkdiv(&pwm_cfg, 1.250); // Fastest clock
+    pwm_init(slice, &pwm_cfg, false);
+    pwm_set_wrap(slice, 1000);              // Set initial delay
+
+
+    dma_channel_config timestamp_dma_config = dma_channel_get_default_config(dma_timestamp_channel);
+    dma_channel_config wrap_dma_config      = dma_channel_get_default_config(dma_wrap_channel);
+
+    // Configure DMA for 32-bit transfers
+    channel_config_set_transfer_data_size(&timestamp_dma_config, DMA_SIZE_32); // 32-bit transfers
+    channel_config_set_read_increment(&timestamp_dma_config, false);           // Fixed source address
+    channel_config_set_write_increment(&timestamp_dma_config, true);           // Increment destination
+    channel_config_set_dreq(&timestamp_dma_config, DREQ_PWM_WRAP0);            // Trigger DMA by PWM wrap
+
+    channel_config_set_transfer_data_size(&wrap_dma_config, DMA_SIZE_32);      // 32-bit transfers
+    channel_config_set_read_increment(&wrap_dma_config, true);                 // Fixed source address
+    channel_config_set_write_increment(&wrap_dma_config, false);               // Increment destination
+    channel_config_set_dreq(&wrap_dma_config, DREQ_PWM_WRAP0);                 // Trigger DMA by PWM wrap
+
+    dma_channel_configure(
+        dma_timestamp_channel,
+        &timestamp_dma_config,
+        timestamp_buffer,    // Destination buffer
+        &timer_hw->timerawl, // Source: Timer counter (lower 32 bits)
+        samples,             // Number of transfers
+        true                 // Start immediately
+    );
+
+    // Configure the DMA channel
+    dma_channel_configure(
+        dma_wrap_channel,
+        &wrap_dma_config,
+        &pwm_hw->slice[slice].top, // Destination buffer
+        timing,                    // Source: Timer counter (lower 32 bits)
+        samples,                   // Number of transfers
+        true                       // Start immediately
+    );
+
+    uint64_t start_time = to_us_since_boot(get_absolute_time());
+
+    pwm_set_enabled(slice, true);
+
+    while (dma_channel_is_busy(dma_timestamp_channel)) {
+        // Busy-wait until the transfer completes
+        // You can optionally add a small delay here if desired
+    }
+
+    uint64_t stop_time = to_us_since_boot(get_absolute_time());
+    uint64_t duration  = stop_time - start_time;
+
+    Logger::Print(emio::format("Start time: {:d} us", start_time));
+    Logger::Print(emio::format("Stop time: {:d} us", stop_time));
+    Logger::Print(emio::format("Duration: {:d} us", duration));
+
+    // Print captured data
+    for (size_t i = 0; i < samples; i++) {
+        Logger::Print(emio::format("Sample {:3d}: {:5d}", i, timestamp_buffer[i]));
+    }
+}  // Test_thread::Pacing_timestamp_nonlinear_test

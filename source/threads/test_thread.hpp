@@ -18,13 +18,34 @@
 #include "components/common_sensors/rpm_counter_pio.hpp"
 #include "threads/mini_display_thread.hpp"
 
+#include "hardware/dma.h"
+#include "hardware/clocks.h"
+
 #include "thread.hpp"
 
+#define SAMPLE_COUNT 200     // Number of intervals (samples)
+#define TOTAL_DURATION_US 2000000 // Total sampling duration in microseconds
+
+#define BUFFER_SIZE 100
+
 namespace fra = cpp_freertos;
+
+// DMA channels
+inline int dma_adc_channel, dma_timer_channel;
 
 class Test_thread : public fra::Thread {
 private:
     CAN_thread * can_thread;
+
+    uint16_t sample_intervals[SAMPLE_COUNT]; // Logarithmic delay intervals
+    uint32_t timestamps[SAMPLE_COUNT]; // Logarithmic delay intervals
+    uint16_t adc_buffer[SAMPLE_COUNT];   // ADC data buffer
+
+    uint32_t timing[10] = {1000, 1000, 1000, 10000, 10000, 10000, 10000, 10000, 10000, 10000};
+
+    volatile uint32_t timestamp_buffer[BUFFER_SIZE];
+
+    float minimal_time_us = 2.0;
 
 public:
     explicit Test_thread(CAN_thread * can_thread);
@@ -63,6 +84,26 @@ private:
     void Gain_detector_test();
 
     void OLED_test();
+<<<<<<< HEAD
 >>>>>>> 65d1efd (test_thread: add testing of sensor_module components)
+||||||| parent of 60c3c10 (test_thread: add fluorometer measurement, limited to 0.5s)
+=======
+
+    void Sample_timing_generator(uint32_t count = SAMPLE_COUNT , float total_duration = 2.0);
+
+    void Fluoro_sampler_test();
+
+    void Pacing_timestamp_fast_test();
+
+    void Pacing_timestamp_slow_test();
+
+    void Pacing_timestamp_nonlinear_test();
+
+    void Transmissive_IR_test(I2C_bus &i2c);
+
+    void Multi_OJIP();
+
+
+>>>>>>> 60c3c10 (test_thread: add fluorometer measurement, limited to 0.5s)
 };
 
