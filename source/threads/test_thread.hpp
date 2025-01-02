@@ -32,5 +32,13 @@ public:
 
 protected:
     virtual void Run();
+
+    void Test_RPM();
+
+    void Test_heater();
+
+    void Test_temps();
+
+    void Test_motors();
 };
 
