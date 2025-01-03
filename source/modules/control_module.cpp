@@ -12,12 +12,6 @@ void Control_module::Setup_components(){
 
     GPIO * case_fan = new GPIO(12, GPIO::Direction::Out);
     case_fan->Set(false);
-
-    GPIO * heater_fan = new GPIO(11, GPIO::Direction::Out);
-    heater_fan->Set(false);
-
-    GPIO * mixer_fan = new GPIO(13, GPIO::Direction::Out);
-    mixer_fan->Set(false);
 }
 
 void Control_module::Setup_LEDs(){
@@ -52,13 +46,7 @@ void Control_module::Setup_heater(){
 
     GPIO * heater_vref = new GPIO(20, GPIO::Direction::Out);
     heater_vref->Set(true);
-    heater = new Heater(23, 25, 20);
-    // Limit max heater power to 0.3 for 10W limit, 0.75 for 25W limit
-    heater->Intensity(0.0);
 
-    // GPIO * in1 = new GPIO(23, GPIO::Direction::Out);
-    // GPIO * in2 = new GPIO(25, GPIO::Direction::Out);
-
-    // in1->Set(false);
-    // in2->Set(true);
+    // 8W power (frequency 100 kHz): cooling -0.77, heating 0.75
+    heater = new Heater(23, 25, 100000);
 }
