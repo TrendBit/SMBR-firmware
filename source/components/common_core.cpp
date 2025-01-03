@@ -1,5 +1,7 @@
 #include "common_core.hpp"
 
+#include "modules/base_module.hpp"
+
 Common_core::Common_core():
     Component(Codes::Component::Common_core),
     Message_receiver(Codes::Component::Common_core),
@@ -23,6 +25,9 @@ bool Common_core::Receive(Application_message message){
 
         case Codes::Message_type::Core_temperature_request:
             return Core_temperature();
+
+        case Codes::Message_type::Board_temperature_request:
+            return Board_temperature();
 
         case Codes::Message_type::Core_load_request:
             return Core_load();
@@ -62,6 +67,18 @@ bool Common_core::Core_temperature(){
     Logger::Print(emio::format("MCU_temp: {:05.2f}˚C", temp));
     auto temp_response = App_messages::Common::Core_temp_response(temp);
 
+    Send_CAN_message(temp_response);
+    return true;
+}
+
+bool Common_core::Board_temperature(){
+    auto module_instance = Base_module::Instance();
+    if(not module_instance){
+        return false;
+    }
+    float temp = module_instance->Board_temperature();
+    Logger::Print(emio::format("Board temperature: {:05.2f}˚C", temp));
+    auto temp_response = App_messages::Common::Board_temp_response(temp);
     Send_CAN_message(temp_response);
     return true;
 }

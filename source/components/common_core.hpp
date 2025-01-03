@@ -20,6 +20,7 @@
 #include "codes/messages/common/probe_modules_response.hpp"
 #include "codes/messages/common/core_temp_response.hpp"
 #include "codes/messages/common/core_load_response.hpp"
+#include "codes/messages/common/board_temp_response.hpp"
 
 #include "pico/unique_id.h"
 #include "pico/bootrom.h"
@@ -124,6 +125,14 @@ public:
      * @return false    Core temperature response cannot be sent
      */
     bool Core_temperature();
+
+    /**
+     * @brief   Respond to request for board temperature retrieved from module
+     *
+     * @return true     Response with board temperature was sent
+     * @return false    Board temperature cannot be obtained
+     */
+    bool Board_temperature();
 
     /**
      * @brief   Respond to request for module discovery, send response with unique ID of module (MCU UID)
