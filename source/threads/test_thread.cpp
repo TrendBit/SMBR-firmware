@@ -13,6 +13,8 @@
 
 #include "hardware/pwm.h"
 
+#include "rtos/delayed_execution.hpp"
+
 #include "logger.hpp"
 #include "emio/emio.hpp"
 
@@ -33,12 +35,11 @@ void Test_thread::Run(){
 
     Logger::Print("Test thread init");
 
-    Test_temps();
 };
 
 void Test_thread::Test_RPM(){
     PWM * mix_fan_pwm = new PWM(13, 50, 0.5, true);
-    auto mix_rpm_counter = new RPM_counter_PIO(PIO_machine(pio1,1),7, 100000.0,0.1,2);
+    auto mix_rpm_counter = new RPM_counter_PIO(PIO_machine(pio0,1),7, 100000.0,0.1,2);
 
     while (true) {
 
@@ -59,20 +60,21 @@ void Test_thread::Test_heater(){
     GPIO * heater_vref = new GPIO(20, GPIO::Direction::Out);
     heater_vref->Set(true);
 
-    // heater = new Heater(23, 25, 10000);
     // 8W power (frequency 100 kHz): cooling -0.77
-    // heater->Intensity(-0.3);
+    Heater * heater = new Heater(23, 25, 100000);
+    heater->Intensity(0.5);
 
+/*
     float frequency = 100000;
     float intensity = -0.7;
 
     if (intensity > 0) {
-        auto in1 = new PWM(23, frequency, intensity, true);
-        auto in2 = new PWM(25, frequency, 0.0, true);
+        new PWM(23, frequency, intensity, true);
+        new PWM(25, frequency, 0.0, true);
     } else {
-        auto in1 = new PWM(23, frequency, 0.0, true);
-        auto in2 = new PWM(25, frequency, -intensity, true);
-    }
+        new PWM(23, frequency, 0.0, true);
+        new PWM(25, frequency, -intensity, true);
+    }*/
 }
 
 void Test_thread::Test_motors(){
@@ -87,6 +89,13 @@ void Test_thread::Test_motors(){
 
     DC_HBridge * air = new DC_HBridge(air_in1, air_in2);
     air->Speed(0.25);
+
+    auto lambda = [pump](){
+        pump->Coast();
+    };
+
+    rtos::Delayed_execution *pump_stopper = new rtos::Delayed_execution(lambda);
+    pump_stopper->Execute(2000);
 }
 
 
