@@ -1,7 +1,8 @@
 #include "control_module.hpp"
 
 Control_module::Control_module():
-    Base_module(Codes::Module::Control_module, Codes::Instance::Exclusive, 24)
+    Base_module(Codes::Module::Control_module, Codes::Instance::Exclusive, 24),
+    board_thermistor(new Thermistor(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_1, 3.30f), 3950, 10000, 25, 5100))
 {
     Setup_components();
 }
@@ -49,4 +50,8 @@ void Control_module::Setup_heater(){
 
     // 8W power (frequency 100 kHz): cooling -0.77, heating 0.75
     heater = new Heater(23, 25, 100000);
+}
+
+float Control_module::Board_temperature(){
+    return board_thermistor->Temperature();
 }

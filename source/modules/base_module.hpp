@@ -134,7 +134,14 @@ public:
      */
     static uint Send_CAN_message(CAN::Message const &message);
 
-protected:
+    /**
+     * @brief   Retrieves current temperature of board
+     *          Implemented by every board module
+     *
+     * @return float    Temperature of board in Celsius
+     */
+    virtual float Board_temperature() = 0;
+
     /**
      * @brief Get pointer to this class instance using "singleton" pattern
      */

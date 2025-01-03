@@ -9,3 +9,7 @@ Sensor_module::Sensor_module():
 void Sensor_module::Setup_components(){
     Logger::Print("Sensor module component setup");
 }
+
+float Sensor_module::Board_temperature(){
+    return std::numeric_limits<float>::quiet_NaN();
+}

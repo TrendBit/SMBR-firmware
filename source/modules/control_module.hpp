@@ -30,9 +30,20 @@
  */
 class Control_module: public Base_module {
 private:
+    /**
+     * @brief   LED panel component
+     */
     LED_panel * led_panel = nullptr;
 
+    /**
+     * @brief   Heater component
+     */
     Heater * heater = nullptr;
+
+    /**
+     * @brief   Thermistor to measure onboard temperature
+     */
+    Thermistor * const board_thermistor;
 
 public:
     /**
@@ -56,5 +67,12 @@ private:
      * @brief   Configure heater for temperature control
      */
     void Setup_heater();
+
+    /**
+     * @brief   Retrieves current temperature of board from onboard thermistor
+     *
+     * @return float    Temperature of board in Celsius
+     */
+    virtual float Board_temperature() override;
 
 };
