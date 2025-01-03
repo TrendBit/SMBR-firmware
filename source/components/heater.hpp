@@ -49,6 +49,12 @@ private:
      */
     GPIO * const heater_fan;
 
+    /**
+     * @brief   Target temperature which should be reached via regulator
+     *          If not set, regulation is disabled
+     */
+    std::optional<float> target_temperature = std::nullopt;
+
 public:
     /**
      * @brief Construct a new Heater object
@@ -80,6 +86,13 @@ public:
      * @return float    Temperature in Celsius
      */
     float Temperature();
+
+    /**
+     * @brief   Immediately turn off heater, set intensity to 0 and disable regulation (clear target temperature)
+     */
+    void Turn_off();
+
+protected:
 
     /**
      * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)

@@ -43,4 +43,5 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Heater_set_target_temperature,         Codes::Component::Bottle_heater    },
     { Codes::Message_type::Heater_get_target_temperature_request, Codes::Component::Bottle_heater    },
     { Codes::Message_type::Heater_get_plate_temperature_request,  Codes::Component::Bottle_heater    },
+    { Codes::Message_type::Heater_turn_off,                       Codes::Component::Bottle_heater    },
 };

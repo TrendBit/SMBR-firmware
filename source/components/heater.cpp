@@ -35,6 +35,11 @@ float Heater::Temperature(){
      return heater_sensor->Temperature();
 }
 
+void Heater::Turn_off(){
+    target_temperature.reset();
+    Intensity(0);
+}
+
 bool Heater::Receive(CAN::Message message){
     UNUSED(message);
     return true;
@@ -60,17 +65,36 @@ bool Heater::Receive(Application_message message){
             return true;
         }
 
-        case Codes::Message_type::Heater_set_target_temperature:
-            return false;
+        case Codes::Message_type::Heater_set_target_temperature:{
+            App_messages::Heater::Set_target_temperature set_target_temperature;
+            if (!set_target_temperature.Interpret_data(message.data)){
+                Logger::Print("Heater_set_target_temperature interpretation failed");
+                return false;
+            }
+            Logger::Print(emio::format("Heater target temperature set to: {:05.2f}˚C", set_target_temperature.temperature));
+            target_temperature = set_target_temperature.temperature;
+            return true;
+        }
 
-        case Codes::Message_type::Heater_get_target_temperature_request:
-            return false;
+        case Codes::Message_type::Heater_get_target_temperature_request:{
+            float target_temp = target_temperature.value_or(std::numeric_limits<float>::quiet_NaN());
+            Logger::Print(emio::format("Heater target is temperature: {:05.2f}˚C", target_temp));
+            App_messages::Heater::Get_target_temperature_response target_temperature_response(target_temp);
+            Send_CAN_message(target_temperature_response);
+            return true;
+        }
 
         case Codes::Message_type::Heater_get_plate_temperature_request:{
             float temp = Temperature();
             Logger::Print(emio::format("Heater plate temperature: {:05.2f}˚C", temp));
             App_messages::Heater::Get_plate_temperature_response plate_temperature(temp);
             Send_CAN_message(plate_temperature);
+            return true;
+        }
+
+        case Codes::Message_type::Heater_turn_off:{
+            Logger::Print("Heater turned off");
+            Turn_off();
             return true;
         }
 
