@@ -5,7 +5,7 @@
 
 CAN_thread::CAN_thread()
     : Thread("can_thread", 1000, 8),
-    can_bus(CAN::Bus(5, 4, CONFIG_CANBUS_SPEED, 0))
+    can_bus(CAN::Bus(5, 4, CONFIG_CANBUS_SPEED, 1))
 {
     Start();
 };
