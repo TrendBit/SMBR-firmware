@@ -25,6 +25,7 @@ inline static const std::unordered_map<Codes::Command_admin, Codes::Component> A
  *          STL version of unordered_map is used because ETL is not placed into flash memory
  */
 inline static const std::unordered_map<Codes::Message_type, Codes::Component> Routing_table = {
+    // Common core
     { Codes::Message_type::Device_reset,                          Codes::Component::Common_core      },
     { Codes::Message_type::Device_usb_bootloader,                 Codes::Component::Common_core      },
     { Codes::Message_type::Device_can_bootloader,                 Codes::Component::Common_core      },
@@ -33,15 +34,24 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Core_temperature_request,              Codes::Component::Common_core      },
     { Codes::Message_type::Core_load_request,                     Codes::Component::Common_core      },
     { Codes::Message_type::Board_temperature_request,             Codes::Component::Common_core      },
-
+    // LED panel
     { Codes::Message_type::LED_set_intensity,                     Codes::Component::LED_panel        },
     { Codes::Message_type::LED_get_intensity_request,             Codes::Component::LED_panel        },
     { Codes::Message_type::LED_get_temperature_request,           Codes::Component::LED_panel        },
-
+    // Heater
     { Codes::Message_type::Heater_set_intensity,                  Codes::Component::Bottle_heater    },
     { Codes::Message_type::Heater_get_intensity_request,          Codes::Component::Bottle_heater    },
     { Codes::Message_type::Heater_set_target_temperature,         Codes::Component::Bottle_heater    },
     { Codes::Message_type::Heater_get_target_temperature_request, Codes::Component::Bottle_heater    },
     { Codes::Message_type::Heater_get_plate_temperature_request,  Codes::Component::Bottle_heater    },
     { Codes::Message_type::Heater_turn_off,                       Codes::Component::Bottle_heater    },
+    // Cuvette pump
+    { Codes::Message_type::Cuvette_pump_set_speed,                Codes::Component::Cuvette_pump     },
+    { Codes::Message_type::Cuvette_pump_get_speed_request,        Codes::Component::Cuvette_pump     },
+    { Codes::Message_type::Cuvette_pump_set_flowrate,             Codes::Component::Cuvette_pump     },
+    { Codes::Message_type::Cuvette_pump_get_flowrate_request,     Codes::Component::Cuvette_pump     },
+    { Codes::Message_type::Cuvette_pump_move,                     Codes::Component::Cuvette_pump     },
+    { Codes::Message_type::Cuvette_pump_prime,                    Codes::Component::Cuvette_pump     },
+    { Codes::Message_type::Cuvette_pump_purge,                    Codes::Component::Cuvette_pump     },
+    { Codes::Message_type::Cuvette_pump_stop,                     Codes::Component::Cuvette_pump     },
 };
