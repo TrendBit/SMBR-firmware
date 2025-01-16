@@ -10,6 +10,7 @@ Control_module::Control_module():
 void Control_module::Setup_components(){
     Setup_LEDs();
     Setup_heater();
+    Setup_cuvette_pump();
 
     GPIO * case_fan = new GPIO(12, GPIO::Direction::Out);
     case_fan->Set(false);
@@ -49,7 +50,12 @@ void Control_module::Setup_heater(){
     heater_vref->Set(true);
 
     // 8W power (frequency 100 kHz): cooling -0.77, heating 0.75
-    heater = new Heater(23, 25, 100000);
+    heater = new Heater(23, 25, 400000);
+}
+
+void Control_module::Setup_cuvette_pump(){
+    Logger::Print("Cuvette_pump initialization");
+    cuvette_pump = new Cuvette_pump(22, 8, 100.0, 20.0, 0.2, 50.0f);
 }
 
 float Control_module::Board_temperature(){

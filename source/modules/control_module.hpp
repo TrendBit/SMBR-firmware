@@ -16,6 +16,7 @@
 #include "components/led/led_pwm.hpp"
 #include "components/led_panel.hpp"
 #include "components/heater.hpp"
+#include "components/cuvette_pump.hpp"
 
 /**
  * @brief Control module shield used for:
@@ -39,6 +40,11 @@ private:
      * @brief   Heater component
      */
     Heater * heater = nullptr;
+
+    /**
+     * @brief   Cuvette pump component
+     */
+    Cuvette_pump * cuvette_pump = nullptr;
 
     /**
      * @brief   Thermistor to measure onboard temperature
@@ -67,6 +73,11 @@ private:
      * @brief   Configure heater for temperature control
      */
     void Setup_heater();
+
+    /**
+     * @brief   Configure peristaltic pump for moving liquid into cuvette
+     */
+    void Setup_cuvette_pump();
 
     /**
      * @brief   Retrieves current temperature of board from onboard thermistor
