@@ -11,7 +11,7 @@
 
 #include "can_bus/message_receiver.hpp"
 #include "components/component.hpp"
-#include "components/motors/peristaltic_pump.hpp"
+#include "components/motors/dc_hbridge.hpp"
 #include "rtos/delayed_execution.hpp"
 #include "logger.hpp"
 #include "can_bus/app_message.hpp"
