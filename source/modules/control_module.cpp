@@ -12,6 +12,7 @@ void Control_module::Setup_components(){
     Setup_heater();
     Setup_cuvette_pump();
     Setup_aerator();
+    Setup_mixer();
 
     GPIO * case_fan = new GPIO(12, GPIO::Direction::Out);
     case_fan->Set(false);
@@ -62,6 +63,12 @@ void Control_module::Setup_cuvette_pump(){
 void Control_module::Setup_aerator(){
     Logger::Print("Aerator initialization");
     aerator = new Aerator(3, 2, 2500.0, 0.12, 50.0f);
+}
+
+void Control_module::Setup_mixer(){
+    Logger::Print("Mixer initialization");
+    auto mixer_tacho = new RPM_counter_PIO(PIO_machine(pio0,1),7, 100000.0,0.1,2);
+    mixer = new Mixer(13, mixer_tacho, 100.0, 6000.0, 0.1);
 }
 
 float Control_module::Board_temperature(){

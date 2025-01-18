@@ -13,11 +13,15 @@
 
 #include "threads/test_thread.hpp"
 
+#include "hal/pwm/pwm.hpp"
+#include "components/common_sensors/rpm_counter.hpp"
+#include "components/common_sensors/rpm_counter_pio.hpp"
 #include "components/led/led_pwm.hpp"
 #include "components/led_panel.hpp"
 #include "components/heater.hpp"
 #include "components/cuvette_pump.hpp"
 #include "components/aerator.hpp"
+#include "components/mixer.hpp"
 
 /**
  * @brief Control module shield used for:
@@ -51,6 +55,11 @@ private:
      * @brief   Aerator (air pump) component
      */
     Aerator * aerator = nullptr;
+
+    /**
+     * @brief   Mixer component
+     */
+    Mixer * mixer = nullptr;
 
     /**
      * @brief   Thermistor to measure onboard temperature
@@ -89,6 +98,11 @@ private:
      * @brief   Configure aerator for aerating liquid in bottle
      */
     void Setup_aerator();
+
+    /**
+     * @brief   Configure mixer for stirring liquid in bottle
+     */
+    void Setup_mixer();
 
     /**
      * @brief   Retrieves current temperature of board from onboard thermistor
