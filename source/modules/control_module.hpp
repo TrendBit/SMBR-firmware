@@ -17,6 +17,7 @@
 #include "components/led_panel.hpp"
 #include "components/heater.hpp"
 #include "components/cuvette_pump.hpp"
+#include "components/aerator.hpp"
 
 /**
  * @brief Control module shield used for:
@@ -45,6 +46,11 @@ private:
      * @brief   Cuvette pump component
      */
     Cuvette_pump * cuvette_pump = nullptr;
+
+    /**
+     * @brief   Aerator (air pump) component
+     */
+    Aerator * aerator = nullptr;
 
     /**
      * @brief   Thermistor to measure onboard temperature
@@ -78,6 +84,11 @@ private:
      * @brief   Configure peristaltic pump for moving liquid into cuvette
      */
     void Setup_cuvette_pump();
+
+    /**
+     * @brief   Configure aerator for aerating liquid in bottle
+     */
+    void Setup_aerator();
 
     /**
      * @brief   Retrieves current temperature of board from onboard thermistor

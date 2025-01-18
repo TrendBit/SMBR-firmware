@@ -11,6 +11,7 @@ void Control_module::Setup_components(){
     Setup_LEDs();
     Setup_heater();
     Setup_cuvette_pump();
+    Setup_aerator();
 
     GPIO * case_fan = new GPIO(12, GPIO::Direction::Out);
     case_fan->Set(false);
@@ -56,6 +57,11 @@ void Control_module::Setup_heater(){
 void Control_module::Setup_cuvette_pump(){
     Logger::Print("Cuvette_pump initialization");
     cuvette_pump = new Cuvette_pump(22, 8, 100.0, 20.0, 0.2, 50.0f);
+}
+
+void Control_module::Setup_aerator(){
+    Logger::Print("Aerator initialization");
+    aerator = new Aerator(3, 2, 2500.0, 0.12, 50.0f);
 }
 
 float Control_module::Board_temperature(){
