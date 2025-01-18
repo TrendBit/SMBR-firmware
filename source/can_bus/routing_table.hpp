@@ -54,4 +54,11 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Cuvette_pump_prime,                    Codes::Component::Cuvette_pump     },
     { Codes::Message_type::Cuvette_pump_purge,                    Codes::Component::Cuvette_pump     },
     { Codes::Message_type::Cuvette_pump_stop,                     Codes::Component::Cuvette_pump     },
+    // Aerator
+    { Codes::Message_type::Aerator_set_speed,                     Codes::Component::Bottle_aerator   },
+    { Codes::Message_type::Aerator_get_speed_request,             Codes::Component::Bottle_aerator   },
+    { Codes::Message_type::Aerator_set_flowrate,                  Codes::Component::Bottle_aerator   },
+    { Codes::Message_type::Aerator_get_flowrate_request,          Codes::Component::Bottle_aerator   },
+    { Codes::Message_type::Aerator_move,                          Codes::Component::Bottle_aerator   },
+    { Codes::Message_type::Aerator_stop,                          Codes::Component::Bottle_aerator   },
 };
