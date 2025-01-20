@@ -2,22 +2,9 @@
 
 #include "ticks.hpp"
 
-#define BUFF_SIZE (128 * 10)
+void Mini_display_thread::Display_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p){
+    auto display = Mini_display_thread::Get_instance()->Get_display();
 
-// Frame buffers
-/*A static or global variable to store the buffers*/
-inline static lv_disp_draw_buf_t disp_buf;
-/*A variable to hold the drivers. Must be static or global.*/
-inline static lv_disp_drv_t disp_drv;
-
-/*Static or global buffer(s). The second buffer is optional*/
-inline static lv_color_t buf_1[BUFF_SIZE];
-
-inline SSD1306 *display;
-
-void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p){
-    /*The most simple case (but also the slowest) to put all pixels to the screen one-by-one
-     *`put_px` is just an example, it needs to be implemented by you.*/
     int32_t x, y;
     uint8_t *buffer       = (uint8_t *) color_p;
     const int max_columns = 64;
@@ -39,117 +26,130 @@ void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_
         }
     }
 
-    /* IMPORTANT!!!
-     * Inform LVGL that you are ready with the flushing and buf is not used anymore*/
     lv_disp_flush_ready(disp_drv);
 }
 
 #define BIT_SET(a, b)   ((a) |= (1U << (b)))
 #define BIT_CLEAR(a, b) ((a) &= ~(1U << (b)))
-void set_px_cb(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa){
+
+void Mini_display_thread::Set_pixel(lv_disp_drv_t *disp_drv, uint8_t *buf, lv_coord_t buf_w, lv_coord_t x, lv_coord_t y, lv_color_t color, lv_opa_t opa){
     UNUSED(disp_drv);
-    UNUSED(opa);
     uint16_t byte_index = x + (( y >> 3 ) * buf_w);
     uint8_t bit_index   = y & 0x7;
     // == 0 inverts, so we get blue on black
-    if (color.full == 0) {
-        BIT_SET(buf[ byte_index ], bit_index);
+    if ((color.full == 0) && (LV_OPA_TRANSP != opa)) {
+        BIT_SET(buf[byte_index], bit_index);
     } else {
-        BIT_CLEAR(buf[ byte_index ], bit_index);
+        BIT_CLEAR(buf[byte_index], bit_index);
     }
 }
 
-void rounder_cb(lv_disp_drv_t *disp_drv, lv_area_t *area){
+void Mini_display_thread::Round_area(lv_disp_drv_t *disp_drv, lv_area_t *area){
     UNUSED(disp_drv);
     area->y1 = (area->y1 & (~0x7));
-    area->y2 = (area->y2 & (~0x7)) + 7;
+    area->y2 = area->y2 | 0x07;
 }
 
-Mini_display_thread::Mini_display_thread(std::string name, uint32_t cycle_time)
+Mini_display_thread::Mini_display_thread(uint32_t cycle_time, std::string name)
     : Thread(name, 4096, 6),
     cycle_time(cycle_time){
+    instance = this;
     Start();
-};
+}
 
 void Mini_display_thread::Run(){
-    I2C_bus *i2c = new I2C_bus(i2c0, 16, 17, 1000000, true);
+    Initialize_hardware();
+    Initialize_lvgl();
+    Initialize_ui();
+    Display_loop();
+}
+
+bool Mini_display_thread::Initialize_hardware(){
+    i2c = new I2C_bus(i2c0, 16, 17, 400000, true);
+    if (!i2c) return false;
 
     display = new SSD1306(128, 64, *i2c, 0x3c);
+    if (!display) return false;
+
     display->Init();
     display->On();
     display->Clear_all();
     display->Set_contrast(0x8f);
 
+    return true;
+}
+
+bool Mini_display_thread::Initialize_lvgl(){
     lv_init();
-    lv_disp_draw_buf_init(&disp_buf, buf_1, NULL, BUFF_SIZE);
-    lv_disp_drv_init(&disp_drv);     /*Basic initialization*/
-    disp_drv.draw_buf   = &disp_buf; /*Set an initialized buffer*/
-    disp_drv.flush_cb   = flush_cb;  /*Set a flush callback to draw to the display*/
-    disp_drv.set_px_cb  = set_px_cb;
-    disp_drv.rounder_cb = rounder_cb;
-    disp_drv.hor_res    = 128;       /*Set the horizontal resolution in pixels*/
-    disp_drv.ver_res    = 64;        /*Set the vertical resolution in pixels*/
 
-    lv_disp_drv_register(&disp_drv); /*Register the driver and save the created display objects*/
+    // Initialize display buffer
+    lv_disp_draw_buf_init(&display_buffer, buffer_memory, nullptr, BUFF_SIZE);
 
-    lv_obj_t *label_top;
-    lv_obj_t *label_bottom;
-    lv_obj_t *label_ambient;
-    lv_obj_t *label_timer;
+    // Configure display driver
+    lv_disp_drv_init(&display_driver);
+    display_driver.draw_buf   = &display_buffer;
+    display_driver.flush_cb   = Display_flush;
+    display_driver.set_px_cb  = Set_pixel;
+    display_driver.rounder_cb = Round_area;
+    display_driver.hor_res    = 128;
+    display_driver.ver_res    = 64;
 
-    label_top     = lv_label_create(lv_scr_act());
-    label_bottom  = lv_label_create(lv_scr_act());
-    label_ambient = lv_label_create(lv_scr_act());
-    label_timer   = lv_label_create(lv_scr_act());
+    return lv_disp_drv_register(&display_driver) != nullptr;
+}
 
-    lv_label_set_text(label_top, "");
-    lv_obj_set_pos(label_top, 8, 0);
+void Mini_display_thread::Initialize_ui(){
+    // Create labels
+    labels.sid      = lv_label_create(lv_scr_act());
+    labels.serial   = lv_label_create(lv_scr_act());
+    labels.hostname = lv_label_create(lv_scr_act());
+    labels.ip       = lv_label_create(lv_scr_act());
 
-    lv_label_set_text(label_bottom, "");
-    lv_obj_set_pos(label_bottom, 8, 16);
+    // Position labels
+    lv_obj_set_pos(labels.sid, 8, 0);
+    lv_obj_set_pos(labels.serial, 8, 16);
+    lv_obj_set_pos(labels.hostname, 8, 32);
+    lv_obj_set_pos(labels.ip, 8, 48);
 
-    lv_label_set_text(label_ambient, "");
-    lv_obj_set_pos(label_ambient, 8, 32);
+    // Set initial values
+    Update_SID(0);
+    Update_serial(0);
+    Update_hostname("none");
+    Update_ip({ 0, 0, 0, 0 });
+}
 
-    lv_label_set_text(label_timer, "");
-    lv_obj_set_pos(label_timer, 8, 48);
+void Mini_display_thread::Display_loop(){
+    uint32_t last_tick = cpp_freertos::Ticks::GetTicks();
 
-    unsigned int current_ticks = 0;
-    unsigned int time_past_ms = cycle_time;
-
-    while (1) {
-        unsigned int past_ticks = cpp_freertos::Ticks::GetTicks();
+    while (true) {
         rtos::Delay(cycle_time);
-        timer -= time_past_ms;
-        lv_tick_inc(time_past_ms);
+
+        uint32_t current_tick = cpp_freertos::Ticks::GetTicks();
+        uint32_t elapsed      = (current_tick >= last_tick) ?
+          current_tick - last_tick :
+          (UINT32_MAX - last_tick) + current_tick + 1;
+
+        // Update time from last redraw and call LVGL handler
+        lv_tick_inc(elapsed);
         lv_timer_handler();
 
-        if (timer <= 0) {
-            timer = 0;
-        }
-
-        double top_temp = 1.0;
-        std::string top_temp_label = emio::format("Top: {:.1f}°C", top_temp);
-
-        double bottom_temp = 2.0;
-        std::string bottom_temp_label = emio::format("Bottom: {:.1f}°C", bottom_temp);
-
-        double ambient_temp = 3.0;
-        std::string ambient_temp_label = emio::format("Ambient: {:.1f}°C", ambient_temp);
-
-        std::string time = emio::format("Timer: {:02}:{:02}", (timer / 1000) / 60, (timer / 1000) % 60);
-
-        lv_label_set_text(label_top, top_temp_label.c_str());
-        lv_label_set_text(label_bottom, bottom_temp_label.c_str());
-        lv_label_set_text(label_ambient, ambient_temp_label.c_str());
-        lv_label_set_text(label_timer, time.c_str());
-
-        current_ticks = cpp_freertos::Ticks::GetTicks();
-        time_past_ms = current_ticks - past_ticks;
+        last_tick = current_tick;
     }
-}; // Run
+}
 
-uint32_t Mini_display_thread::Set_timer(int timer_ms){
-    timer = timer_ms;
-    return timer;
-};
+void Mini_display_thread::Update_SID(uint16_t sid){
+    lv_label_set_text(labels.sid, emio::format("SID: 0x{:04x}", sid).c_str());
+}
+
+void Mini_display_thread::Update_serial(uint32_t serial){
+    lv_label_set_text(labels.serial, emio::format("Serial: {:d}", serial).c_str());
+}
+
+void Mini_display_thread::Update_hostname(std::string hostname){
+    std::string hostname_label = emio::format("Host: {}", hostname);
+    lv_label_set_text(labels.hostname, hostname_label.c_str());
+}
+
+void Mini_display_thread::Update_ip(std::array<uint8_t, 4> ip){
+    std::string ip_label = emio::format("IP: {:d}.{:d}.{:d}.{:d}", ip[0], ip[1], ip[2], ip[3]);
+    lv_label_set_text(labels.ip, ip_label.c_str());
+}
