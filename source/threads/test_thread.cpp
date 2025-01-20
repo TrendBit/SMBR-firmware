@@ -40,12 +40,10 @@ Test_thread::Test_thread()
 };
 
 void Test_thread::Run(){
-    // Logger::Print("Test thread init");
+    Logger::Print("Test thread init");
 
     I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
 
-    //Transmissive_IR_test(*i2c);
-    Multi_OJIP();
 };
 
 void Test_thread::EEPROM_Test(I2C_bus &i2c){
@@ -142,10 +140,6 @@ void Test_thread::RGBW_sensor_test(I2C_bus &i2c){
 
         Logger::Print(emio::format("RGBW: {:5d} {:5d} {:5d} {:5d}", det_red, det_green, det_blue, det_white));
     }
-}
-
-void Test_thread::OLED_test(){
-    new Mini_display_thread();
 }
 
 void Test_thread::Temp_sensor_test(I2C_bus &i2c){

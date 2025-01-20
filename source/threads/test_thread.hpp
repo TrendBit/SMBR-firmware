@@ -54,7 +54,6 @@ public:
 
 protected:
     virtual void Run();
-<<<<<<< HEAD
 
     void Test_RPM();
 
@@ -63,8 +62,6 @@ protected:
     void Test_temps();
 
     void Test_motors();
-||||||| parent of 65d1efd (test_thread: add testing of sensor_module components)
-=======
 
 private:
     void EEPROM_Test(I2C_bus &i2c);
@@ -84,10 +81,6 @@ private:
     void Gain_detector_test();
 
     void OLED_test();
-<<<<<<< HEAD
->>>>>>> 65d1efd (test_thread: add testing of sensor_module components)
-||||||| parent of 60c3c10 (test_thread: add fluorometer measurement, limited to 0.5s)
-=======
 
     void Sample_timing_generator(uint32_t count = SAMPLE_COUNT , float total_duration = 2.0);
 
@@ -103,7 +96,5 @@ private:
 
     void Multi_OJIP();
 
-
->>>>>>> 60c3c10 (test_thread: add fluorometer measurement, limited to 0.5s)
 };
 
