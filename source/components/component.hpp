@@ -10,6 +10,7 @@
 #include "codes/codes.hpp"
 
 #include "codes/messages/base_message.hpp"
+#include "can_bus/can_message.hpp"
 
 #include "etl/vector.h"
 
@@ -53,6 +54,8 @@ public:
      * @return uint     Number of messages waiting in a buffer to be send
      */
     uint Send_CAN_message(App_messages::Base_message &message);
+
+    uint Send_CAN_message(CAN::Message &message);
 
     /**
      * @brief   Return list of available components

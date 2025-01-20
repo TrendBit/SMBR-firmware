@@ -40,6 +40,7 @@ class Application_message : public CAN::Message {
         bool                Emergency_flag : 1 = false;
     };
 
+public:
     /**
      * @brief   Construct a new Application_message object, subset of CAN message with extended frame format without data
      *          Protected, to force use of variant which read data of Base module and cannot be used modified

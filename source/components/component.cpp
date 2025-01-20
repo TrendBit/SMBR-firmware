@@ -14,6 +14,10 @@ uint Component::Send_CAN_message(App_messages::Base_message &message) {
     return Base_module::Send_CAN_message(message);
 }
 
+uint Component::Send_CAN_message(CAN::Message &message) {
+    return Base_module::Send_CAN_message(message);
+}
+
 etl::vector<Codes::Component, 256> Component::Available_components() {
     return available_components;
 }
