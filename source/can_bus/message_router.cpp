@@ -1,29 +1,42 @@
 #include "message_router.hpp"
 
 bool Message_router::Route(CAN::Message message){
+    // Process application messages
     if(message.Extended()){
         Application_message app_message = Application_message(message);
-        Codes::Module target_module = app_message.Module_type();
-        if (target_module != Codes::Module::All and target_module != Codes::Module::Any and target_module != Base_module::Module_type()){
-            Logger::Print("Message for different module");
-            return false;
-        } else {
-            if (target_module == Codes::Module::Undefined) {
-                Logger::Print("Warning: Undefined module type");
-            }
-        }
-
-        Codes::Instance target_instance = app_message.Instance_enumeration();
-        if (target_instance != Codes::Instance::All and target_instance != Base_module::Instance_enumeration()) {
-            Logger::Print("Message for different instance");
-            return false;
-        } else {
-            if (target_instance == Codes::Instance::Undefined) {
-                Logger::Print("Warning: Undefined instance of module");
-            }
-        }
 
         Codes::Message_type message_type = app_message.Message_type();
+
+        // Filter messages by target module if not in bypass list
+        auto bypass = std::find(Bypass_message_list.begin(),
+                               Bypass_message_list.end(),
+                               message_type);
+        if (bypass == Bypass_message_list.end()) {
+
+            // Check if current module istarget module
+            Codes::Module target_module = app_message.Module_type();
+            if (target_module != Codes::Module::All and target_module != Codes::Module::Any and target_module != Base_module::Module_type()){
+                Logger::Print("Message for different module");
+                return false;
+            } else {
+                if (target_module == Codes::Module::Undefined) {
+                    Logger::Print("Warning: Undefined module type");
+                }
+            }
+
+            // Check if current instance is target instance
+            Codes::Instance target_instance = app_message.Instance_enumeration();
+            if (target_instance != Codes::Instance::All and target_instance != Base_module::Instance_enumeration()) {
+                Logger::Print("Message for different instance");
+                return false;
+            } else {
+                if (target_instance == Codes::Instance::Undefined) {
+                    Logger::Print("Warning: Undefined instance of module");
+                }
+            }
+        }
+
+        // Find component which should receive this message
         auto receiver = Routing_table.find(message_type);
         if (receiver != Routing_table.end()){
             Codes::Component component = receiver->second;
@@ -39,6 +52,7 @@ bool Message_router::Route(CAN::Message message){
             Logger::Print("Message receiver component not found");
             return false;
         }
+    // Process admin messages
     } else {
         Codes::Command_admin cmd = static_cast<Codes::Command_admin>(message.ID());
         auto receiver = Admin_routing_table.find(cmd);
