@@ -1,6 +1,15 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.4 (motor_control)
+- Add CAN message support for new components
+  - Heater: set/get intensity, get plate temperature, stop
+  - Cuvette_pump: set/get intensity, set/get flowrate, move, prime, purge, stop
+  - Aerator: set/get intensity, set/get flowrate, move, stop
+  - Mixer: set/get speed, stir, stop
+- Update bootloader for unified LED interface
+- Add CAN message to read module (board) temperature via CAN
+
 # 0.3 (led_illumination)  
 - Update to new version of message codes with messages split into categories by component name
 - Rename modules from board to modules, so that it's the same across the board
