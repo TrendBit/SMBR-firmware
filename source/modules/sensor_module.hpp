@@ -12,6 +12,10 @@
 #include "logger.hpp"
 
 #include "components/mini_oled.hpp"
+#include "components/adc/TLA2024.hpp"
+#include "components/adc/TLA2024_channel.hpp"
+#include "components/thermometers/thermopile.hpp"
+#include "components/bottle_temperature.hpp"
 
 /**
  * @brief Sensor module in measuring compartment of device, enables:
@@ -22,9 +26,16 @@
 class Sensor_module: public Base_module {
 private:
     /**
+     * @brief  Main I2C bus of system connected to sensors and detectors
+     */
+    I2C_bus * const i2c;
+
+    /**
      * @brief   Mini OLED display component
      */
     Mini_OLED * mini_oled;
+
+    Bottle_temperature * bottle_temperature;
 
 public:
     /**
@@ -50,4 +61,9 @@ private:
      * @brief   Setup Mini OLED display
      */
     void Setup_Mini_OLED();
+
+    /**
+     * @brief   Setup and configure thermopile sensors for measuring temperature of bottle
+     */
+    void Setup_bottle_thermometers();
 };
