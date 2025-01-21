@@ -22,7 +22,7 @@ void CAN::Bus::Callback( uint32_t notify, struct can2040_msg *msg){
     IRQ_type type;
     if (notify == CAN2040_NOTIFY_RX) {
         type     = IRQ_type::RX;
-        last_received = Message(msg);
+        received_messages.emplace(Message(msg));
     } else if (notify == CAN2040_NOTIFY_TX) {
         type     = IRQ_type::TX;
     } else {
@@ -54,10 +54,14 @@ bool CAN::Bus::Transmit_available(){
     return can2040_check_transmit(&handler);
 }
 
-std::optional<CAN::Message> CAN::Bus::Received() {
-    if(last_received.has_value()){
-        auto message = last_received;
-        last_received.reset();
+uint8_t CAN::Bus::Received_queue_size(){
+        return received_messages.size();
+    }
+
+std::optional<CAN::Message> CAN::Bus::Receive() {
+    if(!received_messages.empty()){
+        std::optional<CAN::Message> message(received_messages.front());
+        received_messages.pop();
         return message;
     } else {
         return {};

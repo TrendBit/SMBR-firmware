@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "etl/unordered_map.h"
+#include "etl/queue.h"
 
 #include "hal/irq/irq_capable.hpp"
 #include "can_message.hpp"
@@ -70,6 +71,8 @@ private:
      *          Message caching needs to be implemented in higher level
      */
     std::optional<Message> last_received;
+
+    etl::queue<Message, 32, etl::memory_model::MEMORY_MODEL_SMALL> received_messages;
 
 public:
     /**
@@ -146,7 +149,14 @@ public:
      *
      * @return std::optional<Message>   Last received message if any was received, otherwise empty optional
      */
-    std::optional<Message> Received();
+    std::optional<Message> Receive();
+
+    /**
+     * @brief   Returns number of messages in receive queue waiting for processing
+     *
+     * @return uint8_t  Number of messages in receive queue
+     */
+    uint8_t Received_queue_size();
 
 private:
     /**
