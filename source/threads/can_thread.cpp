@@ -4,7 +4,7 @@
 #include "config.hpp"
 
 CAN_thread::CAN_thread()
-    : Thread("can_thread", 1000, 8),
+    : Thread("can_thread", 1000, 10),
     can_bus(CAN::Bus(5, 4, CONFIG_CANBUS_SPEED, 1))
 {
     Start();
@@ -21,7 +21,7 @@ void CAN_thread::Run(){
             }
         } else if(irq_type == CAN::Bus::IRQ_type::RX){  // Message was received
             Logger::Print("CAN RX IRQ");
-            auto message = can_bus.Received();
+            auto message = can_bus.Receive();
             if (not message.has_value()) {
                 Logger::Print("CAN message not found after RX IRQ");
             } else {
