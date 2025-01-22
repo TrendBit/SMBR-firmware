@@ -21,11 +21,13 @@ void CAN_thread::Run(){
             }
         } else if(irq_type == CAN::Bus::IRQ_type::RX){  // Message was received
             Logger::Print("CAN RX IRQ");
-            auto message = can_bus.Receive();
-            if (not message.has_value()) {
-                Logger::Print("CAN message not found after RX IRQ");
-            } else {
-                Receive(message.value());
+            while(can_bus.Received_queue_size() > 0){
+                auto message = can_bus.Receive();
+                if (not message.has_value()) {
+                    Logger::Print("CAN message not found after RX IRQ");
+                } else {
+                    Receive(message.value());
+                }
             }
         } else if (irq_type == CAN::Bus::IRQ_type::Error){  // Error occurred
             Logger::Print("CAN Error IRQ");
