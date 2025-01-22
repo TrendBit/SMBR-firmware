@@ -20,6 +20,9 @@ CAN::Bus::Bus(unsigned int gpio_rx, unsigned int gpio_tx, unsigned int bitrate, 
 
 void CAN::Bus::Callback( uint32_t notify, struct can2040_msg *msg){
     IRQ_type type;
+    if(not (msg->id & CAN2040_ID_EFF)){
+        return;
+    }
     if (notify == CAN2040_NOTIFY_RX) {
         type     = IRQ_type::RX;
         received_messages.emplace(Message(msg));
