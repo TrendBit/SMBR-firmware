@@ -31,7 +31,7 @@ async def query_can_nodes(can_interface):
         await asyncio.sleep(.5)
         nodes = await sock._query_uuids()
 
-    nodes_id = [format(node, 'x') for node in nodes]
+    nodes_id = [format(node, '012x') for node in nodes]
 
     return nodes_id
 
