@@ -72,7 +72,10 @@ private:
      */
     std::optional<Message> last_received;
 
-    etl::queue<Message, 32, etl::memory_model::MEMORY_MODEL_SMALL> received_messages;
+    /**
+     * @brief   Queue of received messages, used for storing messages nside ISR until they are loaded by thread
+     */
+    etl::queue<Message, 64, etl::memory_model::MEMORY_MODEL_SMALL> received_messages;
 
 public:
     /**
