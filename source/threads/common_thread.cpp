@@ -14,10 +14,12 @@ void Common_thread::Run(){
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1));
 
-        if (can_thread->Message_available()) {
+        while(can_thread->Message_available()) {
             Logger::Print("Message available");
-            CAN::Message message_in = can_thread->Read_message().value();
-            Message_router::Route(message_in);
+            auto message_in = can_thread->Read_message();
+            if (message_in.has_value()) {
+                Message_router::Route(message_in.value());
+            }
         }
     }
 }
