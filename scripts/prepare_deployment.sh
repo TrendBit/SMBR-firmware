@@ -58,7 +58,7 @@ build_bootloader
 echo "All firmware builds completed."
 
 # Get version branch and commit
-version=$(git describe --tags)
+version=$(git describe --tags | sed 's/\(.*\)-.*/\1/')
 if [ $? -ne 0 ]; then
   version="vx.x"
 fi
