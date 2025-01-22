@@ -42,8 +42,8 @@ Test_thread::Test_thread()
 void Test_thread::Run(){
     Logger::Print("Test thread init");
 
-    I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
-
+    // I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
+    // Fluoro_buck_test();
 };
 
 void Test_thread::EEPROM_Test(I2C_bus &i2c){
@@ -115,12 +115,34 @@ void Test_thread::Fluoro_boost_test(){
 }
 
 void Test_thread::Fluoro_buck_test(){
-    auto led_pwm = new PWM(17, 100000, 0.0, true);
+    GPIO *NTC_select = new GPIO(18, GPIO::Direction::Out);
+    NTC_select->Set(false);
+
+    auto ntc_adc = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_3, 3.30f);
+
+    Thermistor *flr_ntc = new Thermistor(ntc_adc, 3950, 10000, 25, 5100, 3.3f);
+
+    Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+
+    rtos::Delay(500);
+
+    Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+
+    rtos::Delay(500);
+
+    Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+
+    auto led_pwm = new PWM(23, 100000, 0.0, true);
     led_pwm->Duty_cycle(1.0);
 
     rtos::Delay(2000);
 
     led_pwm->Duty_cycle(0.0);
+
+    while(true){
+        DelayUntil(fra::Ticks::MsToTicks(500));
+        Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+    }
 }
 
 void Test_thread::RGBW_sensor_test(I2C_bus &i2c){
