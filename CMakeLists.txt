@@ -8,7 +8,7 @@ set(CMAKE_BUILD_TYPE Debug)
 # Set the Pico SDK build type
 set(PICO_DEFAULT_BUILD_TYPE Debug)
 
-project(PhenoCAN CXX C ASM)
+project(SMPBR CXX C ASM)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_CXX_STANDARD 20)
