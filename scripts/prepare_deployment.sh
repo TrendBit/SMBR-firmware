@@ -11,7 +11,10 @@ generate_firmware() {
     genconfig  --header-path source/config.hpp config/Kconfig
 
     # Build firmware
-    make
+    cd build
+    cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1
+    make firmware -j$(nproc)
+    cd ..
 
     # Convert module name to lowercase
     local module_name_lowercase="${module_name,,}"
@@ -25,7 +28,9 @@ build_bootloader(){
     cp bootloader/katapult.config bootloader/katapult/.config
 
     # Build bootloader
-    make -C bootloader/katapult/
+    cd bootloader/katapult
+    make
+    cd ../..
 
     # Copy bootloader to binaries folder
     cp bootloader/katapult/out/katapult.uf2 binaries/katapult.uf2
@@ -36,8 +41,12 @@ build_bootloader(){
 rm -rf binaries
 mkdir -p binaries
 
+
 # Path to config file
 export KCONFIG_CONFIG=config/.config
+
+# Backup current config
+cp ${KCONFIG_CONFIG} config/.config.backup
 
 # Array of module names
 modules=("CONTROL_MODULE" "SENSOR_MODULE")
@@ -46,11 +55,15 @@ modules=("CONTROL_MODULE" "SENSOR_MODULE")
 alldefconfig config/Kconfig
 
 # Loop through each module and call the generate_firmware function
+
 for module in "${modules[@]}"; do
     echo "Generating firmware for ${module}..."
     generate_firmware "$module"
     echo "Firmware generation completed for ${module}."
 done
+
+# Restore original config
+mv config/.config.backup ${KCONFIG_CONFIG}
 
 # Build bootloader
 build_bootloader
