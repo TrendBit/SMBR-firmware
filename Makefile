@@ -51,7 +51,7 @@ docker-debug:
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"bindto 0.0.0.0\" -c \"reset_config srst_only\" & gdb-multiarch -ex \"target extended-remote :3333\""
 
 firmware: $(BUILD_DIR)
-	$(USER_RUN) "cd $(BUILD_DIR) && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 && make firmware -j$(nproc)"
+	$(USER_RUN) "cd $(BUILD_DIR) && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 && make -j$(nproc)"
 	@$(MAKE) -s modify_clangd
 
 modify_clangd:
@@ -78,11 +78,10 @@ test: $(BUILD_DIR)
 	@$(MAKE) -s modify_clangd
 
 flash: firmware
-	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"program build/source/firmware.elf verify reset exit\""
+	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"program out/application.elf verify reset exit\""
 
 katapult:
-	@cp bootloader/katapult.config bootloader/katapult/.config
-	@$(MAKE) -C bootloader/katapult/
+	$(USER_RUN) "cp bootloader/katapult.config bootloader/katapult/.config && cd bootloader/katapult/ && make"
 
 flash_katapult:
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"program bootloader/katapult/out/katapult.elf verify reset exit\""
@@ -95,6 +94,9 @@ picotool-flash: build
 
 picotool-bootsel: build
 	$(ROOT_RUN) "picotool reboot -u -f"
+
+deploy_files:
+	$(USER_RUN) "scripts/prepare_deployment.sh"
 
 menuconfig:
 	$(USER_RUN_IT) "cd config && menuconfig Kconfig"
