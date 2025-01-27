@@ -1,6 +1,18 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.6 (pico-sdk_2.1.0)
+- update pico-sdk and picotool to 2.1.0
+- add `out/` folder where output binaries are generated
+- update deployment script which is not performed inside docker container
+- add backup and restore of original .config file during deployment
+- move bootloader (katapult) build into container
+- add `auto_flash.sh` script which can mass flash multiple board via USB
+- add combined version of binary (`out/firmware.bin`) containing bootloader rand application code
+- separate binary are now generated for katapult and application code
+  - application(smpbr-fw) - `out/application.bin`
+  - bootloader(katapult) - `out/bootloader.bin`
+
 # 0.5 (thermal sensor)
 - add bottle temperature sensor (thermopiles) as components to sensor_module
 - add mini_display components to sensor_module
