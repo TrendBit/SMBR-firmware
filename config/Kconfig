@@ -5,14 +5,15 @@ choice
     help
         Type of module for which will be firmware build
     config CONTROL_MODULE
-        bool "Control_module"
+        bool "control_module"
     config SENSOR_MODULE
-        bool "Sensor_module"
+        bool "sensor_module"
 endchoice
+
 config MODULE_TYPE
     string
-    default "Control_module" if CONTROL_MODULE
-    default "Sensor_module" if SENSOR_MODULE
+    default "control_module" if CONTROL_MODULE
+    default "sensor_module" if SENSOR_MODULE
 
 config CANBUS_SPEED
     int "CAN bus speed"

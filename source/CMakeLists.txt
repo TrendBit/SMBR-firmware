@@ -71,3 +71,55 @@ target_link_libraries(${TARGET} freertos-addons)
 target_link_libraries(${TARGET} iir_filters)
 target_link_libraries(${TARGET} fast-hash)
 target_link_libraries(${TARGET} lvgl::lvgl)
+
+# Create output directory
+file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/out)
+
+# Add custom command to copy firmware files
+add_custom_target(copy-binary
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/source/firmware.elf
+            ${CMAKE_SOURCE_DIR}/out/application.elf
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/source/firmware.uf2
+            ${CMAKE_SOURCE_DIR}/out/application.uf2
+    COMMAND ${CMAKE_COMMAND} -E copy
+            ${CMAKE_BINARY_DIR}/source/firmware.bin
+            ${CMAKE_SOURCE_DIR}/out/application.bin
+    DEPENDS ${TARGET}
+    COMMENT "Copying firmware files to output directory"
+)
+
+set(OUTPUT_NAME ${CONFIG_MODULE_TYPE})
+
+# Create combined firmware target
+add_custom_target(combined_firmware ALL
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/out
+    COMMAND dd if=/dev/zero of=${CMAKE_SOURCE_DIR}/out/${OUTPUT_NAME}.bin bs=1k count=16 2> /dev/null
+    COMMAND dd if=${CMAKE_SOURCE_DIR}/out/bootloader.bin of=${CMAKE_SOURCE_DIR}/out/${OUTPUT_NAME}.bin conv=notrunc 2> /dev/null
+    COMMAND dd if=${CMAKE_SOURCE_DIR}/out/application.bin of=${CMAKE_SOURCE_DIR}/out/${OUTPUT_NAME}.bin bs=1k seek=16 conv=notrunc 2> /dev/null
+    COMMAND picotool uf2 convert ${CMAKE_SOURCE_DIR}/out/${OUTPUT_NAME}.bin ${CMAKE_SOURCE_DIR}/out/${OUTPUT_NAME}.uf2
+    COMMAND ln -sf ${OUTPUT_NAME}.bin firmware.bin
+    COMMAND ln -sf ${OUTPUT_NAME}.uf2 firmware.uf2
+    DEPENDS ${TARGET} katapult copy-binary
+    COMMENT "Creating combined firmware binary (application & bootloader)"
+)
+
+# Add Katapult build target
+add_custom_target(katapult
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/bootloader/katapult.config
+        ${CMAKE_SOURCE_DIR}/bootloader/katapult/.config
+    COMMAND make -C ${CMAKE_SOURCE_DIR}/bootloader/katapult
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/bootloader/katapult/out/katapult.bin
+        ${CMAKE_SOURCE_DIR}/out/bootloader.bin
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/bootloader/katapult/out/katapult.elf
+        ${CMAKE_SOURCE_DIR}/out/bootloader.elf
+    COMMAND ${CMAKE_COMMAND} -E copy
+        ${CMAKE_SOURCE_DIR}/bootloader/katapult/out/katapult.uf2
+        ${CMAKE_SOURCE_DIR}/out/bootloader.uf2
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    COMMENT "Building Katapult bootloader"
+)
