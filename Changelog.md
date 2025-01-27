@@ -1,6 +1,12 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.5 (thermal sensor)
+- add bottle temperature sensor (thermopiles) as components to sensor_module
+- add mini_display components to sensor_module
+  - new thread controlling mini OLEd display on side of device showing device info
+- add lvgl library for mini display rendering
+
 # 0.4 (motor_control)
 - Add CAN message support for new components
   - Heater: set/get intensity, get plate temperature, stop
