@@ -5,25 +5,29 @@ FROM alpine:3.18
 
 RUN apk update && \
     apk upgrade && \
-    apk add git \
-            python3 \
-            py3-pip \
-            cmake \
-            build-base \
-            libusb-dev \
-            libtool \
-            texinfo \
-            automake\
+    apk add \
             autoconf \
-            bsd-compat-headers \
-            gcc\
-            g++\
-            newlib-arm-none-eabi \
-            g++-arm-none-eabi \
-            gcc-arm-none-eabi \
-            gdb-multiarch \
+            automake \
             bash \
-            ninja
+            bsd-compat-headers \
+            build-base \
+            cmake \
+            g++-arm-none-eabi \
+            g++\
+            gcc-arm-none-eabi \
+            gcc\
+            gdb-multiarch \
+            git \
+            libtool \
+            libusb-dev \
+            linux-headers \
+            newlib-arm-none-eabi \
+            ninja \
+            pkgconf \
+            py3-pip \
+            python3 \
+            texinfo \
+            zip
 
 RUN pip install --break-system-packages kconfiglib
 
@@ -40,7 +44,7 @@ RUN cd /usr/share/ &&\
     ./configure &&\
     make -j"$(nproc)" &&\
     make install
-    #remove unneeded directories
+
 RUN cd ..
 RUN rm -rf /usr/share/openocd
 
@@ -48,23 +52,22 @@ EXPOSE 3333
 
 # Raspberry Pi Pico SDK
 ARG SDK_PATH=/usr/share/pico_sdk
-RUN git clone --depth 1 --branch 1.5.0 https://github.com/raspberrypi/pico-sdk $SDK_PATH && \
+ENV PICO_SDK_PATH=$SDK_PATH
+
+RUN git clone --recursive --branch 2.1.0 https://github.com/raspberrypi/pico-sdk $SDK_PATH && \
     cd $SDK_PATH && \
     git submodule update --init
 
 ENV UDEV=1
 
-ENV PICO_SDK_PATH=$SDK_PATH
-
 # Picotool installation
-RUN git clone --depth 1 --branch 1.1.1 https://github.com/raspberrypi/picotool.git /home/picotool && \
-    cd /home/picotool && \
+RUN git clone --depth 1 --branch 2.1.0 https://github.com/raspberrypi/picotool.git /home/user && \
+    cd /home/user && \
     mkdir build && \
     cd build && \
     cmake .. && \
     make && \
-    cp /home/picotool/build/picotool /bin/picotool && \
-    rm -rf /home/picotool
+    make install
 
 ARG USER_ID
 ARG GROUP_ID
