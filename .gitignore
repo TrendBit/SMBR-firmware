@@ -5,4 +5,5 @@ config/.config.old
 source/config.hpp
 .vscode/
 binaries/
+out/
 smpbr_firmware_v*.zip

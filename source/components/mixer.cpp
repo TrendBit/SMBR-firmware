@@ -3,7 +3,7 @@
 Mixer::Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float max_rpm, float min_speed):
     Component(Codes::Component::Bottle_mixer),
     Message_receiver(Codes::Component::Bottle_mixer),
-    Fan_RPM(new PWM(pwm_pin, frequency, 0.0f, true), tacho),
+    Fan_RPM(new PWM_channel(pwm_pin, frequency, 0.0f, true), tacho),
     max_rpm(max_rpm),
     min_speed(min_speed)
 {

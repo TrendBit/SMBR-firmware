@@ -9,7 +9,6 @@
 
 #include "can_bus/app_message.hpp"
 #include "can_bus/message_receiver.hpp"
-#include "RP2040.h"
 #include "hal/gpio/gpio.hpp"
 
 #include "components/component.hpp"
