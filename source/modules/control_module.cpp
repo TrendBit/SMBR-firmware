@@ -21,10 +21,10 @@ void Control_module::Setup_components(){
 void Control_module::Setup_LEDs(){
     Logger::Print("LED initialization");
 
-    PWM * r_pwm = new PWM(17, 100, 0.00, true);
-    PWM * g_pwm = new PWM(16, 100, 0.00, true);
-    PWM * b_pwm = new PWM(14, 100, 0.00, true);
-    PWM * w_pwm = new PWM(15, 100, 0.00, true);
+    PWM_channel * r_pwm = new PWM_channel(17, 100, 0.00, true);
+    PWM_channel * g_pwm = new PWM_channel(16, 100, 0.00, true);
+    PWM_channel * b_pwm = new PWM_channel(14, 100, 0.00, true);
+    PWM_channel * w_pwm = new PWM_channel(15, 100, 0.00, true);
 
     // Each channel is limited to max 25% of power to keep LED relatively cool is conserve power budget
     LED_PWM * led_r = new LED_PWM(r_pwm, 0.01, 0.25, 10.0);

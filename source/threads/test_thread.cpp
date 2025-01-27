@@ -132,7 +132,7 @@ void Test_thread::Fluoro_buck_test(){
 
     Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
 
-    auto led_pwm = new PWM(23, 100000, 0.0, true);
+    auto led_pwm = new PWM_channel(23, 100000, 0.0, true);
     led_pwm->Duty_cycle(1.0);
 
     rtos::Delay(2000);
@@ -419,7 +419,7 @@ void Test_thread::Fluoro_sampler_test(){
 
     const bool boost = false;
 
-    auto led_pwm = new PWM(17, 10000000, 0.0, true);
+    auto led_pwm = new PWM_channel(17, 10000000, 0.0, true);
     //GPIO *led_pwm  = new GPIO(17, GPIO::Direction::Out);
 
     GPIO *LED_en  = new GPIO(22, GPIO::Direction::Out);
