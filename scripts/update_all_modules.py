@@ -25,6 +25,8 @@ if __name__ == "__main__":
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('-i', '--interface', type=str, default='can0', help='CAN interface to use, default can0')
     parser.add_argument('-d', '--directory', type=str, default='.', help='Path to folder with firmware binaries')
+    parser.add_argument('-y', '--yes', action='store_true', help='Flash without asking for confirmation')
+
 
     args = parser.parse_args()
 
@@ -65,10 +67,14 @@ if __name__ == "__main__":
                 firmware_name = f"{firmware}.bin"
             print(f"{module.module_name():<25}{module.instance_name():<20}{module.uid_str():<20}{firmware_name:<25}")
 
-    start_flashing = input("\nDo you want to proceed with flashing? [Y/n]: ").strip().lower()
-    if start_flashing == 'n':
-        print("Flashing aborted.")
-        exit(0)
+    if not args.yes:
+        while(True):
+            start_flashing = input("\nDo you want to proceed with flashing? [Y/n]: ").strip().lower()
+            if start_flashing == 'n':
+                print("Flashing aborted.")
+                exit(0)
+            elif start_flashing == 'Y':
+                break
 
     for module, firmware in module_firmwares.items():
         if firmware is None:
