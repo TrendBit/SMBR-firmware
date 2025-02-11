@@ -7,6 +7,8 @@ bool Message_router::Route(CAN::Message message){
 
         Codes::Message_type message_type = app_message.Message_type();
 
+        Logger::Print(emio::format("Routing message: {}", Codes::to_string(message_type)));
+
         // Filter messages by target module if not in bypass list
         auto bypass = std::find(Bypass_message_list.begin(),
                                Bypass_message_list.end(),
