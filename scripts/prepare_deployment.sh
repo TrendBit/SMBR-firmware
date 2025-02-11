@@ -8,7 +8,7 @@ generate_firmware() {
     setconfig --kconfig=config/Kconfig "${module_name}=y"
 
     # Generate config header
-    genconfig  --header-path source/config.hpp config/Kconfig
+    genconfig --header-path source/config.hpp config/Kconfig
 
     # Build firmware
     cd build
@@ -55,15 +55,15 @@ modules=("CONTROL_MODULE" "SENSOR_MODULE")
 alldefconfig config/Kconfig
 
 # Loop through each module and call the generate_firmware function
-
 for module in "${modules[@]}"; do
     echo "Generating firmware for ${module}..."
     generate_firmware "$module"
     echo "Firmware generation completed for ${module}."
 done
 
-# Restore original config
+# Restore original config and regenerate source files
 mv config/.config.backup ${KCONFIG_CONFIG}
+genconfig --header-path source/config.hpp config/Kconfig
 
 # Build bootloader
 build_bootloader
