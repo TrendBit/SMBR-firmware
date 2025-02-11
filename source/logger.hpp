@@ -15,6 +15,7 @@
 
 #include "pico/stdlib.h"
 #include "hardware/uart.h"
+#include <hardware/dma.h>
 
 /**
  *  @brief  Basic logger which is used for printing messages to UART and USB
@@ -33,6 +34,10 @@ private:
      * @brief UART instance which is used for printing to UART
      */
     inline static uart_inst_t * uart_instance = nullptr;
+
+    inline static int dma_channel = 1;
+
+    inline static std::string buffer = "";
 
 public:
     /**

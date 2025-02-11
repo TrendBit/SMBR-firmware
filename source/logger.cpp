@@ -8,6 +8,20 @@ void Logger::Init_UART(uart_inst_t * uart_instance, uint tx_gpio, uint rx_gpio, 
     // Set the UART pins
     gpio_set_function(tx_gpio, GPIO_FUNC_UART);
     gpio_set_function(rx_gpio, GPIO_FUNC_UART);
+
+    static dma_channel_config dma_channel_config;
+    uint instance_number = uart_get_index(uart_instance);
+    uint dreq = instance_number ? DREQ_UART1_TX : DREQ_UART0_TX;
+    uart_hw_t *uart_hw = instance_number ? uart1_hw : uart0_hw;
+
+    dma_channel_config = dma_channel_get_default_config(dma_channel);
+    channel_config_set_transfer_data_size(&dma_channel_config, DMA_SIZE_8);
+    channel_config_set_read_increment(&dma_channel_config, true);
+    channel_config_set_write_increment(&dma_channel_config, false);
+    channel_config_set_dreq(&dma_channel_config, dreq);
+    dma_channel_set_config(dma_channel, &dma_channel_config, false);
+    dma_channel_set_write_addr(dma_channel, &uart_hw->dr, false);
+    dma_channel_start(dma_channel);
 }
 
 void Logger::Init_USB(uint usb_interface_id)
@@ -42,8 +56,11 @@ void Logger::Print_to_USB(std::string &message){
 
 void Logger::Print_to_UART(const std::string &message){
     if (uart_instance) {
-        uart_puts(uart_instance, message.c_str());
-        uart_tx_wait_blocking(uart_instance);
+        if(dma_channel_is_busy(dma_channel)){
+            dma_channel_wait_for_finish_blocking(dma_channel);
+        }
+        buffer = message;
+        dma_channel_transfer_from_buffer_now(dma_channel, buffer.data(), buffer.length());
     }
 }
 
