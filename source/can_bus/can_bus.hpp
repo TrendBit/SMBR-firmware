@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <vector>
 
+#include "queue.hpp"
+
 #include "etl/unordered_map.h"
 #include "etl/queue.h"
 
@@ -32,6 +34,8 @@ extern "C" {
 #include "RP2040.h"
 
 #define UNUSED(x) (void)(x)
+
+namespace fra = cpp_freertos;
 
 /**
  * @brief
@@ -73,9 +77,10 @@ private:
     std::optional<Message> last_received;
 
     /**
-     * @brief   Queue of received messages, used for storing messages nside ISR until they are loaded by thread
+     * @brief   Queue containing raw can2040 messages received from can bus
+     *          Queue is ISR safe, implemented as part of FreeRTOS sync routines
      */
-    etl::queue<Message, 64, etl::memory_model::MEMORY_MODEL_SMALL> received_messages;
+    fra::Queue * rx_queue;
 
 public:
     /**
@@ -92,7 +97,7 @@ public:
      * @brief   Internal class callback executed by global level callback
      *
      * @param notify    Type of event triggering callback which is translated into IRQ_type
-     * @param msg       Message received or transmitted in case of RX event
+     * @param msg       Message received or transmitted in case of RX event, pointer is only valid during callback
      */
     void Callback(uint32_t notify, struct can2040_msg *msg);
 
@@ -150,9 +155,9 @@ public:
     /**
      * @brief Returns last received message on CAN bus
      *
-     * @return std::optional<Message>   Last received message if any was received, otherwise empty optional
+     * @return std::optional<can2040_msg>   Last received message if any was received, otherwise empty optional
      */
-    std::optional<Message> Receive();
+    std::optional<can2040_msg> Receive();
 
     /**
      * @brief   Returns number of messages in receive queue waiting for processing

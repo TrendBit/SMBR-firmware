@@ -10,6 +10,8 @@ CAN::Bus::Bus(unsigned int gpio_rx, unsigned int gpio_tx, unsigned int bitrate, 
 
     can2040_setup(&handler, pio_number);
 
+    rx_queue = new fra::Queue(64, sizeof(can2040_msg));
+
     instances[pio_number] = this;
 
     can2040_callback_config(&handler, &Bus::Callback_handler);
@@ -18,14 +20,17 @@ CAN::Bus::Bus(unsigned int gpio_rx, unsigned int gpio_tx, unsigned int bitrate, 
     can2040_start(&handler, sys_clock, bitrate, gpio_rx, gpio_tx);
 }
 
-void CAN::Bus::Callback( uint32_t notify, struct can2040_msg *msg){
+void CAN::Bus::Callback(uint32_t notify, struct can2040_msg *msg){
     IRQ_type type;
     if(not (msg->id & CAN2040_ID_EFF)){
         return;
     }
     if (notify == CAN2040_NOTIFY_RX) {
         type     = IRQ_type::RX;
-        received_messages.emplace(Message(msg));
+        // Throw this away
+        BaseType_t *pxHigherPriorityTaskWoken = pdFALSE;
+        // Enqueue message to ISR safe queue, message is copied into queue
+        rx_queue->EnqueueFromISR(msg, pxHigherPriorityTaskWoken);
     } else if (notify == CAN2040_NOTIFY_TX) {
         type     = IRQ_type::TX;
     } else {
@@ -58,14 +63,15 @@ bool CAN::Bus::Transmit_available(){
 }
 
 uint8_t CAN::Bus::Received_queue_size(){
-        return received_messages.size();
+        return rx_queue->NumItems();
     }
 
-std::optional<CAN::Message> CAN::Bus::Receive() {
-    if(!received_messages.empty()){
-        std::optional<CAN::Message> message(received_messages.front());
-        received_messages.pop();
-        return message;
+std::optional<can2040_msg> CAN::Bus::Receive() {
+    if(!rx_queue->IsEmpty()){
+        can2040_msg message_data;
+        // Read message from ISR safe queue
+        rx_queue->Dequeue(&message_data);
+        return message_data;
     } else {
         return {};
     }
