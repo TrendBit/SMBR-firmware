@@ -12,21 +12,22 @@ CAN_thread::CAN_thread()
 
 void CAN_thread::Run(){
     while (true) {
+        // Wait for any IRQ from CAN bus peripheral
         CAN::Bus::IRQ_type irq_type = can_bus.Wait_for_any<CAN::Bus::IRQ_type>();
 
         if(irq_type == CAN::Bus::IRQ_type::TX){ // Message was transmitted
-            Logger::Print("CAN TX IRQ");
             if (not tx_queue.empty()) {
                 Retransmit();
             }
         } else if(irq_type == CAN::Bus::IRQ_type::RX){  // Message was received
-            Logger::Print("CAN RX IRQ");
             while(can_bus.Received_queue_size() > 0){
-                auto message = can_bus.Receive();
-                if (not message.has_value()) {
+                auto message_data = can_bus.Receive();
+                if (not message_data.has_value()) {
                     Logger::Print("CAN message not found after RX IRQ");
                 } else {
-                    Receive(message.value());
+                    // Convert message from can2040 struct to CAN::Message
+                    CAN::Message message = CAN::Message(&message_data.value());
+                    Receive(message);
                 }
             }
         } else if (irq_type == CAN::Bus::IRQ_type::Error){  // Error occurred
@@ -64,6 +65,7 @@ uint CAN_thread::Send(CAN::Message const &message){
 
 uint CAN_thread::Send(App_messages::Base_message &message){
     Application_message app_message(message);
+    Logger::Print(emio::format("Sending CAN message type: {}", Codes::to_string(app_message.Message_type())));
     return Send(app_message);
 }
 
@@ -80,8 +82,12 @@ uint8_t CAN_thread::Retransmit(){
     uint8_t retransmitted = 0;
     while((can_bus.Transmit_available()) and (not tx_queue.empty())){
         CAN::Message message = tx_queue.front();
+        uint ret = can_bus.Transmit(message);
+        if (not ret) {
+            Logger::Print(emio::format("Transmission failed"));
+            break;
+        }
         tx_queue.pop();
-        can_bus.Transmit(message);
         retransmitted++;
     }
     Logger::Print(emio::format("CAN retransmitted: {}", retransmitted));
