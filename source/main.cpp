@@ -6,7 +6,7 @@ int main(){
     timer_hw->dbgpause = 0; // Required for SWD debug otherwise timers are alway zero during debug
 
     #ifdef CONFIG_LOGGER
-        Logger::Init_UART(uart0, 0, 1, 115200);
+        Logger::Init_UART(uart0, 0, 1, 961200);
         Logger::Print_raw("\r\n");
         Logger::Print("Logger UART Initialized");
     #endif
