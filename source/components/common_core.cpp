@@ -57,6 +57,7 @@ bool Common_core::Ping(Application_message message){
     }
 
     uint8_t sequence_number = ping_request.sequence_number;
+    Logger::Print(emio::format("Ping request, sequence number: {}", sequence_number));
     App_messages::Common::Ping_response ping_response(sequence_number);
     Send_CAN_message(ping_response);
     return true;
@@ -86,12 +87,14 @@ bool Common_core::Board_temperature(){
 bool Common_core::Probe_modules(){
     auto uid = UID();
     auto probe_response = App_messages::Common::Probe_modules_response(uid);
+    Logger::Print(emio::format("UID: {:02x} {:02x} {:02x} {:02x} {:02x} {:02x}", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]));
     Send_CAN_message(probe_response);
     return true;
 }
 
 bool Common_core::Core_load(){
     float load = MCU_core_utilization();
+    Logger::Print(emio::format("MCU load: {:05.2f}%", load));
     auto load_response = App_messages::Common::Core_load_response(load);
     Send_CAN_message(load_response);
     return true;
