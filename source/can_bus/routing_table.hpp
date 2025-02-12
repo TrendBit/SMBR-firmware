@@ -68,22 +68,10 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Mixer_get_rpm_request,                      Codes::Component::Bottle_mixer       },
     { Codes::Message_type::Mixer_stir,                                 Codes::Component::Bottle_mixer       },
     { Codes::Message_type::Mixer_stop,                                 Codes::Component::Bottle_mixer       },
-    // Mini OLED
-    { Codes::Message_type::Core_SID_response,                          Codes::Component::Mini_OLED          },
-    { Codes::Message_type::Core_IP_response,                           Codes::Component::Mini_OLED          },
-    { Codes::Message_type::Core_hostname_response,                     Codes::Component::Mini_OLED          },
-    { Codes::Message_type::Core_serial_response,                       Codes::Component::Mini_OLED          },
     // Bottle temperature
     { Codes::Message_type::Bottle_temperature_request,                 Codes::Component::Bottle_temperature },
     { Codes::Message_type::Bottle_top_measured_temperature_request,    Codes::Component::Bottle_temperature },
     { Codes::Message_type::Bottle_bottom_measured_temperature_request, Codes::Component::Bottle_temperature },
     { Codes::Message_type::Bottle_top_sensor_temperature_request,      Codes::Component::Bottle_temperature },
     { Codes::Message_type::Bottle_bottom_sensor_temperature_request,   Codes::Component::Bottle_temperature },
-};
-
-inline static const std::vector<Codes::Message_type> Bypass_message_list = {
-    Codes::Message_type::Core_SID_response,
-    Codes::Message_type::Core_IP_response,
-    Codes::Message_type::Core_hostname_response,
-    Codes::Message_type::Core_serial_response,
 };
