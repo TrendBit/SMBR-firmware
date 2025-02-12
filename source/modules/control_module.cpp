@@ -57,7 +57,8 @@ void Control_module::Setup_heater(){
 
 void Control_module::Setup_cuvette_pump(){
     Logger::Print("Cuvette_pump initialization");
-    cuvette_pump = new Cuvette_pump(22, 8, 100.0, 20.0, 0.2, 50.0f);
+    PWM_channel * cuvettte_pump_vref_pwm = new PWM_channel(10, 2000, 0.2, true);
+    cuvette_pump = new Cuvette_pump(22, 8, 100.0, 20.0, 0.2, 250.0f);
 }
 
 void Control_module::Setup_aerator(){
