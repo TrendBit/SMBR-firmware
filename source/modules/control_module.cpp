@@ -14,8 +14,7 @@ void Control_module::Setup_components(){
     Setup_aerator();
     Setup_mixer();
 
-    GPIO * case_fan = new GPIO(12, GPIO::Direction::Out);
-    case_fan->Set(false);
+    PWM_channel * case_fan = new PWM_channel(12, 100, 0.7, true);
 }
 
 void Control_module::Setup_LEDs(){
