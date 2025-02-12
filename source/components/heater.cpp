@@ -9,6 +9,7 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
 {
     control_bridge->Coast();
     heater_fan->Set(false);
+    Message_router::Register_bypass(Codes::Message_type::Bottle_temperature_response, Codes::Component::Bottle_heater);
 }
 
 float Heater::Intensity(float requested_intensity){
@@ -95,6 +96,17 @@ bool Heater::Receive(Application_message message){
         case Codes::Message_type::Heater_turn_off:{
             Logger::Print("Heater turned off");
             Turn_off();
+            return true;
+        }
+
+        case Codes::Message_type::Bottle_temperature_response:{
+            App_messages::Bottle_temperature::Temperature_response temperature_response;
+            if (!temperature_response.Interpret_data(message.data)){
+                Logger::Print("Bottle_temperature_response interpretation failed");
+                return false;
+            }
+            float temp = temperature_response.temperature;
+            Logger::Print(emio::format("Bottle temperature: {:05.2f}˚C", temp));
             return true;
         }
 

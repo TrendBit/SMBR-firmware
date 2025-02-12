@@ -8,6 +8,7 @@
 #pragma once
 
 #include "can_bus/message_receiver.hpp"
+#include "can_bus/message_router.hpp"
 #include "components/component.hpp"
 #include "components/motors/dc_hbridge_pio.hpp"
 #include "components/thermometers/thermistor.hpp"
@@ -21,6 +22,7 @@
 #include "codes/messages/heater/set_target_temperature.hpp"
 #include "codes/messages/heater/get_target_temperature_response.hpp"
 #include "codes/messages/heater/get_plate_temperature_response.hpp"
+#include "codes/messages/bottle_temperature/temperature_response.hpp"
 
 class Heater: public Component, public Message_receiver {
 private:
