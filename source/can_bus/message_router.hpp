@@ -35,6 +35,13 @@ private:
      */
     inline static etl::unordered_map<Codes::Component, Message_receiver *, 32> component_instances = {};
 
+    /**
+     * @brief  Dynamic routing table for bypassing router and sending message directly to component
+     *         Is used to receive messages from another module based on special function of module
+     *              for example can be used by sensor module to receive info which will be on display
+     */
+    inline static etl::unordered_map<Codes::Message_type, Codes::Component, 32> bypass_routing_table = {};
+
 public:
 
     /**
@@ -53,4 +60,12 @@ public:
      * @param receiver     Instance of component (Message_receiver) which will receive messages
      */
     static void Register_receiver(Codes::Component component, Message_receiver *receiver);
+
+    /**
+     * @brief   Add message type and receiver to bypass list, and this types of messages
+     *              will not be discarded abut forwarded to component
+     *
+     * @param message_type
+     */
+    static void Register_bypass(Codes::Message_type message_type, Codes::Component component_code);
 };

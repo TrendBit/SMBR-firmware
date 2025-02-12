@@ -10,12 +10,10 @@ bool Message_router::Route(CAN::Message message){
         Logger::Print(emio::format("Routing message: {}", Codes::to_string(message_type)));
 
         // Filter messages by target module if not in bypass list
-        auto bypass = std::find(Bypass_message_list.begin(),
-                               Bypass_message_list.end(),
-                               message_type);
-        if (bypass == Bypass_message_list.end()) {
+        auto bypass = bypass_routing_table.find(message_type);
 
-            // Check if current module istarget module
+        if (bypass == bypass_routing_table.end()) {
+            // Check if current module is target module
             Codes::Module target_module = app_message.Module_type();
             if (target_module != Codes::Module::All and target_module != Codes::Module::Any and target_module != Base_module::Module_type()){
                 Logger::Print("Message for different module");
@@ -35,6 +33,15 @@ bool Message_router::Route(CAN::Message message){
                 if (target_instance == Codes::Instance::Undefined) {
                     Logger::Print("Warning: Undefined instance of module");
                 }
+            }
+        } else {
+            Message_receiver* instance = component_instances[bypass->second];
+            if (instance) {
+                instance->Receive(app_message);
+                return true;
+            } else {
+                Logger::Print("Message receiver instance not found");
+                return false;
             }
         }
 
@@ -82,4 +89,8 @@ void Message_router::Register_receiver(Codes::Component component, Message_recei
     } else {
         component_instances[component] = receiver;
     }
+}
+
+void Message_router::Register_bypass(Codes::Message_type message_type, Codes::Component component_code) {
+    bypass_routing_table.insert({message_type, component_code});
 }
