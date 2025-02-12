@@ -8,6 +8,7 @@
 #pragma once
 
 #include "can_bus/message_receiver.hpp"
+#include "can_bus/message_router.hpp"
 #include "components/component.hpp"
 #include "rtos/delayed_execution.hpp"
 #include "logger.hpp"

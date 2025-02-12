@@ -21,6 +21,11 @@ Mini_OLED::Mini_OLED(uint32_t data_update_rate_s):
         update_data->Execute(data_update_rate_s * 1000);
     };
 
+    Message_router::Register_bypass(Codes::Message_type::Core_SID_response,      Codes::Component::Mini_OLED);
+    Message_router::Register_bypass(Codes::Message_type::Core_IP_response,       Codes::Component::Mini_OLED);
+    Message_router::Register_bypass(Codes::Message_type::Core_hostname_response, Codes::Component::Mini_OLED);
+    Message_router::Register_bypass(Codes::Message_type::Core_serial_response,   Codes::Component::Mini_OLED);
+
     update_data = new rtos::Delayed_execution(update_data_lambda, data_update_rate_s * 1000, true);
 }
 
