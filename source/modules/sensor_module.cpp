@@ -2,8 +2,9 @@
 
 Sensor_module::Sensor_module():
     Base_module(Codes::Module::Sensor_module, Codes::Instance::Exclusive, 24, 13),
-    i2c(new I2C_bus(i2c1, 10, 11, 100000, true))
-
+    i2c(new I2C_bus(i2c1, 10, 11, 100000, true)),
+    ntc_channel_selector(new GPIO(18, GPIO::Direction::Out)),
+    ntc_thermistors(new Thermistor(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_3, 3.30f), 3950, 10000, 25, 5100))
 {
     Setup_components();
 }
@@ -15,7 +16,8 @@ void Sensor_module::Setup_components(){
 }
 
 float Sensor_module::Board_temperature(){
-    return std::numeric_limits<float>::quiet_NaN();
+    ntc_channel_selector->Set(true);
+    return ntc_thermistors->Temperature();
 }
 
 void Sensor_module::Setup_Mini_OLED(){

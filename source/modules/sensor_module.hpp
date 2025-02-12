@@ -35,7 +35,23 @@ private:
      */
     Mini_OLED * mini_oled;
 
+    /**
+     * @brief   Bottle temperature measuring sensor unit component
+     */
     Bottle_temperature * bottle_temperature;
+
+    /**
+     * @brief   GPIO controlling input of multiplexor for temperature ADC measurement
+     *              1 - onboard thermistor
+     *              0 - Fluoro LED thermistor
+     */
+    GPIO * const ntc_channel_selector;
+
+    /**
+     * @brief   ADC channel for measuring temperature of onboard thermistor or Fluoro LED thermistor
+     *          Thermistor have same values of nominal resistance and B value
+     */
+    Thermistor * const ntc_thermistors;
 
 public:
     /**
