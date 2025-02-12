@@ -10,6 +10,42 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
     control_bridge->Coast();
     heater_fan->Set(false);
     Message_router::Register_bypass(Codes::Message_type::Bottle_temperature_response, Codes::Component::Bottle_heater);
+
+    auto regulation_lambda = [this](){
+        Logger::Print("Regulating heater intensity");
+
+        if (!target_temperature.has_value()){
+            Logger::Print("No target temperature set, regulation disabled");
+            regulation_loop->Abort();
+            return;
+        } else {
+            regulation_loop->Execute(5000);
+        }
+
+        if(bottle_temperature.has_value()){
+            float current_intensity = Intensity();
+            float new_intensity;
+            if (bottle_temperature.value() < target_temperature.value()){
+                new_intensity = std::clamp(current_intensity + 0.1f, 0.0f, intensity_limit);
+                Intensity(new_intensity);
+            } else {
+                new_intensity = std::clamp(current_intensity - 0.1f, 0.0f, intensity_limit);
+                Intensity(new_intensity);
+            }
+            Logger::Print(emio::format("Current temp: {:03.1f}, target temp: {:03.1f}", bottle_temperature.value(), target_temperature.value()));
+            Logger::Print(emio::format("Heater intensity set to: {:03.1f}", new_intensity));
+            bottle_temperature = std::nullopt;
+        } else {
+            Logger::Print("No bottle temperature received, regulation disabled");
+            Intensity(0);
+            regulation_loop->Abort();
+            return;
+        }
+
+        Request_bottle_temperature();
+    };
+
+    regulation_loop = new rtos::Delayed_execution(regulation_lambda, 20000, false);
 }
 
 float Heater::Intensity(float requested_intensity){
@@ -46,6 +82,11 @@ bool Heater::Receive(CAN::Message message){
     return true;
 }
 
+bool Heater::Request_bottle_temperature(){
+    Application_message temp_request(Codes::Module::Sensor_module, Codes::Instance::Exclusive, Codes::Message_type::Bottle_temperature_request);
+    return Send_CAN_message(temp_request);
+}
+
 bool Heater::Receive(Application_message message){
     switch (message.Message_type()){
         case Codes::Message_type::Heater_set_intensity:{
@@ -74,6 +115,8 @@ bool Heater::Receive(Application_message message){
             }
             Logger::Print(emio::format("Heater target temperature set to: {:05.2f}˚C", set_target_temperature.temperature));
             target_temperature = set_target_temperature.temperature;
+            Request_bottle_temperature();
+            regulation_loop->Execute(2000);
             return true;
         }
 
@@ -105,8 +148,8 @@ bool Heater::Receive(Application_message message){
                 Logger::Print("Bottle_temperature_response interpretation failed");
                 return false;
             }
-            float temp = temperature_response.temperature;
-            Logger::Print(emio::format("Bottle temperature: {:05.2f}˚C", temp));
+            bottle_temperature = temperature_response.temperature;
+            Logger::Print(emio::format("Bottle temperature: {:05.2f}˚C", bottle_temperature.value_or(0.0)));
             return true;
         }
 

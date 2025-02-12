@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <algorithm>
+
 #include "can_bus/message_receiver.hpp"
 #include "can_bus/message_router.hpp"
 #include "components/component.hpp"
@@ -15,14 +17,16 @@
 #include "hal/adc/adc_channel.hpp"
 #include "hal/pio.hpp"
 #include "logger.hpp"
+#include "rtos/delayed_execution.hpp"
 
 #include "codes/codes.hpp"
-#include "codes/messages/heater/set_intensity.hpp"
-#include "codes/messages/heater/get_intensity_response.hpp"
-#include "codes/messages/heater/set_target_temperature.hpp"
-#include "codes/messages/heater/get_target_temperature_response.hpp"
-#include "codes/messages/heater/get_plate_temperature_response.hpp"
+#include "codes/messages/bottle_temperature/temperature_request.hpp"
 #include "codes/messages/bottle_temperature/temperature_response.hpp"
+#include "codes/messages/heater/get_intensity_response.hpp"
+#include "codes/messages/heater/get_plate_temperature_response.hpp"
+#include "codes/messages/heater/get_target_temperature_response.hpp"
+#include "codes/messages/heater/set_intensity.hpp"
+#include "codes/messages/heater/set_target_temperature.hpp"
 
 class Heater: public Component, public Message_receiver {
 private:
@@ -56,6 +60,16 @@ private:
      *          If not set, regulation is disabled
      */
     std::optional<float> target_temperature = std::nullopt;
+
+    /**
+     *  @brief Loop regulating intensity of heater based on temperature of bottle
+     */
+    rtos::Delayed_execution *regulation_loop;
+
+    /**
+     * @brief   temperature of bottle obtained from can bus message
+     */
+    std::optional<float> bottle_temperature = std::nullopt;
 
 public:
     /**
@@ -93,6 +107,9 @@ public:
      * @brief   Immediately turn off heater, set intensity to 0 and disable regulation (clear target temperature)
      */
     void Turn_off();
+
+private:
+    bool Request_bottle_temperature();
 
 protected:
 
