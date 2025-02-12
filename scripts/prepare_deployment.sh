@@ -41,7 +41,6 @@ build_bootloader(){
 rm -rf binaries
 mkdir -p binaries
 
-
 # Path to config file
 export KCONFIG_CONFIG=config/.config
 
@@ -94,3 +93,4 @@ zip -r ${archive_name} binaries
 zip -j ${archive_name} scripts/*.py scripts/Readme.md version.txt
 
 rm -f version.txt
+rm -rf binaries
