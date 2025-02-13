@@ -99,22 +99,26 @@ bool Mini_display_thread::Initialize_lvgl(){
 
 void Mini_display_thread::Initialize_ui(){
     // Create labels
-    labels.sid      = lv_label_create(lv_scr_act());
-    labels.serial   = lv_label_create(lv_scr_act());
-    labels.hostname = lv_label_create(lv_scr_act());
-    labels.ip       = lv_label_create(lv_scr_act());
+    labels.line_1      = lv_label_create(lv_scr_act());
+    labels.line_2   = lv_label_create(lv_scr_act());
+    labels.line_3 = lv_label_create(lv_scr_act());
+    labels.line_4       = lv_label_create(lv_scr_act());
 
     // Position labels
-    lv_obj_set_pos(labels.sid, 8, 0);
-    lv_obj_set_pos(labels.serial, 8, 16);
-    lv_obj_set_pos(labels.hostname, 8, 32);
-    lv_obj_set_pos(labels.ip, 8, 48);
+    lv_obj_set_pos(labels.line_1, 8, 0);
+    lv_obj_set_pos(labels.line_2, 8, 16);
+    lv_obj_set_pos(labels.line_3, 8, 32);
+    lv_obj_set_pos(labels.line_4, 8, 48);
+    lv_label_set_long_mode(labels.line_4, LV_LABEL_LONG_SCROLL);
+    lv_obj_set_width(labels.line_4, 116);
 
     // Set initial values
     Update_SID(0);
-    Update_serial(0);
-    Update_hostname("none");
     Update_ip({ 0, 0, 0, 0 });
+    Update_hostname("none");
+    Clear_custom_text();
+    Update_serial(0);
+    Update_temps();
 }
 
 void Mini_display_thread::Display_loop(){
@@ -137,19 +141,42 @@ void Mini_display_thread::Display_loop(){
 }
 
 void Mini_display_thread::Update_SID(uint16_t sid){
-    lv_label_set_text(labels.sid, emio::format("SID: 0x{:04x}", sid).c_str());
+    this->sid = sid;
+    Update_ID_line();
 }
 
 void Mini_display_thread::Update_serial(uint32_t serial){
-    lv_label_set_text(labels.serial, emio::format("Serial: {:d}", serial).c_str());
+    if(custom_text.empty()){
+        lv_label_set_text(labels.line_4, emio::format("Serial: {:d}", serial).c_str());
+    }
 }
 
 void Mini_display_thread::Update_hostname(std::string hostname){
-    std::string hostname_label = emio::format("Host: {}", hostname);
-    lv_label_set_text(labels.hostname, hostname_label.c_str());
+    this->hostname = hostname;
+    Update_ID_line();
 }
 
 void Mini_display_thread::Update_ip(std::array<uint8_t, 4> ip){
     std::string ip_label = emio::format("IP: {:d}.{:d}.{:d}.{:d}", ip[0], ip[1], ip[2], ip[3]);
-    lv_label_set_text(labels.ip, ip_label.c_str());
+    lv_label_set_text(labels.line_2, ip_label.c_str());
+}
+
+void Mini_display_thread::Print_custom_text(std::string text){
+    custom_text += text;
+    // Format to wider with to clear previous text
+    lv_label_set_text(labels.line_4, emio::format("{:20s}", custom_text).c_str());
+}
+
+void Mini_display_thread::Clear_custom_text(){
+    custom_text = "";
+    // Format to wider with to clear previous text
+    lv_label_set_text(labels.line_4, emio::format("{:20s}", custom_text).c_str());
+}
+
+void Mini_display_thread::Update_temps(){
+    lv_label_set_text(labels.line_3, emio::format("B{:04.1f}  P{:04.1f}  T{:04.1f}", bottle_temperature, plate_temperature, target_temperature).c_str());
+}
+
+void Mini_display_thread::Update_ID_line(){
+    lv_label_set_text(labels.line_1, emio::format("{:12s} 0x{:04x}", hostname, sid).c_str());
 }

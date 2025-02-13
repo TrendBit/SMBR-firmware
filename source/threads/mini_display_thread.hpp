@@ -54,10 +54,10 @@ private:
      * @brief   User interface labels
      */
     struct {
-        lv_obj_t* sid;
-        lv_obj_t* serial;
-        lv_obj_t* hostname;
-        lv_obj_t* ip;
+        lv_obj_t* line_1;
+        lv_obj_t* line_2;
+        lv_obj_t* line_3;
+        lv_obj_t* line_4;
     } labels;
 
     /**
@@ -70,6 +70,36 @@ private:
      */
     inline static Mini_display_thread* instance;
 
+    /**
+     * @brief   Custom text to display on the screen
+     */
+    std::string custom_text = "";
+
+    /**
+     * @brief   SID to display
+     */
+    uint16_t sid = 0x0000;
+
+    /**
+     * @brief   Hostname of device to display
+     */
+    std::string hostname = "none";
+
+    /**
+     * @brief   Target temperature to display
+     */
+    float target_temperature = 0.0f;
+
+    /**
+     * @brief   Heater plate temperature to display
+     */
+    float plate_temperature = 0.0f;
+
+    /**
+     * @brief   Bottle temperature to display
+     */
+    float bottle_temperature = 0.0f;
+
 public:
     /**
      * @brief Create display thread instance
@@ -77,7 +107,7 @@ public:
      * @param cycle_time Time between display updates in ms
      * @param name Thread name
      */
-    Mini_display_thread(uint32_t cycle_time = 200, std::string name = "Display");
+    Mini_display_thread(uint32_t cycle_time = 100, std::string name = "Display");
 
     /**
      * @brief Get singleton instance of the display thread
@@ -120,6 +150,44 @@ public:
      * @param ip Array containing the 4 octets of the IP address
      */
     void Update_ip(std::array<uint8_t, 4> ip);
+
+    /**
+     * @brief Update the display with custom text
+     *
+     * @param text Text to display
+     */
+    void Print_custom_text(std::string text);
+
+    /**
+     * @brief Clear the custom text from the display
+     */
+    void Clear_custom_text();
+
+    /**
+     * @brief   Update the display with the current temperatures
+     */
+    void Update_temps();
+
+    /**
+     * @brief   Set the target temperature of heater to display
+     *
+     * @param temperature   Target temperature of heater to display
+     */
+    void Set_target_temperature(float temperature) { target_temperature = temperature;}
+
+    /**
+     * @brief   Set the heater plate temperature to display
+     *
+     * @param temperature   Heater plate temperature to display
+     */
+    void Set_plate_temperature(float temperature) { plate_temperature = temperature;}
+
+    /**
+     * @brief   Set the bottle temperature to display
+     *
+     * @param temperature   Bottle temperature to display
+     */
+    void Set_bottle_temperature(float temperature) { bottle_temperature = temperature;}
 
 protected:
     /**
@@ -185,4 +253,9 @@ private:
      * @param area Area to round
      */
     static void Round_area(lv_disp_drv_t *drv, lv_area_t *area);
+
+    /**
+     * @brief   Update first line of display containing hostname and SID
+     */
+    void Update_ID_line();
 };
