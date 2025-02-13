@@ -74,4 +74,7 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Bottle_bottom_measured_temperature_request, Codes::Component::Bottle_temperature },
     { Codes::Message_type::Bottle_top_sensor_temperature_request,      Codes::Component::Bottle_temperature },
     { Codes::Message_type::Bottle_bottom_sensor_temperature_request,   Codes::Component::Bottle_temperature },
+    // Mini OLED display
+    { Codes::Message_type::Mini_OLED_clear_custom_text,                Codes::Component::Mini_OLED          },
+    { Codes::Message_type::Mini_OLED_print_custom_text,                Codes::Component::Mini_OLED          },
 };
