@@ -14,7 +14,7 @@ void Control_module::Setup_components(){
     Setup_aerator();
     Setup_mixer();
 
-    PWM_channel * case_fan = new PWM_channel(12, 100, 0.7, true);
+    PWM_channel * case_fan = new PWM_channel(12, 100, 1.0, true);
 }
 
 void Control_module::Setup_LEDs(){
