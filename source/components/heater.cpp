@@ -19,21 +19,26 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
             regulation_loop->Abort();
             return;
         } else {
-            regulation_loop->Execute(5000);
+            regulation_loop->Execute(10000);
         }
 
         if(bottle_temperature.has_value()){
             float current_intensity = Intensity();
-            float new_intensity;
-            if (bottle_temperature.value() < target_temperature.value()){
-                new_intensity = std::clamp(current_intensity + 0.1f, 0.0f, intensity_limit);
-                Intensity(new_intensity);
-            } else {
-                new_intensity = std::clamp(current_intensity - 0.1f, 0.0f, intensity_limit);
-                Intensity(new_intensity);
+            float temp_diff = target_temperature.value() - bottle_temperature.value();
+            float regulation_step = 0.1;
+
+            if (std::abs(temp_diff) < regulation_slow_band){
+                Logger::Print("Temperature difference in slow band, regulation step reduced");
+                regulation_step = 0.01;
             }
+
+            float new_intensity = std::clamp(current_intensity + (temp_diff > 0 ? regulation_step : -regulation_step),
+                                    -intensity_limit,  // Allow negative for cooling
+                                    intensity_limit);  // Positive for heating
+            Intensity(new_intensity);
+
             Logger::Print(emio::format("Current temp: {:03.1f}, target temp: {:03.1f}", bottle_temperature.value(), target_temperature.value()));
-            Logger::Print(emio::format("Heater intensity set to: {:03.1f}", new_intensity));
+            Logger::Print(emio::format("Heater intensity set to: {:04.2f}", new_intensity));
             bottle_temperature = std::nullopt;
         } else {
             Logger::Print("No bottle temperature received, regulation disabled");
@@ -48,19 +53,43 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
     regulation_loop = new rtos::Delayed_execution(regulation_lambda, 20000, false);
 }
 
+float Heater::Compensate_intensity(float requested_intensity) {
+    // Find interval in power curve
+    for (size_t i = 1; i < power_curve.size(); i++) {
+        if (power_curve[i].out >= requested_intensity) {
+            // Linear interpolation
+            float t = (requested_intensity - power_curve[i-1].out) /
+                     (power_curve[i].out - power_curve[i-1].out);
+            return power_curve[i-1].set +
+                   t * (power_curve[i].set - power_curve[i-1].set);
+        }
+    }
+    return requested_intensity;
+}
+
 float Heater::Intensity(float requested_intensity){
     // Reduce intensity of higher then maximal allowed
-    this->intensity = std::clamp(requested_intensity, -intensity_limit, intensity_limit);
+    intensity = std::clamp(requested_intensity, -intensity_limit, intensity_limit);
+
+    // Linearize power curve of heater to compensate nonlinearity of heater intensity
+    float compensated_intensity = Compensate_intensity(std::abs(intensity));
+
+    // Apply sign for heating/cooling
+    compensated_intensity = std::clamp(
+        std::copysign(compensated_intensity, requested_intensity),
+        -intensity_limit,
+        intensity_limit
+    );
 
     // Start heater fan if heater is in use
-    if(intensity != 0){
+    if(requested_intensity != 0){
         heater_fan->Set(true);
     } else {
         heater_fan->Set(false);
     }
 
     // Set intensity of heater
-    control_bridge->Speed(intensity);
+    control_bridge->Speed(compensated_intensity);
     return intensity;
 }
 

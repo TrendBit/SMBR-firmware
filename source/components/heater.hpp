@@ -31,14 +31,45 @@
 class Heater: public Component, public Message_receiver {
 private:
     /**
+     * @brief   Point in compensation curve of heater intensity
+     */
+    struct PowerPoint {
+        float set;
+        float out;
+    };
+
+    /**
+     * @brief Power curve of heater to compensate nonlinearity of heater intensity
+     */
+    static constexpr std::array<PowerPoint, 11> power_curve = {{
+        {0.0, 0.00},
+        {0.1, 0.05},
+        {0.2, 0.07},
+        {0.3, 0.08},
+        {0.4, 0.09},
+        {0.5, 0.11},
+        {0.6, 0.16},
+        {0.7, 0.28},
+        {0.8, 0.46},
+        {0.9, 0.67},
+        {1, 1.00}
+    }};
+
+    /**
      * @brief H-bridge for control of heater
      */
     DC_HBridge_PIO * control_bridge;
 
     /**
      * @brief Maximal intensity of heater limited by heat dissipation of driver
+     *        Higher intensity will not help to reach lower temperatures due to heat creapage though peltier
      */
-    const float intensity_limit = 0.8f;
+    const float intensity_limit = 0.7f;
+
+    /**
+     * @brief If temperature difference is lower then this value, regulation is slowdown to avoid oscillation
+     */
+    float regulation_slow_band = 1.0f;
 
     /**
      * @brief Current intensity of heater
@@ -109,6 +140,20 @@ public:
     void Turn_off();
 
 private:
+    /**
+     * @brief   Linearize power curve of heater to compensate nonlinearity of heater intensity
+     *
+     * @param requested_intensity   Requested intensity of heater
+     * @return float                Corresponding intensity of heater
+     */
+    float Compensate_intensity(float requested_intensity);
+
+    /**
+     * @brief  Sends request for bottle temperature used to regulate heater
+     *
+     * @return true     Request was sent
+     * @return false    Request was not sent
+     */
     bool Request_bottle_temperature();
 
 protected:
