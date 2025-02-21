@@ -44,7 +44,7 @@ add_definitions("-DCOMPILER_NAME=\"${COMPILER}gcc\"")
 add_executable(${TARGET} ${SOURCE_FILES} )
 
 target_compile_options(${TARGET} PRIVATE $<$<COMPILE_LANGUAGE:CXX>: -Wall -Wextra -Wno-volatile>)
-target_compile_definitions(${TARGET} PRIVATE PICO_CXX_DISABLE_ALLOCATION_OVERRIDES=1 PICO_NO_BINARY_INFO=1 PICO_STDIO_UART=0)
+target_compile_definitions(${TARGET} PRIVATE PICO_CXX_DISABLE_ALLOCATION_OVERRIDES=1 PICO_NO_BINARY_INFO=1 PICO_STDIO_UART=0 PICO_XOSC_STARTUP_DELAY_MULTIPLIER=32)
 
 target_include_directories(${TARGET} PUBLIC .)
 target_include_directories(${TARGET} PUBLIC codes/messages)
