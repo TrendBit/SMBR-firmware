@@ -17,6 +17,7 @@
 #include "hal/adc/adc_channel.hpp"
 #include "hal/pio.hpp"
 #include "logger.hpp"
+#include "rtos/repeated_execution.hpp"
 #include "rtos/delayed_execution.hpp"
 
 #include "codes/codes.hpp"
@@ -95,7 +96,7 @@ private:
     /**
      *  @brief Loop regulating intensity of heater based on temperature of bottle
      */
-    rtos::Delayed_execution *regulation_loop;
+    rtos::Repeated_execution *regulation_loop;
 
     /**
      * @brief   temperature of bottle obtained from can bus message

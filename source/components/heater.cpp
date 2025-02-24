@@ -16,10 +16,8 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
 
         if (!target_temperature.has_value()){
             Logger::Print("No target temperature set, regulation disabled");
-            regulation_loop->Abort();
+            regulation_loop->Disable();
             return;
-        } else {
-            regulation_loop->Execute(10000);
         }
 
         if(bottle_temperature.has_value()){
@@ -43,14 +41,13 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
         } else {
             Logger::Print("No bottle temperature received, regulation disabled");
             Intensity(0);
-            regulation_loop->Abort();
             return;
         }
 
         Request_bottle_temperature();
     };
 
-    regulation_loop = new rtos::Delayed_execution(regulation_lambda, 20000, false);
+    regulation_loop = new rtos::Repeated_execution(regulation_lambda, 20000, false);
 }
 
 float Heater::Compensate_intensity(float requested_intensity) {
@@ -145,7 +142,7 @@ bool Heater::Receive(Application_message message){
             Logger::Print(emio::format("Heater target temperature set to: {:05.2f}˚C", set_target_temperature.temperature));
             target_temperature = set_target_temperature.temperature;
             Request_bottle_temperature();
-            regulation_loop->Execute(2000);
+            regulation_loop->Enable();
             return true;
         }
 
