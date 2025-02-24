@@ -24,9 +24,7 @@ Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, uint32_t dat
           Send_CAN_message(target_temp_request);
           Send_CAN_message(plate_temp_request);
 
-          //lvgl_thread->);
-
-          update_data->Execute(data_update_rate_s * 1000);
+          Logger::Print("Update messages dispatched");
       };
 
     Message_router::Register_bypass(Codes::Message_type::Core_SID_response, Codes::Component::Mini_OLED);
@@ -37,7 +35,7 @@ Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, uint32_t dat
     Message_router::Register_bypass(Codes::Message_type::Heater_get_plate_temperature_response, Codes::Component::Mini_OLED);
     Message_router::Register_bypass(Codes::Message_type::Bottle_temperature_response, Codes::Component::Mini_OLED);
 
-    update_data = new rtos::Delayed_execution(update_data_lambda, data_update_rate_s * 1000, true);
+    update_data = new rtos::Repeated_execution(update_data_lambda, data_update_rate_s * 1000, true);
 }
 
 bool Mini_OLED::Receive(CAN::Message message){

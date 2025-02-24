@@ -11,6 +11,7 @@
 #include "can_bus/message_router.hpp"
 #include "components/component.hpp"
 #include "components/bottle_temperature.hpp"
+#include "rtos/repeated_execution.hpp"
 #include "rtos/delayed_execution.hpp"
 #include "logger.hpp"
 #include "threads/mini_display_thread.hpp"
@@ -53,7 +54,7 @@ public:
     /**
      * @brief  Repeatedly executed function which requests data from core module
      */
-    rtos::Delayed_execution *update_data;
+    rtos::Repeated_execution *update_data;
 
     /**
      * @brief   Pointer to temperature sensor of bottle which supplies temperature data for display
