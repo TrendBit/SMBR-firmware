@@ -1,6 +1,18 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.7 (sensor_module)
+- Add custom messages for mini-oled
+- Add regulation loop for heater based on sensor-module temperature reports
+  - Enabled by `heater/target_temperature`
+- Add bypass for message router so modules can receive messages addressed for other modules (temp receive)
+- Add onboard thermistor support for sensor module
+- Add control of case fan for control module
+- Add compensation of heater non-linear power output
+- Fix instability of sensor module when many temperature requests was received
+- Update logger to use DMA, which enables in production logging without much additional delay
+- Extend update script for automatic flashing
+
 # 0.6 (pico-sdk_2.1.0)
 - update pico-sdk and picotool to 2.1.0
 - add `out/` folder where output binaries are generated
