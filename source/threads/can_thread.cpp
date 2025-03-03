@@ -23,7 +23,7 @@ void CAN_thread::Run(){
             while(can_bus.Received_queue_size() > 0){
                 auto message_data = can_bus.Receive();
                 if (not message_data.has_value()) {
-                    Logger::Print("CAN message not found after RX IRQ");
+                    Logger::Print("CAN message not found after RX IRQ", Logger::Level::Error);
                 } else {
                     // Convert message from can2040 struct to CAN::Message
                     CAN::Message message = CAN::Message(&message_data.value());
@@ -31,9 +31,9 @@ void CAN_thread::Run(){
                 }
             }
         } else if (irq_type == CAN::Bus::IRQ_type::Error){  // Error occurred
-            Logger::Print("CAN Error IRQ");
+            Logger::Print("CAN Error IRQ", Logger::Level::Error);
         } else {
-            Logger::Print("CAN Unknown IRQ");   // Incorrect IRQ type evaluated
+            Logger::Print("CAN Unknown IRQ", Logger::Level::Error);   // Incorrect IRQ type evaluated
         }
     }
 };
@@ -41,20 +41,20 @@ void CAN_thread::Run(){
 uint CAN_thread::Send(CAN::Message const &message){
     if(tx_queue.empty()){
         if(can_bus.Transmit_available()){
-            Logger::Print("CAN available");
+            Logger::Print("CAN available", Logger::Level::Trace);
             if (can_bus.Transmit(message)){
-                Logger::Print("CAN message sent");
+                Logger::Print("CAN message sent", Logger::Level::Trace);
             } else {
-                Logger::Print("CAN message not sent");
+                Logger::Print("CAN message not sent", Logger::Level::Warning);
             }
         } else {
-            Logger::Print(emio::format("CAN not available, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()));
+            Logger::Print(emio::format("CAN not available, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()), Logger::Level::Notice);
             tx_queue.push(message);
         }
     } else {
-        Logger::Print(emio::format("CAN queue not empty, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()));
+        Logger::Print(emio::format("CAN queue not empty, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()), Logger::Level::Notice);
         if (tx_queue.full()) {
-            Logger::Print("CAN TX queue full, message dropped");
+            Logger::Print("CAN TX queue full, message dropped", Logger::Level::Warning);
             return 0;
         } else {
             tx_queue.push(message);
@@ -65,17 +65,17 @@ uint CAN_thread::Send(CAN::Message const &message){
 
 uint CAN_thread::Send(App_messages::Base_message &message){
     Application_message app_message(message);
-    Logger::Print(emio::format("Sending CAN message type: {}", Codes::to_string(app_message.Message_type())));
+    Logger::Print(emio::format("Sending CAN message type: {}", Codes::to_string(app_message.Message_type())), Logger::Level::Debug);
     return Send(app_message);
 }
 
 void CAN_thread::Receive(CAN::Message const &message){
     if(rx_queue.full()){
-        Logger::Print("CAN RX queue full, message dropped");
+        Logger::Print("CAN RX queue full, message dropped", Logger::Level::Warning);
         return;
     }
     rx_queue.push(message);
-    Logger::Print(emio::format("CAN message received, queue size: {}, available: {}", rx_queue.size(), rx_queue.available()));
+    Logger::Print(emio::format("CAN message received, queue size: {}, available: {}", rx_queue.size(), rx_queue.available()), Logger::Level::Trace);
 };
 
 uint8_t CAN_thread::Retransmit(){
@@ -84,13 +84,13 @@ uint8_t CAN_thread::Retransmit(){
         CAN::Message message = tx_queue.front();
         uint ret = can_bus.Transmit(message);
         if (not ret) {
-            Logger::Print(emio::format("Transmission failed"));
+            Logger::Print(emio::format("Transmission failed"), Logger::Level::Error);
             break;
         }
         tx_queue.pop();
         retransmitted++;
     }
-    Logger::Print(emio::format("CAN retransmitted: {}", retransmitted));
+    Logger::Print(emio::format("CAN retransmitted: {}", retransmitted), Logger::Level::Trace);
     return retransmitted;
 };
 

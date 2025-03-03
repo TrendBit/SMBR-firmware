@@ -10,7 +10,7 @@ Sensor_module::Sensor_module():
 }
 
 void Sensor_module::Setup_components(){
-    Logger::Print("Sensor module component setup");
+    Logger::Print("Sensor module component setup", Logger::Level::Debug);
     Setup_bottle_thermometers();
     Setup_Mini_OLED();
 }
@@ -21,12 +21,12 @@ float Sensor_module::Board_temperature(){
 }
 
 void Sensor_module::Setup_Mini_OLED(){
-    Logger::Print("Setting up Mini OLED");
+    Logger::Print("Setting up Mini OLED", Logger::Level::Debug);
     mini_oled = new Mini_OLED(bottle_temperature, 5);
 }
 
 void Sensor_module::Setup_bottle_thermometers(){
-    Logger::Print("Setting up bottle thermometers");
+    Logger::Print("Setting up bottle thermometers", Logger::Level::Debug);
 
     TLA2024 *adc = new TLA2024(*i2c, 0x4b);
 

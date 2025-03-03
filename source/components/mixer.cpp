@@ -25,18 +25,18 @@ bool Mixer::Receive(Application_message message){
             App_messages::Mixer::Set_speed set_speed;
 
             if (!set_speed.Interpret_data(message.data)) {
-                Logger::Print("Mixer_set_speed interpretation failed");
+                Logger::Print("Mixer_set_speed interpretation failed", Logger::Level::Error);
                 return false;
             }
 
-            Logger::Print(emio::format("Mixer speed set to: {:03.1f}", set_speed.speed));
+            Logger::Print(emio::format("Mixer speed set to: {:03.1f}", set_speed.speed), Logger::Level::Debug);
             Speed(set_speed.speed);
             return true;
         }
 
         case Codes::Message_type::Mixer_get_speed_request: {
             App_messages::Mixer::Get_speed_response speed_response(Speed());
-            Logger::Print(emio::format("Mixer speed requested, response: {:03.1f}", speed_response.speed));
+            Logger::Print(emio::format("Mixer speed requested, response: {:03.1f}", speed_response.speed), Logger::Level::Debug);
             Send_CAN_message(speed_response);
             return true;
         }
@@ -45,18 +45,18 @@ bool Mixer::Receive(Application_message message){
             App_messages::Mixer::Set_rpm set_rpm;
 
             if (!set_rpm.Interpret_data(message.data)) {
-                Logger::Print("Mixer_set_rpm interpretation failed");
+                Logger::Print("Mixer_set_rpm interpretation failed", Logger::Level::Error);
                 return false;
             }
 
-            Logger::Print(emio::format("Mixer RPM set to: {:04.1f}", set_rpm.rpm));
+            Logger::Print(emio::format("Mixer RPM set to: {:04.1f}", set_rpm.rpm), Logger::Level::Debug);
             RPM(set_rpm.rpm);
             return true;
         }
 
         case Codes::Message_type::Mixer_get_rpm_request: {
             App_messages::Mixer::Get_rpm_response rpm_response(RPM());
-            Logger::Print(emio::format("Mixer RPM requested, response: {:03.1f}", rpm_response.rpm));
+            Logger::Print(emio::format("Mixer RPM requested, response: {:03.1f}", rpm_response.rpm), Logger::Level::Debug);
             Send_CAN_message(rpm_response);
             return true;
         }
@@ -65,17 +65,17 @@ bool Mixer::Receive(Application_message message){
             App_messages::Mixer::Stir stir_message;
 
             if (!stir_message.Interpret_data(message.data)) {
-                Logger::Print("Mixer_stir interpretation failed");
+                Logger::Print("Mixer_stir interpretation failed", Logger::Level::Error);
                 return false;
             }
 
-            Logger::Print(emio::format("Mixer stirring, rpm: {:03.1f}, time: {:04.1f}s", stir_message.rpm, stir_message.time));
+            Logger::Print(emio::format("Mixer stirring, rpm: {:03.1f}, time: {:04.1f}s", stir_message.rpm, stir_message.time), Logger::Level::Debug);
             Stir(stir_message.rpm, stir_message.time);
             return true;
         }
 
         case Codes::Message_type::Mixer_stop: {
-            Logger::Print("Mixer stop requested");
+            Logger::Print("Mixer stop requested", Logger::Level::Debug);
             Stop();
             return true;
         }

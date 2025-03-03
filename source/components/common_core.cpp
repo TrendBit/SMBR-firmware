@@ -52,12 +52,12 @@ bool Common_core::Receive(Application_message message){
 bool Common_core::Ping(Application_message message){
     App_messages::Common::Ping_request ping_request;
     if (!ping_request.Interpret_data(message.data)){
-        Logger::Print("Ping_request interpretation failed");
+        Logger::Print("Ping_request interpretation failed", Logger::Level::Error);
         return false;
     }
 
     uint8_t sequence_number = ping_request.sequence_number;
-    Logger::Print(emio::format("Ping request, sequence number: {}", sequence_number));
+    Logger::Print(emio::format("Ping request, sequence number: {}", sequence_number), Logger::Level::Debug);
     App_messages::Common::Ping_response ping_response(sequence_number);
     Send_CAN_message(ping_response);
     return true;
@@ -65,7 +65,7 @@ bool Common_core::Ping(Application_message message){
 
 bool Common_core::Core_temperature(){
     float temp = mcu_internal_temp->Temperature();
-    Logger::Print(emio::format("MCU_temp: {:05.2f}˚C", temp));
+    Logger::Print(emio::format("MCU_temp: {:05.2f}˚C", temp), Logger::Level::Debug);
     auto temp_response = App_messages::Common::Core_temp_response(temp);
 
     Send_CAN_message(temp_response);
@@ -78,7 +78,7 @@ bool Common_core::Board_temperature(){
         return false;
     }
     float temp = module_instance->Board_temperature();
-    Logger::Print(emio::format("Board temperature: {:05.2f}˚C", temp));
+    Logger::Print(emio::format("Board temperature: {:05.2f}˚C", temp), Logger::Level::Debug);
     auto temp_response = App_messages::Common::Board_temp_response(temp);
     Send_CAN_message(temp_response);
     return true;
@@ -87,14 +87,14 @@ bool Common_core::Board_temperature(){
 bool Common_core::Probe_modules(){
     auto uid = UID();
     auto probe_response = App_messages::Common::Probe_modules_response(uid);
-    Logger::Print(emio::format("UID: {:02x} {:02x} {:02x} {:02x} {:02x} {:02x}", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]));
+    Logger::Print(emio::format("UID: {:02x} {:02x} {:02x} {:02x} {:02x} {:02x}", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]), Logger::Level::Debug);
     Send_CAN_message(probe_response);
     return true;
 }
 
 bool Common_core::Core_load(){
     float load = MCU_core_utilization();
-    Logger::Print(emio::format("MCU load: {:05.2f}%", load));
+    Logger::Print(emio::format("MCU load: {:05.2f}%", load), Logger::Level::Debug);
     auto load_response = App_messages::Common::Core_load_response(load);
     Send_CAN_message(load_response);
     return true;
@@ -129,7 +129,7 @@ float Common_core::MCU_core_utilization(){
     // Calculate the CPU load
     float cpuLoad = 100.0f * (1.0f - ((float)task_status.ulRunTimeCounter / (float)total_runtime));
 
-    Logger::Print(emio::format("CPU load: {:05.2f}%", cpuLoad));
+    Logger::Print(emio::format("CPU load: {:05.2f}%", cpuLoad), Logger::Level::Debug);
 
     return cpuLoad;
 }

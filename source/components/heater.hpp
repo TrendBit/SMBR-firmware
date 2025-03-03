@@ -157,6 +157,12 @@ private:
      */
     bool Request_bottle_temperature();
 
+    /**
+     * @brief   Main loop of regulation of heater intensity based on bottle temperature
+     *          Executed from Repeated_execution lambda
+     */
+    void Regulation_loop();
+
 protected:
 
     /**

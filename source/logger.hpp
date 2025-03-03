@@ -24,6 +24,17 @@
  *          Message of logger is prefixed with timestamp with ms precision
  */
 class Logger{
+public:
+    enum class Level {
+        Trace,
+        Debug,
+        Notice,
+        Warning,
+        Error,
+        Critical
+    };
+
+
 private:
     /**
      * @brief USb interface id which is used for printing to USB
@@ -39,11 +50,20 @@ private:
 
     inline static std::string buffer = "";
 
+    inline static Level current_log_level = Level::Trace;
+
 public:
     /**
-     * @brief Construct a new Logger object
+     * @brief Construct a new Logger object with default Notice level
      */
-    Logger() = default;
+    Logger(){ Logger(Level::Notice); };
+
+    /**
+     * @brief Construct a new Logger object with defined level
+     *
+     * @param level Messages with lower level than this will not be printed
+     */
+    explicit Logger(Level level);
 
     /**
      * @brief   Initialize uart peripheral for logging
@@ -65,16 +85,54 @@ public:
      * @brief Print message to UART and USB with timestamp
      *
      * @param message   Message which will be printed
+     * @param level     Level of message
      */
-    static void Print(std::string message);
+    static void Print(std::string message, Level level = Level::Notice);
 
     /**
      * @brief Print message to UART and USB with color and timestamp
      *
      * @param message   Message which will be printed
      * @param colorizer Function which will colorize message
+     * @param level     Level of message
      */
-    static void Print(std::string message, std::function<std::string(const std::string&)> colorizer);
+    static void Print(std::string message, std::function<std::string(const std::string&)> colorizer, Level level = Level::Notice);
+
+    /**
+     * @brief Print trace level message
+     * @param message Message to print
+     */
+    static void Trace(std::string message) { Print(message, Level::Trace); }
+
+    /**
+     * @brief Print debug level message
+     * @param message Message to print
+     */
+    static void Debug(std::string message) { Print(message, Level::Debug); }
+
+    /**
+     * @brief Print notice level message
+     * @param message Message to print
+     */
+    static void Notice(std::string message) { Print(message, Level::Notice); }
+
+    /**
+     * @brief Print warning level message
+     * @param message Message to print
+     */
+    static void Warning(std::string message) { Print(message, Level::Warning); }
+
+    /**
+     * @brief Print error level message
+     * @param message Message to print
+     */
+    static void Error(std::string message) { Print(message, Level::Error); }
+
+    /**
+     * @brief Print critical level message
+     * @param message Message to print
+     */
+    static void Critical(std::string message) { Print(message, Level::Critical); }
 
     /**
      * @brief   Print message into UART and USB without any formatting or timestamp

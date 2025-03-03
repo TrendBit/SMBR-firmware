@@ -1,5 +1,9 @@
 #include "logger.hpp"
 
+Logger::Logger(Level level){
+    current_log_level = level;
+}
+
 void Logger::Init_UART(uart_inst_t * uart_instance, uint tx_gpio, uint rx_gpio, uint baudrate)
 {
     Logger::uart_instance = uart_instance;
@@ -29,15 +33,35 @@ void Logger::Init_USB(uint usb_interface_id)
     Logger::usb_interface_id = usb_interface_id;
 }
 
-void Logger::Print(std::string message){
-    std::string text = Timestamp() + message + "\r\n";
+void Logger::Print(std::string message, Level level){
+    // Skip if message level is below current log level
+    if (level < current_log_level) {
+        return;
+    }
+
+    std::string prefix;
+    switch (level) {
+        case Level::Trace:    prefix = "TRC "; break;
+        case Level::Debug:    prefix = "DBG "; break;
+        case Level::Notice:   prefix = "NOT "; break;
+        case Level::Warning:  prefix = "WAR "; break;
+        case Level::Error:    prefix = "ERR "; break;
+        case Level::Critical: prefix = "CRT "; break;
+    }
+
+    std::string text = prefix + Timestamp() + message + "\r\n";
     Print_to_USB(text);
     Print_to_UART(text);
 }
 
-void Logger::Print(std::string message, std::function<std::string(const std::string&)> colorizer){
+void Logger::Print(std::string message, std::function<std::string(const std::string&)> colorizer, Level level){
+    // Skip if message level is below current log level
+    if (level < current_log_level) {
+        return;
+    }
+
     message = colorizer(message);
-    Print(message);
+    Print(message, level);
 }
 
 void Logger::Print_raw(std::string message){
