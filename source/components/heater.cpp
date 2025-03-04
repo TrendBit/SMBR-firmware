@@ -13,7 +13,7 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
     // Register messages to received for regulator
     Message_router::Register_bypass(Codes::Message_type::Bottle_temperature_response, Codes::Component::Bottle_heater);
 
-    // Prepare regulation loop, do not start iz until target temperature is set
+    // Prepare regulation loop, do not start it until target temperature is set
     auto regulation_lambda = [this](){ this->Regulation_loop(); };
     regulation_loop = new rtos::Repeated_execution(regulation_lambda, 5000, false);
 }
@@ -53,8 +53,8 @@ void Heater::Regulation_loop() {
         // Calculate new intensity
         float new_intensity = std::clamp(
             current_intensity + step_size,
-            -intensity_limit,  // Allow negative for cooling
-            intensity_limit    // Positive for heating
+            -1.0f,  // Allow negative for cooling
+            1.0f    // Positive for heating
         );
 
         // Apply new intensity
@@ -91,18 +91,20 @@ float Heater::Compensate_intensity(float requested_intensity) {
 }
 
 float Heater::Intensity(float requested_intensity){
-    // Reduce intensity of higher then maximal allowed
-    intensity = std::clamp(requested_intensity, -intensity_limit, intensity_limit);
+    // Store the original requested intensity (to return at the end)
+    intensity = requested_intensity;
+
+    float scaling_factor = intensity_limit / std::abs(requested_intensity);
+
+    float scaled_intensity = requested_intensity * scaling_factor;
 
     // Linearize power curve of heater to compensate nonlinearity of heater intensity
     float compensated_intensity = Compensate_intensity(std::abs(intensity));
 
     // Apply sign for heating/cooling
-    compensated_intensity = std::clamp(
-        std::copysign(compensated_intensity, requested_intensity),
-        -intensity_limit,
-        intensity_limit
-    );
+    compensated_intensity = std::copysign(compensated_intensity, intensity);
+
+    Logger::Print(emio::format("Heater requested: {:03.1f}, scaled: {:03.1f}, compensated: {:03.1f} ", requested_intensity, scaled_intensity, compensated_intensity), Logger::Level::Notice);
 
     // Start heater fan if heater is in use
     if(requested_intensity != 0){

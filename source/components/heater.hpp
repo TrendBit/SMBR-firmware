@@ -72,7 +72,7 @@ private:
      */
     float p_gain = 0.25f;
 
-        /**
+    /**
      * @brief Integral gain of regulation loop
      */
     float i_gain = 0.01f;
@@ -96,7 +96,6 @@ private:
      * @brief Current intensity of heater
      */
     float intensity = 0.0;
-
 
     /**
      * @brief   Thermistor for temperature measurement of heatspreader of heater
