@@ -68,14 +68,35 @@ private:
     const float intensity_limit = 0.7f;
 
     /**
-     * @brief If temperature difference is lower then this value, regulation is slowdown to avoid oscillation
+     * @brief  Proportional gain of regulation loop
      */
-    float regulation_slow_band = 1.0f;
+    float p_gain = 0.25f;
+
+        /**
+     * @brief Integral gain of regulation loop
+     */
+    float i_gain = 0.01f;
+
+    /**
+     * @brief Accumulated integral error for I component of PI controller
+     */
+    float integral_error = 0.0f;
+
+    /**
+     * @brief Anti-windup limit to prevent integral term from growing too large
+     */
+    float integral_limit = 10.0f;
+
+    /**
+     * @brief Maximal step size which can be done in one iteration of regulation loop
+     */
+    float regulation_step = 0.05f;
 
     /**
      * @brief Current intensity of heater
      */
     float intensity = 0.0;
+
 
     /**
      * @brief   Thermistor for temperature measurement of heatspreader of heater

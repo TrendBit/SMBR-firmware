@@ -15,38 +15,60 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
 
     // Prepare regulation loop, do not start iz until target temperature is set
     auto regulation_lambda = [this](){ this->Regulation_loop(); };
-    regulation_loop = new rtos::Repeated_execution(regulation_lambda, 20000, false);
+    regulation_loop = new rtos::Repeated_execution(regulation_lambda, 5000, false);
 }
 
-void Heater::Regulation_loop(){
-    Logger::Print("Regulating heater intensity");
+void Heater::Regulation_loop() {
+    Logger::Print("Regulating heater intensity", Logger::Level::Trace);
 
-    if (!target_temperature.has_value()){
-        Logger::Print("No target temperature set, regulation disabled");
+    if (!target_temperature.has_value()) {
+        Logger::Print("No target temperature set, regulation disabled", Logger::Level::Notice);
         regulation_loop->Disable();
+        integral_error = 0.0f;  // Reset integral when regulation is disabled
         return;
     }
 
-    if(bottle_temperature.has_value()){
+    if(bottle_temperature.has_value()) {
         float current_intensity = Intensity();
         float temp_diff = target_temperature.value() - bottle_temperature.value();
-        float regulation_step = 0.1;
 
-        if (std::abs(temp_diff) < regulation_slow_band){
-            Logger::Print("Temperature difference in slow band, regulation step reduced");
-            regulation_step = 0.01;
+        // Update integral term (with anti-windup)
+        if (std::abs(current_intensity) < intensity_limit) {
+            integral_error += temp_diff;
+            // Apply anti-windup by limiting the integral error
+            integral_error = std::clamp(integral_error, -integral_limit, integral_limit);
         }
 
-        float new_intensity = std::clamp(current_intensity + (temp_diff > 0 ? regulation_step : -regulation_step),
-                                -intensity_limit,  // Allow negative for cooling
-                                intensity_limit);  // Positive for heating
+        // Calculate P and I components
+        float p_component = temp_diff * p_gain;
+        float i_component = integral_error * i_gain;
+
+        // Calculate desired intensity from P+I
+        float desired_intensity = std::clamp(p_component + i_component, -1.0f, 1.0f);
+
+        // Limit the size of the step
+        float change = desired_intensity - current_intensity;
+        float step_size = std::clamp(change, -regulation_step, regulation_step);
+
+        // Calculate new intensity
+        float new_intensity = std::clamp(
+            current_intensity + step_size,
+            -intensity_limit,  // Allow negative for cooling
+            intensity_limit    // Positive for heating
+        );
+
+        // Apply new intensity
         Intensity(new_intensity);
 
-        Logger::Print(emio::format("Current temp: {:03.1f}, target temp: {:03.1f}", bottle_temperature.value(), target_temperature.value()));
-        Logger::Print(emio::format("Heater intensity set to: {:04.2f}", new_intensity));
+        // Enhanced logging with P and I component details
+        Logger::Print(emio::format("Current temp: {:03.1f}, target temp: {:03.1f}, diff: {:+03.1f}",
+                     bottle_temperature.value(), target_temperature.value(), temp_diff), Logger::Level::Notice);
+        Logger::Print(emio::format("PI-control: P={:+04.2f}, I={:+04.2f}, desired={:+04.2f}, step={:+04.2f}, new={:04.2f}",
+                     p_component, i_component, desired_intensity, step_size, new_intensity), Logger::Level::Notice);
+
         bottle_temperature = std::nullopt;
     } else {
-        Logger::Print("No bottle temperature received, regulation disabled");
+        Logger::Print("No bottle temperature received, regulation disabled", Logger::Level::Warning);
         Intensity(0);
         return;
     }
