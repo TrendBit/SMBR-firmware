@@ -6,7 +6,7 @@ int main(){
     timer_hw->dbgpause = 0; // Required for SWD debug otherwise timers are alway zero during debug
 
     #ifdef CONFIG_LOGGER
-        Logger(Logger::Level::Debug);
+        Logger(Logger::Level::Debug, Logger::Color_mode::Prefix);
         Logger::Init_UART(uart0, 0, 1, 961200);
         Logger::Print_raw("\r\n");
         Logger::Print("Logger UART Initialized", Logger::Level::Notice);
@@ -14,7 +14,6 @@ int main(){
 
     new USB_thread();
     new CLI_service();
-
 
     #ifdef CONFIG_CONTROL_MODULE
         new Control_module();

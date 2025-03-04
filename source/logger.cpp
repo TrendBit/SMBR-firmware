@@ -1,7 +1,8 @@
 #include "logger.hpp"
 
-Logger::Logger(Level level){
+Logger::Logger(Level level, Color_mode color_mode){
     current_log_level = level;
+    Logger::color_mode = color_mode;
 }
 
 void Logger::Init_UART(uart_inst_t * uart_instance, uint tx_gpio, uint rx_gpio, uint baudrate)
@@ -34,28 +35,38 @@ void Logger::Init_USB(uint usb_interface_id)
 }
 
 void Logger::Print(std::string message, Level level){
-    // Skip if message level is below current log level
     if (level < current_log_level) {
         return;
     }
 
-    std::string prefix;
-    switch (level) {
-        case Level::Trace:    prefix = "TRC "; break;
-        case Level::Debug:    prefix = "DBG "; break;
-        case Level::Notice:   prefix = "NOT "; break;
-        case Level::Warning:  prefix = "WAR "; break;
-        case Level::Error:    prefix = "ERR "; break;
-        case Level::Critical: prefix = "CRT "; break;
+    const std::string& color = level_colors.at(level);
+    const std::string& prefix = level_prefixes.at(level);
+
+    std::string text;
+    switch (color_mode) {
+        case Color_mode::None:
+            text = prefix + Timestamp() + message;
+            break;
+        case Color_mode::Prefix:
+            text = color + prefix + color_reset + Timestamp() + message;
+            break;
+        case Color_mode::Timestamp:
+            text = color + Timestamp() + color_reset + message;
+            break;
+        case Color_mode::Text:
+            text = Timestamp() + color + message + color_reset;
+            break;
+        case Color_mode::Full:
+            text = color + prefix + Timestamp() + message + color_reset;
+            break;
     }
 
-    std::string text = prefix + Timestamp() + message + "\r\n";
+    text += "\r\n";
     Print_to_USB(text);
     Print_to_UART(text);
 }
 
 void Logger::Print(std::string message, std::function<std::string(const std::string&)> colorizer, Level level){
-    // Skip if message level is below current log level
     if (level < current_log_level) {
         return;
     }

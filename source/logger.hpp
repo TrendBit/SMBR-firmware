@@ -9,6 +9,7 @@
 
 #include <string>
 #include <functional>
+#include <map>
 
 #include "tusb.h"
 #include "emio/emio.hpp"
@@ -25,6 +26,9 @@
  */
 class Logger{
 public:
+    /**
+     * @brief   Severity level of messages
+     */
     enum class Level {
         Trace,
         Debug,
@@ -34,6 +38,16 @@ public:
         Critical
     };
 
+    /**
+     * @brief   Output color mode of logger
+     */
+    enum class Color_mode {
+        None,       // No colors
+        Prefix,     // Only level prefix is colored
+        Timestamp,  // Without prefix with colorized timestamp
+        Text,       // Without prefix with message colored
+        Full        // Entire message is colored
+    };
 
 private:
     /**
@@ -46,24 +60,63 @@ private:
      */
     inline static uart_inst_t * uart_instance = nullptr;
 
+    /**
+     * @brief   DMA channel which is used for printing to UART
+     */
     inline static int dma_channel = 1;
 
+    /**
+     * @brief   Buffer for storing messages before printing via DMA
+     */
     inline static std::string buffer = "";
 
+    /**
+     * @brief   Current log level, messages with lower level than this will not be printed
+     */
     inline static Level current_log_level = Level::Trace;
 
-public:
     /**
-     * @brief Construct a new Logger object with default Notice level
+     * @brief   Current color mode of logger
      */
-    Logger(){ Logger(Level::Notice); };
+    inline static Color_mode color_mode = Color_mode::Full;
+
+    /**
+     * @brief   Color code reset for terminal
+     */
+    inline const static std::string color_reset = "\033[0m";
+
+    /**
+     * @brief   Map of colors for each level
+     */
+    const static inline std::map<Level, std::string> level_colors = {
+        {Level::Trace,    "\033[37m"},
+        {Level::Debug,    "\033[34m"},
+        {Level::Notice,   "\033[32m"},
+        {Level::Warning,  "\033[33m"},
+        {Level::Error,    "\033[31m"},
+        {Level::Critical, "\033[35m"}
+    };
+
+    /**
+     * @brief   Map of prefixes for each level
+     */
+    const static inline std::map<Level, std::string> level_prefixes = {
+        {Level::Trace,    "TRC "},
+        {Level::Debug,    "DBG "},
+        {Level::Notice,   "NOT "},
+        {Level::Warning,  "WAR "},
+        {Level::Error,    "ERR "},
+        {Level::Critical, "CRT "}
+    };
+
+public:
 
     /**
      * @brief Construct a new Logger object with defined level
      *
      * @param level Messages with lower level than this will not be printed
      */
-    explicit Logger(Level level);
+    explicit Logger(Level level = Level::Notice, Color_mode color_mode = Color_mode::None);
 
     /**
      * @brief   Initialize uart peripheral for logging
