@@ -16,6 +16,7 @@
 #include "components/adc/TLA2024_channel.hpp"
 #include "components/thermometers/thermopile.hpp"
 #include "components/bottle_temperature.hpp"
+#include "components/fluorometer.hpp"
 
 /**
  * @brief Sensor module in measuring compartment of device, enables:
@@ -53,6 +54,11 @@ private:
      */
     Thermistor * const ntc_thermistors;
 
+    /**
+     * @brief  Fluorometer components used for OJIP measurements
+     */
+    Fluorometer * fluorometer;
+
 public:
     /**
      * @brief Construct a new Sensor_module object, calls constructor of Base_module with type of module
@@ -82,4 +88,9 @@ private:
      * @brief   Setup and configure thermopile sensors for measuring temperature of bottle
      */
     void Setup_bottle_thermometers();
+
+    /**
+     * @brief   Setup fluorometer for OJIP measurements
+     */
+    void Setup_fluorometer();
 };

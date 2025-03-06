@@ -13,6 +13,7 @@ void Sensor_module::Setup_components(){
     Logger::Print("Sensor module component setup", Logger::Level::Debug);
     Setup_bottle_thermometers();
     Setup_Mini_OLED();
+    Setup_fluorometer();
 }
 
 float Sensor_module::Board_temperature(){
@@ -39,4 +40,12 @@ void Sensor_module::Setup_bottle_thermometers(){
     Thermopile *thermopile_bottom = new Thermopile(adc_ch3, adc_ch2, 0.95);
 
     bottle_temperature = new Bottle_temperature(thermopile_top, thermopile_bottom);
+}
+
+void Sensor_module::Setup_fluorometer(){
+    Logger::Print("Setting up fluorometer", Logger::Level::Debug);
+    auto led_pwm = new PWM_channel(23, 1000, 0.0, true);
+    uint detector_gain_selector_pin = 21;
+
+    fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors);
 }
