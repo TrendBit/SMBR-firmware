@@ -68,6 +68,11 @@ private:
     const float intensity_limit = 0.7f;
 
     /**
+     *  @brief Maximal safe temperature of heater plate, above this value, power output will start to scale down
+     */
+    const float plate_max_temperature = 60.0f;
+
+    /**
      * @brief  Proportional gain of regulation loop
      */
     float p_gain = 0.25f;

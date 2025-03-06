@@ -30,7 +30,17 @@ void Heater::Regulation_loop() {
 
     if(bottle_temperature.has_value()) {
         float current_intensity = Intensity();
-        float temp_diff = target_temperature.value() - bottle_temperature.value();
+
+        float temp_diff;
+
+        // Limit intensity based on max temp of heater plate
+        float plate_current_temperature = Temperature();
+        if (plate_current_temperature > plate_max_temperature) {
+            Logger::Print("Heater plate temperature exceeded, limiting power output", Logger::Level::Warning);
+            temp_diff = plate_max_temperature - plate_current_temperature;
+        } else {
+            temp_diff = target_temperature.value() - bottle_temperature.value();
+        }
 
         // Update integral term (with anti-windup)
         if (std::abs(current_intensity) < intensity_limit) {
