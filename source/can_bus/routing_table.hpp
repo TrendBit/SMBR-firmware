@@ -77,4 +77,7 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     // Mini OLED display
     { Codes::Message_type::Mini_OLED_clear_custom_text,                Codes::Component::Mini_OLED          },
     { Codes::Message_type::Mini_OLED_print_custom_text,                Codes::Component::Mini_OLED          },
+    // Fluorometer
+    { Codes::Message_type::Fluorometer_sample_request,                 Codes::Component::Fluorometer        },
+    { Codes::Message_type::Fluorometer_emitor_temperature_request,     Codes::Component::Fluorometer        },
 };
