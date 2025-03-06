@@ -9,7 +9,6 @@ Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, uint32_t dat
 {
 
     auto update_data_lambda = [this, data_update_rate_s](){
-          Logger::Print("Updating data");
           Application_message sid_request(Codes::Module::Core_module, Codes::Instance::Exclusive, Codes::Message_type::Core_SID_request);
           Application_message ip_request(Codes::Module::Core_module, Codes::Instance::Exclusive, Codes::Message_type::Core_IP_request);
           Application_message hostname_request(Codes::Module::Core_module, Codes::Instance::Exclusive, Codes::Message_type::Core_hostname_request);
