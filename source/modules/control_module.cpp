@@ -8,13 +8,14 @@ Control_module::Control_module():
 }
 
 void Control_module::Setup_components(){
+
+    PWM_channel * case_fan = new PWM_channel(12, 100, 1.0, true);
+
     Setup_LEDs();
     Setup_heater();
     Setup_cuvette_pump();
     Setup_aerator();
     Setup_mixer();
-
-    PWM_channel * case_fan = new PWM_channel(12, 100, 1.0, true);
 }
 
 void Control_module::Setup_LEDs(){
@@ -67,8 +68,9 @@ void Control_module::Setup_aerator(){
 
 void Control_module::Setup_mixer(){
     Logger::Print("Mixer initialization", Logger::Level::Debug);
-    auto mixer_tacho = new RPM_counter_PIO(PIO_machine(pio0,1),7, 100000.0,0.1,2);
-    mixer = new Mixer(13, mixer_tacho, 100.0, 6000.0, 0.1);
+    auto mixer_tacho = new RPM_counter_PIO(PIO_machine(pio0,1),7, 10000.0,100,2);
+    mixer = new Mixer(13, mixer_tacho, 2500.0, 6000.0, 0.0);
+    // mixer->RPM(500);
 }
 
 float Control_module::Board_temperature(){
