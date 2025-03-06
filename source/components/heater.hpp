@@ -85,7 +85,7 @@ private:
     /**
      * @brief Anti-windup limit to prevent integral term from growing too large
      */
-    float integral_limit = 10.0f;
+    float integral_limit = 15.0f;
 
     /**
      * @brief Maximal step size which can be done in one iteration of regulation loop

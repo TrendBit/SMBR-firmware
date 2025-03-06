@@ -94,9 +94,7 @@ float Heater::Intensity(float requested_intensity){
     // Store the original requested intensity (to return at the end)
     intensity = requested_intensity;
 
-    float scaling_factor = intensity_limit / std::abs(requested_intensity);
-
-    float scaled_intensity = requested_intensity * scaling_factor;
+    float scaled_intensity = requested_intensity * intensity_limit;
 
     // Linearize power curve of heater to compensate nonlinearity of heater intensity
     float compensated_intensity = Compensate_intensity(std::abs(intensity));
