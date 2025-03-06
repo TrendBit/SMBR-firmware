@@ -12,6 +12,31 @@ Mixer::Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float max_rpm
     };
 
     mixer_stopper = new rtos::Delayed_execution(stopper_lamda);
+
+    // Prepare regulation loop, do not start it until target temperature is set
+    auto regulation_lambda = [this](){ this->Regulation_loop(); };
+    regulation_loop = new rtos::Repeated_execution(regulation_lambda, 500, false);
+}
+
+void Mixer::Regulation_loop(){
+    Logger::Print("Mixer regulation loop", Logger::Level::Trace);
+
+    float current_rpm = RPM();
+
+    int target_error = static_cast<int>(target_rpm - current_rpm);
+
+    float current_speed = Speed();
+
+    float speed_adjustment = target_error * p_gain / max_rpm;
+
+    float new_speed = current_speed + speed_adjustment;
+
+    new_speed = std::clamp(new_speed, 0.0f, 1.0f);
+
+    Speed(new_speed);
+
+    // Log detailed information
+    Logger::Print(emio::format("Target={:4.0f}, Current={:4.0f}, Error={:4d}, Previous={:.3f}, Adjustment={:.3f}, New={:.3f}", target_rpm, current_rpm, target_error, current_speed, speed_adjustment, new_speed), Logger::Level::Debug);
 }
 
 bool Mixer::Receive(CAN::Message message){
@@ -105,10 +130,13 @@ float Mixer::Speed(){
 }
 
 float Mixer::RPM(float rpm){
-    float clamped_rpm = std::clamp(rpm, 0.0f, max_rpm);
-    float speed = clamped_rpm / max_rpm;
+    target_rpm = rpm;
 
-    return Speed(speed);
+    float startup_speed = 0.2;
+
+    regulation_loop->Enable();
+
+    return Speed(startup_speed);
 }
 
 void Mixer::Stir(float rpm, float time_s){
@@ -117,7 +145,9 @@ void Mixer::Stir(float rpm, float time_s){
 }
 
 void Mixer::Stop(){
+    target_rpm = 0;
     mixer_stopper->Abort();
+    regulation_loop->Disable();
     Off();
 }
 

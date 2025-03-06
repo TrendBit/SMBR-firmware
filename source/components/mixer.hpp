@@ -12,6 +12,7 @@
 #include "rtos/delayed_execution.hpp"
 #include "logger.hpp"
 #include "can_bus/app_message.hpp"
+#include "rtos/repeated_execution.hpp"
 
 #include "components/fan/fan_rpm.hpp"
 #include "components/common_sensors/rpm_counter.hpp"
@@ -43,9 +44,21 @@ private:
     float min_speed = 0.0f;
 
     /**
+     * @brief  Proportional gain of regulation loop
+     */
+    float p_gain = 0.05f;
+
+    float target_rpm = 0.0f;
+
+    /**
      * @brief Timer function which stops mixer after defined time, used for stirring command
      */
     rtos::Delayed_execution * mixer_stopper;
+
+    /**
+     *  @brief Loop regulating intensity of heater based on temperature of bottle
+     */
+    rtos::Repeated_execution *regulation_loop;
 
 public:
     /**
@@ -112,7 +125,7 @@ public:
      */
     virtual bool Receive(CAN::Message message) override final;
 
-        /**
+    /**
      * @brief   Receive message implementation from Message_receiver interface for Application messages (extended frame)
      *          This method is invoked by Message_router when message is determined for this component
      *
@@ -121,4 +134,9 @@ public:
      * @return false    Message cannot be processed by this component
      */
     virtual bool Receive(Application_message message) override final;
+
+private:
+
+    void Regulation_loop();
+
 };
