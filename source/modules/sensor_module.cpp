@@ -47,5 +47,5 @@ void Sensor_module::Setup_fluorometer(){
     auto led_pwm = new PWM_channel(23, 1000, 0.0, true);
     uint detector_gain_selector_pin = 21;
 
-    fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors);
+    fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors, i2c);
 }
