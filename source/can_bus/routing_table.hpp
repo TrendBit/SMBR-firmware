@@ -79,5 +79,11 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Mini_OLED_print_custom_text,                Codes::Component::Mini_OLED          },
     // Fluorometer
     { Codes::Message_type::Fluorometer_sample_request,                 Codes::Component::Fluorometer        },
+    { Codes::Message_type::Fluorometer_OJIP_capture_request,           Codes::Component::Fluorometer        },
+    { Codes::Message_type::Fluorometer_OJIP_completed_request,         Codes::Component::Fluorometer        },
+    { Codes::Message_type::Fluorometer_OJIP_retrieve_request,          Codes::Component::Fluorometer        },
     { Codes::Message_type::Fluorometer_emitor_temperature_request,     Codes::Component::Fluorometer        },
+    { Codes::Message_type::Fluorometer_detector_temperature_request,   Codes::Component::Fluorometer        },
+    { Codes::Message_type::Fluorometer_detector_info_request,          Codes::Component::Fluorometer        },
+    { Codes::Message_type::Fluorometer_emitor_info_request,            Codes::Component::Fluorometer        },
 };
