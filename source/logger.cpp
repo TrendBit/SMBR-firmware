@@ -19,6 +19,8 @@ void Logger::Init_UART(uart_inst_t * uart_instance, uint tx_gpio, uint rx_gpio, 
     uint dreq = instance_number ? DREQ_UART1_TX : DREQ_UART0_TX;
     uart_hw_t *uart_hw = instance_number ? uart1_hw : uart0_hw;
 
+    dma_channel = dma_claim_unused_channel(true);
+
     dma_channel_config = dma_channel_get_default_config(dma_channel);
     channel_config_set_transfer_data_size(&dma_channel_config, DMA_SIZE_8);
     channel_config_set_read_increment(&dma_channel_config, true);
