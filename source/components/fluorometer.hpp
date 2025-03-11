@@ -8,41 +8,55 @@
 #pragma once
 
 #include <algorithm>
+#include <ranges>
 
 #include "can_bus/app_message.hpp"
 #include "can_bus/message_receiver.hpp"
 #include "components/component.hpp"
 #include "components/thermometers/thermistor.hpp"
+#include "components/thermometers/TMP102.hpp"
 #include "hal/adc/adc_channel.hpp"
 #include "hal/gpio/gpio.hpp"
 #include "hal/pwm/pwm.hpp"
 #include "logger.hpp"
 #include "rtos/wrappers.hpp"
+#include "etl/map.h"
 
 #include "hardware/adc.h"
 #include "hardware/pwm.h"
 #include "hardware/dma.h"
 
 #include "codes/messages/fluorometer/fluorometer_config.hpp"
+#include "codes/messages/fluorometer/ojip_capture_request.hpp"
+#include "codes/messages/fluorometer/ojip_completed_response.hpp"
+#include "codes/messages/fluorometer/ojip_retrieve_request.hpp"
+#include "codes/messages/fluorometer/data_sample.hpp"
+#include "codes/messages/fluorometer/detector_info_response.hpp"
+#include "codes/messages/fluorometer/detector_temperature_response.hpp"
+#include "codes/messages/fluorometer/emitor_info_response.hpp"
+#include "codes/messages/fluorometer/emitor_temperature_response.hpp"
+
 #include "codes/messages/fluorometer/sample_request.hpp"
 #include "codes/messages/fluorometer/sample_response.hpp"
 
 #define FLUOROMETER_MAX_SAMPLES 4096
+
+typedef std::function<bool(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES>&,uint,float)> Timing_generator_interface;
 
 class Fluorometer: public Component, public Message_receiver {
 public:
 
     struct OJIP{
         uint8_t measurement_id;
-        uint8_t source_intensity;
+        float emitor_intensity;
         Fluorometer_config::Gain detector_gain;
-        bool saturated;
         float sample_range;
         etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> sample_time_us;
         etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> intensity;
     };
 
 private:
+
     /**
      * @brief   GPIO controlling input of multiplexor for temperature ADC measurement
      *              1 - onboard thermistor
@@ -57,7 +71,7 @@ private:
     Thermistor * const ntc_thermistors;
 
     /**
-     * @brief   PWM channel for controlling main source (high-power) LED of fluorometer
+     * @brief   PWM channel for controlling main source (high-power) emitor LED of fluorometer
      */
     PWM_channel * const led_pwm;
 
@@ -74,7 +88,7 @@ private:
     /**
      * @brief   Slice of timer PWM which triggers sampling (whole slice isused)
      */
-    const uint sampler_trigger_slice = 2;
+    const uint sampler_trigger_slice = 4;
 
     /**
      * @brief   Data of last measured OJIP
@@ -96,7 +110,9 @@ private:
     /**
      * @brief   Flag indicating that OJIP curve capture is finished, used to wait for results by API functions
      */
-    bool ojip_capture_finished = false;
+    bool ojip_capture_finished = true;
+
+    TMP102 * const detector_temperature_sensor;
 
 public:
     /**
@@ -106,18 +122,22 @@ public:
      * @param detector_gain_pin     Pin which controls gain of detector
      * @param ntc_channel_selector  GPIO controlling input of multiplexor for temperature ADC measurement
      * @param ntc_thermistors       ADC channel for measuring temperature of onboard thermistor or Fluoro LED thermistor
+     * @param i2c                   I2C bus for temp sensor
      */
-    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors);
+    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c);
 
     /**
-     * @brief   Start capture of OJIP curve
-     *          During this capture ADC is unavailable and all components should be restricted to access it
-     *          Another measurement or change of parameters can disrupt measurement of OJIP curve
+     * @brief
      *
-     * @return true     OJIP curve was captured
+     * @param gain
+     * @param emitor_intensity
+     * @param capture_length
+     * @param samples
+     * @param timing
+     * @return true
      * @return false
      */
-    bool Capture_OJIP(Fluorometer_config::Gain gain, float emitor_intensity = 1.0, float capture_length = 2.0, uint samples = 1000);
+    bool Capture_OJIP(Fluorometer_config::Gain gain, float emitor_intensity = 1.0, float capture_length = 2.0, uint samples = 1000, Fluorometer_config::Timing timing = Fluorometer_config::Timing::Linear);
 
     /**
      * @brief       Determines if OJIP curve capture is finished
@@ -203,6 +223,20 @@ private:
      */
     float Emitor_temperature();
 
+    /**
+     * @brief   Get temperature of detector (IR PIN photodiode)
+     *
+     * @return float    Temperature of detector in °C
+     */
+    float Detector_temperature();
+
+    /**
+     * @brief Measure noise on detector output
+     *
+     * @param samples       Number of samples to collect
+     * @param period_us     Period of sampling in microseconds
+     * @return float
+     */
     float Measure_noise(uint16_t samples, uint period_us);
 
     /**
@@ -225,4 +259,17 @@ private:
      * @param data  Data to be printed
      */
     static void Print_curve_data(OJIP * data);
+
+    static bool Timing_generator_linear(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
+
+    static bool Timing_generator_logarithmic(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
+
+    static bool Process_timestamps(uint64_t start, etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> &sample_time_us);
+
+    bool Export_data(OJIP * data);
+
+    etl::map<Fluorometer_config::Timing, Timing_generator_interface, 16> timing_generators = {
+        {Fluorometer_config::Timing::Linear, Timing_generator_linear},
+        {Fluorometer_config::Timing::Logarithmic, Timing_generator_logarithmic}
+    };
 };
