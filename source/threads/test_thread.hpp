@@ -96,5 +96,9 @@ private:
 
     void Multi_OJIP();
 
+    void Spectrophotometer_test(I2C_bus &i2c);
+
+    void Calibrate_VEML_lux(I2C_bus &i2c);
+
 };
 

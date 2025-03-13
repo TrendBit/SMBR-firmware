@@ -2,6 +2,7 @@
 #include "can_bus/can_message.hpp"
 #include "can_bus/message_router.hpp"
 #include "modules/base_module.hpp"
+#include "modules/sensor_module.hpp"
 #include "modules/control_module.hpp"
 
 #include "components/led/led_pwm.hpp"
@@ -42,9 +43,71 @@ Test_thread::Test_thread()
 void Test_thread::Run(){
     Logger::Print("Test thread init");
 
-    // I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
+    I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
+    // Calibrate_VEML_lux(*i2c);
+    // Spectrophotometer_test(*i2c);
+    // LED_test(*i2c);
+
     // Fluoro_buck_test();
 };
+
+
+void Test_thread::Calibrate_VEML_lux(I2C_bus &i2c){
+
+    KTD2026 *led_driver_0 = new KTD2026(i2c, 0x31);
+    led_driver_0->Init();
+
+    KTD2026 *led_driver_1 = new KTD2026(i2c, 0x30);
+    led_driver_1->Init();
+
+    VEML6040 *rgbw_sensor = new VEML6040(i2c, 0x10);
+
+    rgbw_sensor->Exposure_time(VEML6040::Exposure::_1280_ms);
+
+
+    led_driver_0->Intensity(KTD2026::Channel::CH_3, 1.0);
+
+    rtos::Delay(2000);
+
+    float green = rgbw_sensor->Measure_relative(VEML6040::Channels::Green);
+    float white = rgbw_sensor->Measure_relative(VEML6040::Channels::White);
+
+    float white_compensation = green / white;
+
+    Logger::Print(emio::format("Green/white values: {:05.3f}/{:05.3f}", green, white));
+    Logger::Print(emio::format("White compensation: {:05.3f}", white_compensation));
+
+    led_driver_0->Intensity(KTD2026::Channel::CH_3, 0.0f);
+
+    rgbw_sensor->Exposure_time(VEML6040::Exposure::_320_ms);
+
+    led_driver_1->Intensity(KTD2026::Channel::CH_1, 1.0f);
+    rtos::Delay(800);
+
+    float red = rgbw_sensor->Measure_relative(VEML6040::Channels::Red);
+    white = rgbw_sensor->Measure_relative(VEML6040::Channels::White);
+
+    float red_compensation = white / red;
+
+    Logger::Print(emio::format("White/red values: {:05.3f}/{:05.3f}", white, red));
+    Logger::Print(emio::format("Red compensation: {:05.3f}", red_compensation));
+
+    led_driver_1->Intensity(KTD2026::Channel::CH_1, 0.0f);
+
+    rgbw_sensor->Exposure_time(VEML6040::Exposure::_320_ms);
+    led_driver_0->Intensity(KTD2026::Channel::CH_2, 1.0f);
+    rtos::Delay(800);
+
+    float blue = rgbw_sensor->Measure_relative(VEML6040::Channels::Blue);
+    white = rgbw_sensor->Measure_relative(VEML6040::Channels::White);
+
+    float blue_compensation = white / blue;
+
+    Logger::Print(emio::format("White/blue values: {:05.3f}/{:05.3f}", white, blue));
+    Logger::Print(emio::format("Blue compensation: {:05.3f}", blue_compensation));
+
+    led_driver_0->Intensity(KTD2026::Channel::CH_2, 0.0f);
+}
 
 void Test_thread::EEPROM_Test(I2C_bus &i2c){
     auto eeprom = new AT24Cxxx(i2c, 0x50, 256);
@@ -151,13 +214,13 @@ void Test_thread::RGBW_sensor_test(I2C_bus &i2c){
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1000));
 
-        uint16_t det_red = rgb_sensor->Measure(VEML6040::channels::Red);
+        uint16_t det_red = rgb_sensor->Measure(VEML6040::Channels::Red);
         rtos::Delay(10);
-        uint16_t det_green = rgb_sensor->Measure(VEML6040::channels::Green);
+        uint16_t det_green = rgb_sensor->Measure(VEML6040::Channels::Green);
         rtos::Delay(10);
-        uint16_t det_blue = rgb_sensor->Measure(VEML6040::channels::Blue);
+        uint16_t det_blue = rgb_sensor->Measure(VEML6040::Channels::Blue);
         rtos::Delay(10);
-        uint16_t det_white = rgb_sensor->Measure(VEML6040::channels::White);
+        uint16_t det_white = rgb_sensor->Measure(VEML6040::Channels::White);
         rtos::Delay(10);
 
         Logger::Print(emio::format("RGBW: {:5d} {:5d} {:5d} {:5d}", det_red, det_green, det_blue, det_white));
@@ -192,21 +255,77 @@ void Test_thread::Temp_sensor_test(I2C_bus &i2c){
 void Test_thread::LED_test(I2C_bus &i2c){
     KTD2026 *led_driver_0 = new KTD2026(i2c, 0x31);
     led_driver_0->Init();
-    led_driver_0->Enable_channel(1);
-    led_driver_0->Set_intensity(1, 20);
-    led_driver_0->Enable_channel(2);
-    led_driver_0->Set_intensity(2, 10);
-    led_driver_0->Enable_channel(3);
-    led_driver_0->Set_intensity(3, 10);
 
     KTD2026 *led_driver_1 = new KTD2026(i2c, 0x30);
     led_driver_1->Init();
-    led_driver_1->Enable_channel(1);
-    led_driver_1->Set_intensity(1, 10);
-    led_driver_1->Enable_channel(2);
-    led_driver_1->Set_intensity(2, 10);
-    led_driver_1->Enable_channel(3);
-    led_driver_1->Set_intensity(3, 10);
+
+    led_driver_0->Intensity(KTD2026::Channel::CH_1, 1.0f);
+    led_driver_0->Intensity(KTD2026::Channel::CH_2, 1.0f);
+    led_driver_0->Intensity(KTD2026::Channel::CH_3, 1.0f);
+
+    led_driver_1->Intensity(KTD2026::Channel::CH_1, 1.0f);
+    led_driver_1->Intensity(KTD2026::Channel::CH_2, 1.0f);
+    led_driver_1->Intensity(KTD2026::Channel::CH_3, 1.0f);
+}
+
+void Test_thread::Spectrophotometer_test(I2C_bus &i2c){
+    KTD2026 *led_driver_0 = new KTD2026(i2c, 0x31);
+    led_driver_0->Init();
+
+    KTD2026 *led_driver_1 = new KTD2026(i2c, 0x30);
+    led_driver_1->Init();
+
+    VEML6040 *rgb_sensor = new VEML6040(i2c, 0x10);
+
+    led_driver_0->Intensity(KTD2026::Channel::CH_1, 1.0f);
+    led_driver_0->Intensity(KTD2026::Channel::CH_2, 1.0f);
+    led_driver_0->Intensity(KTD2026::Channel::CH_3, 1.0f);
+
+    led_driver_1->Intensity(KTD2026::Channel::CH_1, 1.0f);
+    led_driver_1->Intensity(KTD2026::Channel::CH_2, 1.0f);
+    led_driver_1->Intensity(KTD2026::Channel::CH_3, 1.0f);
+
+    rgb_sensor->Exposure_time(VEML6040::Exposure::_320_ms);
+    rtos::Delay(500);
+
+    Logger::Print(emio::format("Blue: {:05d} ", rgb_sensor->Measure(VEML6040::Channels::Blue)));
+    Logger::Print(emio::format("Blue: {:05.1f} lux", rgb_sensor->Measure_lux(VEML6040::Channels::Blue)));
+
+    rgb_sensor->Exposure_time(VEML6040::Exposure::_160_ms);
+    rtos::Delay(500);
+    Logger::Print(emio::format("Blue: {:05d} ", rgb_sensor->Measure(VEML6040::Channels::Blue)));
+    Logger::Print(emio::format("Blue: {:05.1f} lux", rgb_sensor->Measure_lux(VEML6040::Channels::Blue)));
+
+    while (true) {
+        DelayUntil(fra::Ticks::MsToTicks(5000));
+        for(float intensity = 0.0f; intensity <= 1.0 ;intensity += 0.05){
+            led_driver_0->Intensity(KTD2026::Channel::CH_1, intensity);
+            led_driver_0->Intensity(KTD2026::Channel::CH_2, intensity);
+            led_driver_0->Intensity(KTD2026::Channel::CH_3, intensity);
+
+            led_driver_1->Intensity(KTD2026::Channel::CH_1, intensity);
+            led_driver_1->Intensity(KTD2026::Channel::CH_2, intensity);
+            led_driver_1->Intensity(KTD2026::Channel::CH_3, intensity);
+
+            rtos::Delay(200);
+
+            uint16_t det_red   = rgb_sensor->Measure(VEML6040::Channels::Red);
+            uint16_t det_green = rgb_sensor->Measure(VEML6040::Channels::Green);
+            uint16_t det_blue  = rgb_sensor->Measure(VEML6040::Channels::Blue);
+            uint16_t det_white = rgb_sensor->Measure(VEML6040::Channels::White);
+
+            Logger::Notice(emio::format("RGBW: {:6d} {:6d} {:6d} {:6d}", det_red, det_green, det_blue, det_white));
+
+        }
+        led_driver_0->Intensity(KTD2026::Channel::CH_1, 0.0f);
+        led_driver_0->Intensity(KTD2026::Channel::CH_2, 0.0f);
+        led_driver_0->Intensity(KTD2026::Channel::CH_3, 0.0f);
+
+        led_driver_1->Intensity(KTD2026::Channel::CH_1, 0.0f);
+        led_driver_1->Intensity(KTD2026::Channel::CH_2, 0.0f);
+        led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.0f);
+    }
+
 }
 
 void Test_thread::Gain_detector_test(){
@@ -233,8 +352,8 @@ void Test_thread::Gain_detector_test(){
 void Test_thread::Transmissive_IR_test(I2C_bus &i2c){
     KTD2026 *led_driver_1 = new KTD2026(i2c, 0x30);
     led_driver_1->Init();
-    led_driver_1->Enable_channel(3);
-    led_driver_1->Set_intensity(3, 10);
+    led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.2f);
+
 
     GPIO *ts_gain = new GPIO(9, GPIO::Direction::In);
     ts_gain->Set_pulls(false, false);
@@ -244,11 +363,11 @@ void Test_thread::Transmissive_IR_test(I2C_bus &i2c){
     //Logger::Print(emio::format("Gain: {:3d}", 1));
     Logger::Print_raw("\r\n\r\n");
 
-    for (uint16_t intensity = 0; intensity <= 0xff; intensity+= 0x5) {
-        led_driver_1->Set_intensity(3, intensity);
+    for (float intensity = 0.0f; intensity <= 1.0f; intensity+= 0.1f) {
+        led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.2f);
         rtos::Delay(50);
         //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
-        Logger::Print_raw(emio::format("{:3d}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
+        Logger::Print_raw(emio::format("{:3.1f}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
     }
 
     ts_gain->Set_direction(GPIO::Direction::Out);
@@ -257,11 +376,11 @@ void Test_thread::Transmissive_IR_test(I2C_bus &i2c){
     //Logger::Print(emio::format("Gain: {:3d}", 10));
     Logger::Print_raw("\r\n\r\n");
 
-    for (uint16_t intensity = 0; intensity <= 0xff; intensity+= 0x5) {
-        led_driver_1->Set_intensity(3, intensity);
+    for (float intensity = 0.0f; intensity <= 1.0f; intensity+= 0.1f) {
+        led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.2f);
         rtos::Delay(50);
         //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
-        Logger::Print_raw(emio::format("{:3d}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
+        Logger::Print_raw(emio::format("{:3.1f}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
     }
 
     ts_gain->Set(true);
@@ -269,11 +388,11 @@ void Test_thread::Transmissive_IR_test(I2C_bus &i2c){
     //Logger::Print(emio::format("Gain: {:3d}", 50));
     Logger::Print_raw("\r\n\r\n");
 
-    for (uint16_t intensity = 0; intensity <= 0xff; intensity+= 0x5) {
-        led_driver_1->Set_intensity(3, intensity);
+    for (float intensity = 0.0f; intensity <= 1.0f; intensity+= 0.1f) {
+        led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.2f);
         rtos::Delay(50);
         //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
-        Logger::Print_raw(emio::format("{:3d}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
+        Logger::Print_raw(emio::format("{:3.1f}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
     }
 
     while(true){
@@ -502,7 +621,6 @@ void Test_thread::Pacing_timestamp_fast_test(){
 
     // Set the timer using dma_timer_set_fraction (ensuring it fits in uint16_t)
     dma_timer_set_fraction(timer, (uint16_t) numerator, (uint16_t) denominator);
-
 
     Logger::Print(emio::format("Clock frequency: {:d}", clock_freq));
     Logger::Print(emio::format("Cycle period: {:d}", cycles));
