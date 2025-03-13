@@ -48,11 +48,11 @@ uint CAN_thread::Send(CAN::Message const &message){
                 Logger::Print("CAN message not sent", Logger::Level::Warning);
             }
         } else {
-            Logger::Print(emio::format("CAN not available, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()), Logger::Level::Notice);
+            Logger::Print(emio::format("CAN not available, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()), Logger::Level::Debug);
             tx_queue.push(message);
         }
     } else {
-        Logger::Print(emio::format("CAN queue not empty, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()), Logger::Level::Notice);
+        Logger::Print(emio::format("CAN queue not empty, message queued, size: {}, available {}", tx_queue.size(), tx_queue.available()), Logger::Level::Debug);
         if (tx_queue.full()) {
             Logger::Print("CAN TX queue full, message dropped", Logger::Level::Warning);
             return 0;
