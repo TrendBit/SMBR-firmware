@@ -86,4 +86,9 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Fluorometer_detector_temperature_request,   Codes::Component::Fluorometer        },
     { Codes::Message_type::Fluorometer_detector_info_request,          Codes::Component::Fluorometer        },
     { Codes::Message_type::Fluorometer_emitor_info_request,            Codes::Component::Fluorometer        },
+    // Spectrophotometer
+    { Codes::Message_type::Spectrophotometer_channel_count_request,     Codes::Component::Spectrophotometer  },
+    { Codes::Message_type::Spectrophotometer_channel_info_request,      Codes::Component::Spectrophotometer  },
+    { Codes::Message_type::Spectrophotometer_measurement_request,       Codes::Component::Spectrophotometer  },
+    { Codes::Message_type::Spectrophotometer_calibrate,                 Codes::Component::Spectrophotometer  },
 };
