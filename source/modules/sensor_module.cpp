@@ -14,6 +14,7 @@ void Sensor_module::Setup_components(){
     Setup_bottle_thermometers();
     Setup_Mini_OLED();
     Setup_fluorometer();
+    Setup_spectrophotometer();
 }
 
 float Sensor_module::Board_temperature(){
@@ -48,4 +49,8 @@ void Sensor_module::Setup_fluorometer(){
     uint detector_gain_selector_pin = 21;
 
     fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors, i2c);
+}
+
+void Sensor_module::Setup_spectrophotometer(){
+    spectrophotometer = new Spectrophotometer(*i2c);
 }

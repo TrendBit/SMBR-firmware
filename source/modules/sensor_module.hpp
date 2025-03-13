@@ -17,6 +17,7 @@
 #include "components/thermometers/thermopile.hpp"
 #include "components/bottle_temperature.hpp"
 #include "components/fluorometer.hpp"
+#include "components/spectrophotometer.hpp"
 
 /**
  * @brief Sensor module in measuring compartment of device, enables:
@@ -59,6 +60,11 @@ private:
      */
     Fluorometer * fluorometer;
 
+    /**
+     * @brief  Multi spectral photo meter used for measuring optical density of suspension
+     */
+    Spectrophotometer * spectrophotometer;
+
 public:
     /**
      * @brief Construct a new Sensor_module object, calls constructor of Base_module with type of module
@@ -93,4 +99,9 @@ private:
      * @brief   Setup fluorometer for OJIP measurements
      */
     void Setup_fluorometer();
+
+    /**
+     * @brief   Setup spectrophotometer for measuring optical density of suspension
+     */
+    void Setup_spectrophotometer();
 };
