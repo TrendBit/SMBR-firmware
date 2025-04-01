@@ -377,7 +377,7 @@ bool Fluorometer::Receive(Application_message message){
 
         case Codes::Message_type::Fluorometer_detector_info_request: {
             Logger::Print("Fluorometer detector info request", Logger::Level::Notice);
-            App_messages::Fluorometer::Detector_info_response response(700, 1);
+            App_messages::Fluorometer::Detector_info_response response(700, 1, 500);
             Send_CAN_message(response);
             return true;
         }
@@ -391,7 +391,7 @@ bool Fluorometer::Receive(Application_message message){
             return true;
         }
 
-                case Codes::Message_type::Fluorometer_emitor_info_request: {
+        case Codes::Message_type::Fluorometer_emitor_info_request: {
             Logger::Print("Fluorometer emitor info request", Logger::Level::Notice);
             App_messages::Fluorometer::Emitor_info_response response(535, 10000);
             Send_CAN_message(response);
