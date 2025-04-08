@@ -9,12 +9,11 @@
 
 
 #include "threads/can_thread.hpp"
+#include "components/memory.hpp"
 #include "logger.hpp"
 #include "can_bus/message_router.hpp"
 
 #include "thread.hpp"
-
-class Base_module;
 
 namespace fra = cpp_freertos;
 
@@ -31,13 +30,18 @@ private:
      */
     CAN_thread * const can_thread;
 
+    /**
+     * @brief   Persistent memory containing calibration
+     */
+    EEPROM_storage * const memory;
+
 public:
     /**
      * @brief Construct a new Common_thread object
      *
      * @param can_thread    Pointer to CAN bus manager thread which is responsible for handling of CAN Bus peripheral
      */
-    Common_thread(CAN_thread * can_thread);
+    Common_thread(CAN_thread * can_threadm, EEPROM_storage * const memory);
 
 protected:
     /**
