@@ -1,5 +1,6 @@
 #include "hardware/structs/clocks.h"
 #include "hardware/clocks.h"
+#include "hardware/watchdog.h"
 
 #include "pico/time.h"
 #include "pico/multicore.h"
