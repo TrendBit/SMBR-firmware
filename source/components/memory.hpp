@@ -69,7 +69,10 @@ public:
      * @param module     Module type of this instance
      * @param instance   Instance enumeration of this instance
      */
-    explicit EEPROM_storage(M24Cxx * const eeprom, Codes::Module module, Codes::Instance instance);
+    explicit EEPROM_storage(M24Cxx * const eeprom);
+
+    
+    bool Check_type(Codes::Module module, Codes::Instance instance);
 
     /**
      * @brief   Read record of module type from EEPROM

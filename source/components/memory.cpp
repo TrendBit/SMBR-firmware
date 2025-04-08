@@ -22,11 +22,15 @@ constexpr bool EEPROM_storage::Check_for_record_gaps() {
     return true;
 }
 
-EEPROM_storage::EEPROM_storage(M24Cxx * const eeprom, Codes::Module module, Codes::Instance instance)
+EEPROM_storage::EEPROM_storage(M24Cxx * const eeprom)
     :eeprom(eeprom)
 {
     // Compile time checks
     static_assert(EEPROM_storage::Check_for_overlapping_records(), "Records are overlapping");
+}
+
+bool EEPROM_storage::Check_type(Codes::Module module, Codes::Instance instance){
+    bool type_check = true;
 
     // Check if module is in program is same as in EEPROM
     Codes::Module current_module = Module();
@@ -34,6 +38,7 @@ EEPROM_storage::EEPROM_storage(M24Cxx * const eeprom, Codes::Module module, Code
         Logger::Print("EEPROM storage already contains module", Logger::Level::Trace);
         if(current_module != module) {
             Logger::Print("EEPROM storage contains data for another module", Logger::Level::Error);
+            type_check = false;
         } else {
             Logger::Print("EEPROM storage contains data for the same module", Logger::Level::Trace);
         }
@@ -42,6 +47,8 @@ EEPROM_storage::EEPROM_storage(M24Cxx * const eeprom, Codes::Module module, Code
         Logger::Print("Reseting module type in EEPROM", Logger::Level::Trace);
         std::vector<uint8_t> data = {static_cast<uint8_t>(module)};
         Write_record(Record_name::Module_type, data);
+        type_check = false;
+        rtos::Delay(5);
     }
 
     // Check if instance is in program is same as in EEPROM
@@ -50,6 +57,7 @@ EEPROM_storage::EEPROM_storage(M24Cxx * const eeprom, Codes::Module module, Code
         Logger::Print("EEPROM storage already contains instance", Logger::Level::Trace);
         if(current_instance != instance) {
             Logger::Print("EEPROM storage contains data for another instance", Logger::Level::Error);
+            type_check = false;
         } else {
             Logger::Print("EEPROM storage contains data for the same instance", Logger::Level::Trace);
         }
@@ -58,7 +66,11 @@ EEPROM_storage::EEPROM_storage(M24Cxx * const eeprom, Codes::Module module, Code
         Logger::Print("Reseting instance enumeration in EEPROM", Logger::Level::Trace);
         std::vector<uint8_t> data = {static_cast<uint8_t>(instance)};
         Write_record(Record_name::Instance_enumeration, data);
+        type_check = false;
+        rtos::Delay(5);
     }
+
+    return type_check;
 }
 
 bool EEPROM_storage::Write_OJIP_calibration(std::array<uint16_t, 1000> &calibration) {
