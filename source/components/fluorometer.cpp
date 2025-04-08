@@ -1,6 +1,6 @@
 #include "fluorometer.hpp"
 
-Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c):
+Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory):
     Component(Codes::Component::Fluorometer),
     Message_receiver(Codes::Component::Fluorometer),
     ntc_channel_selector(ntc_channel_selector),
@@ -8,9 +8,47 @@ Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * n
     led_pwm(led_pwm),
     detector_gain(new GPIO(detector_gain_pin)),
     detector_adc(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_1, 3.30f)),
-    detector_temperature_sensor(new TMP102(*i2c, 0x48))
+    detector_temperature_sensor(new TMP102(*i2c, 0x48)),
+    memory(memory)
 {
-    detector_gain->Set_pulls(false, false);
+    detector_gain->Set_pulls(true, true);
+    Gain(Fluorometer_config::Gain::x1);
+    calibration_data.adc_value.fill(0);
+    memory->Read_OJIP_calibration(calibration_data.adc_value);
+}
+
+void Fluorometer::Calibrate(){
+
+    // Initialize calibration data
+    bool stat = Capture_OJIP(Fluorometer_config::Gain::x50, 1.0, 1.0, 1000, Fluorometer_config::Timing::Logarithmic);
+
+    if (!stat) {
+        Logger::Print("Capture OJIP failed", Logger::Level::Error);
+        return;
+    }
+
+    // Copy captured value to calibration data
+    for(size_t i = 0; i < calibration_data.adc_value.size(); i++){
+        calibration_data.adc_value[i] = OJIP_data.intensity[i];
+    }
+
+    Logger::Print("Current calibration data", Logger::Level::Notice);
+    for ( size_t i = 0; i < calibration_data.adc_value.size(); i++){
+        Logger::Print(emio::format("{:d} = {:d}", i, calibration_data.adc_value[i]), Logger::Level::Notice);
+    }
+
+    memory->Write_OJIP_calibration(calibration_data.adc_value);
+
+    calibration_data.adc_value.fill(0);
+    Logger::Print("Calibration data written to memory", Logger::Level::Notice);
+
+    // Read calibration data from memory
+    memory->Read_OJIP_calibration(calibration_data.adc_value);
+
+    Logger::Print("Calibration data read from memory", Logger::Level::Notice);
+    for ( size_t i = 0; i < calibration_data.adc_value.size(); i++){
+        Logger::Print(emio::format("{:d} = {:d}", i, calibration_data.adc_value[i]), Logger::Level::Notice);
+    }
 }
 
 void Fluorometer::Gain(Fluorometer_config::Gain gain){
@@ -46,6 +84,7 @@ float Fluorometer::Detector_value(){
 }
 
 void Fluorometer::Emitor_intensity(float intensity){
+    led_pwm->Reset_counter();
     led_pwm->Duty_cycle(std::clamp(intensity,0.0f, 1.0f));
 }
 
@@ -77,7 +116,9 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
 
     Logger::Print("Initializing memory", Logger::Level::Notice);
     OJIP_data.sample_time_us.resize(samples);
+    OJIP_data.sample_time_us.fill(0);
     OJIP_data.intensity.resize(samples);
+    OJIP_data.intensity.fill(0);
     capture_timing.resize(samples);
     capture_timing.fill(0);
 
@@ -99,8 +140,14 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
     }
 
     Logger::Print("Configuring ADC", Logger::Level::Notice);
+    adc_init();
+    adc_gpio_init(26 + 1);
+    adc_select_input(1);
     adc_set_clkdiv(0);                          // 0.5 Msps
     adc_fifo_setup(true, true, 1, false, false); // Enable FIFO, 1 sample threshold
+    if(adc_fifo_get_level() > 0){
+        adc_fifo_drain();
+    }
     adc_run(true);
 
     ojip_capture_finished = false;
@@ -129,7 +176,7 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
     Logger::Print("Configuring sample trigger slice", Logger::Level::Notice);
 
     pwm_config pwm_cfg = pwm_get_default_config();
-    pwm_set_counter(sampler_trigger_slice, 1);
+    pwm_set_counter(sampler_trigger_slice, 0);
     pwm_config_set_clkdiv(&pwm_cfg, 125.0);
     pwm_init(sampler_trigger_slice, &pwm_cfg, false);
     pwm_set_wrap(sampler_trigger_slice, capture_timing[0]);
@@ -144,6 +191,8 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
         Logger::Print("DMA channels not available", Logger::Level::Error);
         return false;
     }
+
+    rtos::Delay(1000);
 
     dma_channel_config timestamp_dma_config = dma_channel_get_default_config(timestamp_dma_channel);
     dma_channel_config wrap_dma_config      = dma_channel_get_default_config(wrap_dma_channel);
@@ -183,7 +232,7 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
         wrap_dma_channel,
         &wrap_dma_config,
         &pwm_hw->slice[sampler_trigger_slice].top,  // Destination buffer slice threshold
-        capture_timing.data()+2,                     // Source: Timer counter (lower 32 bits)
+        capture_timing.data(),                      // Source: Timer counter (lower 32 bits)
         samples,                                    // Number of transfers
         true                                        // Start immediately but wait wait for trigger
     );
@@ -196,9 +245,6 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
         samples,                                    // Number of transfers
         true                                        // Start immediately but wait wait for trigger
     );
-
-    Logger::Print("Starting capture", Logger::Level::Notice);
-    rtos::Delay(10);
 
     Emitor_intensity(emitor_intensity);
 
@@ -219,6 +265,8 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
     dma_channel_unclaim(timestamp_dma_channel);
     dma_channel_unclaim(wrap_dma_channel);
     dma_channel_unclaim(adc_dma_channel);
+
+    pwm_set_enabled(sampler_trigger_slice, false);
 
     Logger::Print("Stopped DMA channels", Logger::Level::Notice);
 
@@ -254,7 +302,7 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
 
     Logger::Print(emio::format("Valid samples: {:d}", samples_captured), Logger::Level::Notice);
 
-    // Print_curve_data(&OJIP_data);
+    Print_curve_data(&OJIP_data);
 
     ojip_capture_finished = true;
 
@@ -265,7 +313,7 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
 
 void Fluorometer::Print_curve_data(OJIP * data){
     for (size_t i = 0; i < data->sample_time_us.size(); i++) {
-        Logger::Print(emio::format("{:8d} {:04d}", data->sample_time_us[i], data->intensity[i]));
+        Logger::Print_raw(emio::format("{:8d} {:04d}\r\n", data->sample_time_us[i], data->intensity[i]));
     }
 }
 
@@ -280,12 +328,68 @@ bool Fluorometer::Export_data(OJIP * data){
     sample.gain = data->detector_gain;
     sample.emitor_intensity = data->emitor_intensity;
 
+    const uint base_estimation_length = 5;
+
+    uint sample_base;
+    uint calibration_base;
+
+    uint sample_peak = 0;
+    uint calibration_peak = 0;
+
+    uint accumulator = 0;
+
+    int offset = 0;
+
+    for(size_t i = 0; i < base_estimation_length; ++i) {
+        accumulator += data->intensity[i];
+    }
+    sample_base = accumulator / base_estimation_length;
+
+    for(size_t i = 0; i < base_estimation_length; ++i) {
+        accumulator += calibration_data.adc_value[i];
+    }
+    calibration_base = accumulator / base_estimation_length;
+
+    int i;
+    for(i = 0; i < 1000; i++) {
+        if(data->intensity[i] > (sample_base*5)){
+            sample_peak = i;
+            break;
+        }
+    }
+
+    for(i = 0; i < 1000; i++) {
+        if(calibration_data.adc_value[i] > (calibration_base*2)){
+            calibration_peak = i;
+            break;
+        }
+    }
+
+    offset = sample_peak - calibration_peak;
+
+    Logger::Print(emio::format("Sample base: {:d}, calibration base: {:d}, offset: {:d}", sample_base, calibration_base, offset), Logger::Level::Notice);
+
     if (data->sample_time_us.size() == data->intensity.size()) {
         for (size_t i = 0; i < data->sample_time_us.size(); ++i) {
             const auto& time = data->sample_time_us[i];
             const auto& intensity = data->intensity[i];
             sample.time_us = time;
             sample.sample_value = intensity;
+            if((i > 1) and (i < 1000)){
+                uint16_t correction = 0;
+
+                if(i > calibration_data.adc_value.size()){
+                    correction = calibration_data.adc_value[calibration_data.adc_value.size()-2];
+                } else {
+                    correction = calibration_data.adc_value[i-offset];
+                }
+
+                if(sample.sample_value < correction){
+                    sample.sample_value = 0;
+                } else {
+                    sample.sample_value -= correction;
+                }
+            }
             uint queue = Send_CAN_message(sample);
             if (queue < 32) {
                 Logger::Print(emio::format("CAN queue filling up, size:{}", queue), Logger::Level::Notice);
@@ -356,7 +460,9 @@ bool Fluorometer::Receive(Application_message message){
             OJIP_data.measurement_id = ojip_request.measurement_id;
             OJIP_data.emitor_intensity = ojip_request.emitor_intensity;
 
-            Capture_OJIP(ojip_request.detector_gain, ojip_request.emitor_intensity, (ojip_request.length_ms/1000.0f), ojip_request.samples, ojip_request.sample_timing);
+            //Capture_OJIP(ojip_request.detector_gain, ojip_request.emitor_intensity, (ojip_request.length_ms/1000.0f), ojip_request.samples, ojip_request.sample_timing);
+
+            Capture_OJIP(ojip_request.detector_gain, 1.0, 1.0, 1000, Fluorometer_config::Timing::Logarithmic);
 
             OJIP_data.detector_gain = Gain();
 
@@ -407,6 +513,12 @@ bool Fluorometer::Receive(Application_message message){
             return true;
         }
 
+        case Codes::Message_type::Fluorometer_calibration_request: {
+            Logger::Print("Fluorometer calibration request", Logger::Level::Notice);
+            Calibrate();
+            return true;
+        }
+
         default:
             return false;
     }
@@ -453,10 +565,10 @@ bool Fluorometer::Timing_generator_logarithmic(etl::vector<uint16_t, FLUOROMETER
         capture_timing_us[i] = static_cast<uint32_t>(timings[i]-timings[i-1]);
     }
 
-    /*
+
     for (unsigned int i = 0; i < samples; ++i) {
-        Logger::Print(emio::format("Timing: {:10.1f} {:10d}", timings[i], capture_timing_us[i]));
-    }*/
+        Logger::Print_raw(emio::format("Timing: {:10.1f} {:10d} \r\n", timings[i], capture_timing_us[i]));
+    }
 
     return true;
 }

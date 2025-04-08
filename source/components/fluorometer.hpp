@@ -13,6 +13,7 @@
 #include "can_bus/app_message.hpp"
 #include "can_bus/message_receiver.hpp"
 #include "components/component.hpp"
+#include "components/memory.hpp"
 #include "components/thermometers/thermistor.hpp"
 #include "components/thermometers/TMP102.hpp"
 #include "hal/adc/adc_channel.hpp"
@@ -21,6 +22,10 @@
 #include "logger.hpp"
 #include "rtos/wrappers.hpp"
 #include "etl/map.h"
+#include "etl/vector.h"
+#include "etl/array.h"
+
+
 
 #include "hardware/adc.h"
 #include "hardware/pwm.h"
@@ -39,7 +44,7 @@
 #include "codes/messages/fluorometer/sample_request.hpp"
 #include "codes/messages/fluorometer/sample_response.hpp"
 
-#define FLUOROMETER_MAX_SAMPLES 4096
+#define FLUOROMETER_MAX_SAMPLES 1024
 
 typedef std::function<bool(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES>&,uint,float)> Timing_generator_interface;
 
@@ -53,6 +58,13 @@ public:
         float sample_range;
         etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> sample_time_us;
         etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> intensity;
+    };
+
+    struct Calibration_data{
+        std::array<uint16_t, 1000> adc_value;
+        Fluorometer_config::Gain gain;
+        float intensity;
+        float length;
     };
 
 private:
@@ -112,7 +124,20 @@ private:
      */
     bool ojip_capture_finished = true;
 
+    /**
+     * @brief Calibration data for OJIP curve
+     */
+    inline static Calibration_data calibration_data = {};
+
+    /**
+     * @brief   Temperature sensor next to IR detector
+     */
     TMP102 * const detector_temperature_sensor;
+
+    /**
+     * @brief   Persistent memory for OJIP calibration data
+     */
+    EEPROM_storage * const memory;
 
 public:
     /**
@@ -123,8 +148,9 @@ public:
      * @param ntc_channel_selector  GPIO controlling input of multiplexor for temperature ADC measurement
      * @param ntc_thermistors       ADC channel for measuring temperature of onboard thermistor or Fluoro LED thermistor
      * @param i2c                   I2C bus for temp sensor
+     * @param memory                EEPROM storage for calibration data
      */
-    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c);
+    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory);
 
     /**
      * @brief
@@ -238,6 +264,8 @@ private:
      * @return float
      */
     float Measure_noise(uint16_t samples, uint period_us);
+
+    void Calibrate();
 
     /**
      * @brief       Sets gain of detector
