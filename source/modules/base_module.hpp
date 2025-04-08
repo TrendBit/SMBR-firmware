@@ -48,6 +48,16 @@ protected:
     Codes::Instance instance_enumeration = Codes::Instance::Undefined;
 
     /**
+     * @brief  Main I2C bus of system connected to sensors and detectors
+     */
+    I2C_bus * const i2c;
+
+    /**
+     * @brief  Pointer to EEPROM storage which is used for storing persistent data (calibration, etc)
+     */
+    EEPROM_storage * const memory;
+
+    /**
      * @brief  Pointer to CAN bus manager thread which is responsible for handling of CAN Bus peripheral
      */
     CAN_thread * const can_thread;
@@ -72,16 +82,6 @@ protected:
      * @brief  Pointer to yellow LED GPIO pin, this LED is optional
      */
     const std::optional<GPIO * const> yellow_led = {};
-
-    /**
-     * @brief  Main I2C bus of system connected to sensors and detectors
-     */
-    I2C_bus * const i2c;
-
-    /**
-     * @brief  Pointer to EEPROM storage which is used for storing persistent data (calibration, etc)
-     */
-    EEPROM_storage * const memory;
 
 protected:
     /**
