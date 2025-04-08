@@ -27,10 +27,6 @@
  */
 class Sensor_module: public Base_module {
 private:
-    /**
-     * @brief  Main I2C bus of system connected to sensors and detectors
-     */
-    I2C_bus * const i2c;
 
     /**
      * @brief   Mini OLED display component
