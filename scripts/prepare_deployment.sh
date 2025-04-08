@@ -6,6 +6,7 @@ generate_firmware() {
 
     # Set configuration
     setconfig --kconfig=config/Kconfig "${module_name}=y"
+    setconfig --kconfig=config/Kconfig "LOGGER=y"
 
     # Generate config header
     genconfig --header-path source/config.hpp config/Kconfig
