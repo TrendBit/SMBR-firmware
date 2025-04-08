@@ -43,12 +43,12 @@ Test_thread::Test_thread()
 void Test_thread::Run(){
     Logger::Print("Test thread init");
 
-    I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
+    // I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
     // Calibrate_VEML_lux(*i2c);
     // Spectrophotometer_test(*i2c);
     // LED_test(*i2c);
 
-    // Fluoro_buck_test();
+    Multi_OJIP();
 };
 
 
@@ -538,14 +538,14 @@ void Test_thread::Fluoro_sampler_test(){
 
     const bool boost = false;
 
-    auto led_pwm = new PWM_channel(17, 10000000, 0.0, true);
-    //GPIO *led_pwm  = new GPIO(17, GPIO::Direction::Out);
+    auto led_pwm = new PWM_channel(23, 10000000, 0.0, true);
+    //GPIO *led_pwm  = new GPIO(23, GPIO::Direction::Out);
 
     GPIO *LED_en  = new GPIO(22, GPIO::Direction::Out);
     GPIO *LED_pwm = new GPIO(25, GPIO::Direction::Out);
 
     if (not boost) {
-        led_pwm->Duty_cycle(0.3);
+        led_pwm->Duty_cycle(1.0);
         //led_pwm->Set(true);
     } else {
         LED_en->Set(true);
