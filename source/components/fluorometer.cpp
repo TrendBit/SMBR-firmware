@@ -302,13 +302,68 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
 
     Logger::Print(emio::format("Valid samples: {:d}", samples_captured), Logger::Level::Notice);
 
-    Print_curve_data(&OJIP_data);
+    // Print_curve_data(&OJIP_data);
+
+    // Filter OJIP data
+    if (samples_captured > 0) {
+        Filter_OJIP_data(&OJIP_data, 1.0f);
+    } else {
+        Logger::Print("No valid samples captured, skipping filtering", Logger::Level::Warning);
+    }
 
     ojip_capture_finished = true;
 
     return true;
 }
 
+bool Fluorometer::Filter_OJIP_data(OJIP* data, float tau_ms) {
+    if (!data || data->intensity.empty() || data->sample_time_us.empty()) {
+        Logger::Print("Cannot filter OJIP data: null pointer or empty data", Logger::Level::Error);
+        return false;
+    }
+
+    if (data->intensity.size() != data->sample_time_us.size()) {
+        Logger::Print("Cannot filter OJIP data: timestamp and intensity size mismatch", Logger::Level::Error);
+        return false;
+    }
+
+    // Create temporary buffer for filtered values
+    std::vector<uint16_t> filtered(data->intensity.size());
+
+    // Initialize filter with first value
+    filtered[0] = data->intensity[0];
+    float y = static_cast<float>(data->intensity[0]);
+
+    // Apply exponential filter with irregular time intervals
+    for (size_t i = 1; i < data->intensity.size(); ++i) {
+        // Calculate time difference in milliseconds
+        float dt_ms = static_cast<float>(data->sample_time_us[i] - data->sample_time_us[i-1]) / 1000.0f;
+
+        // Safety check for time differences
+        if (dt_ms <= 0.0f) dt_ms = 0.001f;  // minimum 1µs
+
+        // Calculate time dilation factor
+        float time_dilation_factor = static_cast<float>(data->sample_time_us[i]) / 10000.0f;
+        if (time_dilation_factor < 0.1f) time_dilation_factor = 0.1f;
+
+        // Calculate smoothing coefficient
+        float alpha = 1.0f - std::exp(-dt_ms / (tau_ms * time_dilation_factor));
+
+        // Apply filter
+        y = alpha * static_cast<float>(data->intensity[i]) + (1.0f - alpha) * y;
+
+        // Store filtered value
+        filtered[i] = static_cast<uint16_t>(std::round(y));
+    }
+
+    // Copy filtered values back to the original buffer
+    for (size_t i = 0; i < data->intensity.size(); ++i) {
+        data->intensity[i] = filtered[i];
+    }
+
+    Logger::Print(emio::format("OJIP data filtered with tau={:.1f}ms", tau_ms), Logger::Level::Notice);
+    return true;
+}
 
 
 void Fluorometer::Print_curve_data(OJIP * data){
@@ -365,39 +420,80 @@ bool Fluorometer::Export_data(OJIP * data){
         }
     }
 
+    float gain_value = 50.0f / Fluorometer_config::gain_values.at(data->detector_gain);
+
+    Logger::Print(emio::format("Gain compensation: {:.2f}", gain_value), Logger::Level::Notice);
+
     offset = sample_peak - calibration_peak;
 
     Logger::Print(emio::format("Sample base: {:d}, calibration base: {:d}, offset: {:d}", sample_base, calibration_base, offset), Logger::Level::Notice);
 
     if (data->sample_time_us.size() == data->intensity.size()) {
+        // Perform some initial setup calculations
+        const size_t calibration_size = calibration_data.adc_value.size();
+        const bool has_calibration = calibration_size > 0;
+        size_t samples_sent = 0;
+        size_t samples_calibrated = 0;
+
+        Logger::Print(emio::format("Exporting {} samples with offset {}",
+                    data->sample_time_us.size(), offset), Logger::Level::Notice);
+
+        // Process each sample
         for (size_t i = 0; i < data->sample_time_us.size(); ++i) {
-            const auto& time = data->sample_time_us[i];
-            const auto& intensity = data->intensity[i];
-            sample.time_us = time;
-            sample.sample_value = intensity;
-            if((i > 1) and (i < 1000)){
-                uint16_t correction = 0;
+            // Prepare sample message
+            sample.time_us = data->sample_time_us[i];
+            sample.sample_value = data->intensity[i];
+            sample.measurement_id = data->measurement_id;
+            sample.gain = data->detector_gain;
+            sample.emitor_intensity = data->emitor_intensity;
 
-                if(i > calibration_data.adc_value.size()){
-                    correction = calibration_data.adc_value[calibration_data.adc_value.size()-2];
-                } else {
-                    correction = calibration_data.adc_value[i-offset];
-                }
+            // Apply calibration if available
+            if (has_calibration && i > 1) { // Skip first samples
+                int cal_idx = static_cast<int>(i) - offset;
 
-                if(sample.sample_value < correction){
-                    sample.sample_value = 0;
-                } else {
-                    sample.sample_value -= correction;
+                // Ensure index is in valid range
+                if (cal_idx >= 0 && cal_idx < static_cast<int>(calibration_size)) {
+                    // Get calibration value for this index
+                    uint16_t correction = calibration_data.adc_value[cal_idx] / gain_value;
+
+                    // Apply correction with underflow protection
+                    if (sample.sample_value > correction) {
+                        sample.sample_value -= correction;
+                        samples_calibrated++;
+                    } else {
+                        sample.sample_value = 0;
+                    }
+                } else if (cal_idx >= static_cast<int>(calibration_size)) {
+                    // Use last available calibration value
+                    uint16_t correction = calibration_data.adc_value[calibration_size - 1] / gain_value;
+
+                    if (sample.sample_value > correction) {
+                        sample.sample_value -= correction;
+                    } else {
+                        sample.sample_value = 0;
+                    }
                 }
+                // For negative indices, we don't apply calibration as those are initial samples
             }
+
+            // Send message with CAN queue management
             uint queue = Send_CAN_message(sample);
-            if (queue < 32) {
-                Logger::Print(emio::format("CAN queue filling up, size:{}", queue), Logger::Level::Notice);
-                if (queue < 8) {
-                    rtos::Delay(1);
+            samples_sent++;
+
+            // Manage CAN queue to prevent overflow
+            if (queue > 48) {
+                // CAN queue getting full, add progressive delays
+                rtos::Delay(1);
+
+                if ((i % 20) == 0) {
+                    Logger::Print("CAN queue high level", Logger::Level::Warning);
                 }
+
             }
         }
+
+        Logger::Print(emio::format("OJIP export complete: {}/{} samples sent, {} calibrated",
+                    samples_sent, data->sample_time_us.size(), samples_calibrated), Logger::Level::Notice);
     } else {
         Logger::Print("OJIP sample intensity and timestamp vectors have different sizes", Logger::Level::Error);
     }
@@ -565,10 +661,11 @@ bool Fluorometer::Timing_generator_logarithmic(etl::vector<uint16_t, FLUOROMETER
         capture_timing_us[i] = static_cast<uint32_t>(timings[i]-timings[i-1]);
     }
 
-
+    /*
+    // Print timing data
     for (unsigned int i = 0; i < samples; ++i) {
         Logger::Print_raw(emio::format("Timing: {:10.1f} {:10d} \r\n", timings[i], capture_timing_us[i]));
-    }
+    }*/
 
     return true;
 }

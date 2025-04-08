@@ -214,6 +214,15 @@ private:
     uint16_t Detector_raw_value();
 
     /**
+     * @brief Filter OJIP data in-place using exponential smoothing
+     *
+     * @param data Pointer to OJIP data to filter
+     * @param tau_ms Time constant for filter in milliseconds
+     * @return bool Success status
+     */
+    bool Filter_OJIP_data(OJIP* data, float tau_ms);
+
+    /**
      * @brief Converts existing output value of detector to range 0-1.0f
      *
      * @return float    Value of emission detector in range 0-1.0f
