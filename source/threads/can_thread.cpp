@@ -41,9 +41,9 @@ void CAN_thread::Run(){
 uint CAN_thread::Send(CAN::Message const &message){
     if(tx_queue.empty()){
         if(can_bus.Transmit_available()){
-            Logger::Print("CAN available", Logger::Level::Trace);
+            //Logger::Print("CAN available", Logger::Level::Trace);
             if (can_bus.Transmit(message)){
-                Logger::Print("CAN message sent", Logger::Level::Trace);
+                //Logger::Print("CAN message sent", Logger::Level::Trace);
             } else {
                 Logger::Print("CAN message not sent", Logger::Level::Warning);
             }
@@ -65,7 +65,7 @@ uint CAN_thread::Send(CAN::Message const &message){
 
 uint CAN_thread::Send(App_messages::Base_message &message){
     Application_message app_message(message);
-    Logger::Print(emio::format("Sending CAN message type: {}", Codes::to_string(app_message.Message_type())), Logger::Level::Debug);
+    //Logger::Print(emio::format("Sending CAN message type: {}", Codes::to_string(app_message.Message_type())), Logger::Level::Debug);
     return Send(app_message);
 }
 
