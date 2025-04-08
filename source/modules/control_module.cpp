@@ -1,7 +1,7 @@
 #include "control_module.hpp"
 
 Control_module::Control_module():
-    Base_module(Codes::Module::Control_module, Codes::Instance::Exclusive, 24),
+    Base_module(Codes::Module::Control_module, Codes::Instance::Exclusive, 24, 18, 19),
     board_thermistor(new Thermistor(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_1, 3.30f), 3950, 10000, 25, 5100))
 {
     Setup_components();

@@ -2,26 +2,26 @@
 
 #include "threads/common_thread.hpp"
 
-Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin):
-Base_module(module_type, instance_type, green_led_pin, std::nullopt)
+Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl):
+Base_module(module_type, instance_type, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
 {
 
 }
 
-Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint yellow_led_pin):
-    Base_module(module_type, instance_type, green_led_pin, std::optional<GPIO * const>(new GPIO(yellow_led_pin, GPIO::Direction::Out)))
+Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, uint yellow_led_pin):
+    Base_module(module_type, instance_type, green_led_pin, i2c_sda, i2c_scl, std::optional<GPIO * const>(new GPIO(yellow_led_pin, GPIO::Direction::Out)))
 {
 
 }
 
-Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, std::optional<GPIO * const> yellow_led):
+Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, std::optional<GPIO * const> yellow_led):
     module_type(module_type),
     can_thread(new CAN_thread()),
     common_thread(new Common_thread(can_thread)),
     common_core(new Common_core()),
     heartbeat_thread(new Heartbeat_thread(green_led_pin,200)),
     yellow_led(yellow_led),
-    i2c(new I2C_bus(i2c1, 10, 11, 100000, true)),
+    i2c(new I2C_bus(i2c1, i2c_sda, i2c_scl, 100000, true)),
     memory(new EEPROM_storage(new AT24Cxxx(*i2c, 0x50, 64), module_type, instance_type))
 {
     this->instance = this;

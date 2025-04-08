@@ -91,7 +91,7 @@ protected:
      * @param instance_type Instance enumeration of module which is derived from this class
      * @param green_led_pin GPIO pin of green LED
      */
-    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin);
+    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl);
 
     /**
      * @brief Construct a new Base_module object, must be called from constructor of derived class
@@ -101,7 +101,7 @@ protected:
      * @param green_led_pin  GPIO pin of green LED
      * @param yellow_led_pin GPIO pin of yellow LED
      */
-    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint yellow_led_pin);
+    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, uint yellow_led_pin);
 
 private:
     /**
@@ -112,7 +112,7 @@ private:
      * @param green_led_pin GPIO pin number of green LED passed to heartbeat thread
      * @param yellow_led    Optional pointer to GPIO object representing yellow LED
      */
-    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, std::optional<GPIO * const> yellow_led);
+    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, std::optional<GPIO * const> yellow_led);
 
 public:
     /**
