@@ -8,6 +8,8 @@
 #pragma once
 
 #include "codes/codes.hpp"
+#include "components/memory.hpp"
+#include "components/memory/AT24Cxxx.hpp"
 #include "logger.hpp"
 #include "components/common_core.hpp"
 #include "threads/can_thread.hpp"
@@ -70,6 +72,16 @@ protected:
      * @brief  Pointer to yellow LED GPIO pin, this LED is optional
      */
     const std::optional<GPIO * const> yellow_led = {};
+
+    /**
+     * @brief  Main I2C bus of system connected to sensors and detectors
+     */
+    I2C_bus * const i2c;
+
+    /**
+     * @brief  Pointer to EEPROM storage which is used for storing persistent data (calibration, etc)
+     */
+    EEPROM_storage * const memory;
 
 protected:
     /**

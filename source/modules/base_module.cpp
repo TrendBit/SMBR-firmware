@@ -20,7 +20,9 @@ Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_typ
     common_thread(new Common_thread(can_thread)),
     common_core(new Common_core()),
     heartbeat_thread(new Heartbeat_thread(green_led_pin,200)),
-    yellow_led(yellow_led)
+    yellow_led(yellow_led),
+    i2c(new I2C_bus(i2c1, 10, 11, 100000, true)),
+    memory(new EEPROM_storage(new AT24Cxxx(*i2c, 0x50, 64), module_type, instance_type))
 {
     this->instance = this;
     this->instance_enumeration = instance_type;
