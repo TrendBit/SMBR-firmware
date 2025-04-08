@@ -574,6 +574,16 @@ bool Fluorometer::Receive(Application_message message){
 
         case Codes::Message_type::Fluorometer_OJIP_retrieve_request: {
             Logger::Print("Fluorometer OJIP retrieve request", Logger::Level::Notice);
+            if(!ojip_capture_finished) {
+                Logger::Print("Fluorometer OJIP capture not finished", Logger::Level::Warning);
+                return true;
+            }
+
+            if(OJIP_data.intensity.size() == 0) {
+                Logger::Print("Fluorometer OJIP data empty", Logger::Level::Warning);
+                return true;
+            }
+
             return Export_data(&OJIP_data);
         }
 
