@@ -12,7 +12,7 @@ Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * n
     memory(memory)
 {
     detector_gain->Set_pulls(true, true);
-    Gain(Fluorometer_config::Gain::x1);
+    Gain(Fluorometer_config::Gain::x10);
     calibration_data.adc_value.fill(0);
     memory->Read_OJIP_calibration(calibration_data.adc_value);
 }
@@ -20,7 +20,7 @@ Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * n
 void Fluorometer::Calibrate(){
 
     // Initialize calibration data
-    bool stat = Capture_OJIP(Fluorometer_config::Gain::x50, 1.0, 1.0, 1000, Fluorometer_config::Timing::Logarithmic);
+    bool stat = Capture_OJIP(Fluorometer_config::Gain::x10, 1.0, 1.0, 1000, Fluorometer_config::Timing::Logarithmic);
 
     if (!stat) {
         Logger::Print("Capture OJIP failed", Logger::Level::Error);
@@ -420,11 +420,13 @@ bool Fluorometer::Export_data(OJIP * data){
         }
     }
 
-    float gain_value = 50.0f / Fluorometer_config::gain_values.at(data->detector_gain);
+    float gain_value = Fluorometer_config::gain_values.at(calibration_data.gain) / Fluorometer_config::gain_values.at(data->detector_gain);
 
     Logger::Print(emio::format("Gain compensation: {:.2f}", gain_value), Logger::Level::Notice);
 
     offset = sample_peak - calibration_peak;
+
+    offset = 0;
 
     Logger::Print(emio::format("Sample base: {:d}, calibration base: {:d}, offset: {:d}", sample_base, calibration_base, offset), Logger::Level::Notice);
 
