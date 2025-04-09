@@ -135,11 +135,13 @@ float Common_core::MCU_core_utilization(){
 }
 
 bool Common_core::Enter_USB_bootloader(){
+    watchdog_disable();
     reset_usb_boot(0, 0);
     return true;
 }
 
 bool Common_core::Enter_CAN_bootloader(){
+    watchdog_disable();
     uint32_t *bl_vectors = (uint32_t *)(KATAPULT_BOOT_ADDRESS);
     uint64_t *req_sig = (uint64_t *)bl_vectors[0];
     asm volatile("cpsid i" ::: "memory");
