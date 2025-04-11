@@ -30,6 +30,7 @@
 #include "hardware/adc.h"
 #include "hardware/pwm.h"
 #include "hardware/dma.h"
+#include "hardware/watchdog.h"
 
 #include "codes/messages/fluorometer/fluorometer_config.hpp"
 #include "codes/messages/fluorometer/ojip_capture_request.hpp"

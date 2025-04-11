@@ -14,13 +14,14 @@ Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * n
     detector_gain->Set_pulls(true, true);
     Gain(Fluorometer_config::Gain::x10);
     calibration_data.adc_value.fill(0);
+    calibration_data.gain = Fluorometer_config::Gain::x10;
     memory->Read_OJIP_calibration(calibration_data.adc_value);
 }
 
 void Fluorometer::Calibrate(){
 
     // Initialize calibration data
-    bool stat = Capture_OJIP(Fluorometer_config::Gain::x10, 1.0, 1.0, 1000, Fluorometer_config::Timing::Logarithmic);
+    bool stat = Capture_OJIP(calibration_data.gain, 1.0, 1.0, 1000, Fluorometer_config::Timing::Logarithmic);
 
     if (!stat) {
         Logger::Print("Capture OJIP failed", Logger::Level::Error);
@@ -138,6 +139,9 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
     if (capture_timing[1] <= capture_timing[0]) {
         Logger::Print(emio::format("Capture timing is incorrect, [0]={}, [1]={}",capture_timing[0], capture_timing[1]), Logger::Level::Error);
     }
+
+    Logger::Print("Reseting watchdog before capture", Logger::Level::Notice);
+    watchdog_update();
 
     Logger::Print("Configuring ADC", Logger::Level::Notice);
     adc_init();
@@ -419,6 +423,9 @@ bool Fluorometer::Export_data(OJIP * data){
             break;
         }
     }
+
+    Logger::Print("Reseting watchdog before export", Logger::Level::Notice);
+    watchdog_update();
 
     float gain_value = Fluorometer_config::gain_values.at(calibration_data.gain) / Fluorometer_config::gain_values.at(data->detector_gain);
 
