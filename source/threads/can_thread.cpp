@@ -58,6 +58,13 @@ uint CAN_thread::Send(CAN::Message const &message){
             return 0;
         } else {
             tx_queue.push(message);
+            if (tx_queue.size() % 8 == 0) {
+                static uint8_t emergency_retransmit_count = 0;
+                emergency_retransmit_count++;
+                Logger::Print(emio::format("CAN Emergency retransmit count: {}", emergency_retransmit_count), Logger::Level::Warning);
+                Logger::Print("CAN performing retransmit attempt", Logger::Level::Warning);
+                Retransmit();
+            }
         }
     }
     return tx_queue.available();
