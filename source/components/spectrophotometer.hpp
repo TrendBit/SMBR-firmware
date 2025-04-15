@@ -63,7 +63,7 @@ private:
      */
     static inline etl::unordered_map<Channels, Channel, 6> channels = {
         {Channels::UV,     {430, 10, 0.91, 1.0, 0, KTD2026::Channel::CH_1, VEML6040::Channels::White, VEML6040::Exposure::_640_ms}},
-        {Channels::Blue,   {480, 10, 0.34, 1.0, 0, KTD2026::Channel::CH_2, VEML6040::Channels::Blue,  VEML6040::Exposure::_80_ms}},
+        {Channels::Blue,   {480, 10, 1.34, 1.0, 0, KTD2026::Channel::CH_2, VEML6040::Channels::Blue,  VEML6040::Exposure::_80_ms}},
         {Channels::Green,  {560, 10, 1.00, 1.0, 0, KTD2026::Channel::CH_3, VEML6040::Channels::Green, VEML6040::Exposure::_640_ms}},
         {Channels::Orange, {630, 10, 0.58, 1.0, 1, KTD2026::Channel::CH_1, VEML6040::Channels::Red,   VEML6040::Exposure::_80_ms}},
         {Channels::Red,    {675, 10, 0.36, 1.0, 1, KTD2026::Channel::CH_2, VEML6040::Channels::Red,   VEML6040::Exposure::_160_ms}},
