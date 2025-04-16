@@ -166,6 +166,27 @@ bool EEPROM_storage::Read_OJIP_calibration(std::array<uint16_t, 1000> &calibrati
     return true;
 }
 
+bool EEPROM_storage::Read_spectrophotometer_calibration(std::array<float, 6> &calibration){
+    auto record = Read_record(Record_name::SPM_nominal_calibration);
+    if (record.has_value()) {
+        if (record.value()[0] == 0xFF and record.value()[1] == 0xFF) {
+            return false; // Invalid values of data
+        } else {
+            std::copy(record.value().begin(), record.value().end(), reinterpret_cast<uint8_t*>(calibration.data()));
+            return true;
+        }
+    } else {
+        return false; // Data not available, read failed
+    }
+}
+
+bool EEPROM_storage::Write_spectrophotometer_calibration(std::array<float, 6> &calibration){
+    std::vector<uint8_t> data;
+    data.resize(sizeof(float) * calibration.size());
+    std::copy(reinterpret_cast<uint8_t*>(calibration.data()), reinterpret_cast<uint8_t*>(calibration.data()) + sizeof(float) * calibration.size(), data.begin());
+    return Write_record(Record_name::SPM_nominal_calibration, data);
+}
+
 Codes::Module EEPROM_storage::Module(){
     auto record = Read_record(Record_name::Module_type);
     if (record.has_value()) {

@@ -32,6 +32,7 @@ public:
         Instance_enumeration,
         Reserved,
         OJIP_calibration,
+        SPM_nominal_calibration, // Spectrophotometer
     };
 
 private:
@@ -54,11 +55,12 @@ private:
      *          In future should even contain in which EEPROM chip
      *          Array of pairs because constexpr std::map does not exist in c++20
      */
-    static constexpr std::array<std::pair<Record_name, Record>, 4> records = {
-        std::make_pair(Record_name::Module_type,                Record{0x0000, 1}),
-        std::make_pair(Record_name::Instance_enumeration,       Record{0x0001, 1}),
-        std::make_pair(Record_name::Reserved,                   Record{0x0002, 2}),
-        std::make_pair(Record_name::OJIP_calibration,           Record{0x0400, 2000}),
+    static constexpr std::array<std::pair<Record_name, Record>, 5> records = {
+        std::make_pair(Record_name::Module_type,                    Record{0x0000, 1}),
+        std::make_pair(Record_name::Instance_enumeration,           Record{0x0001, 1}),
+        std::make_pair(Record_name::Reserved,                       Record{0x0002, 2}),
+        std::make_pair(Record_name::SPM_nominal_calibration,        Record{0x0300, 24}),
+        std::make_pair(Record_name::OJIP_calibration,               Record{0x0400, 2000}),
     };
 
 public:
@@ -71,7 +73,7 @@ public:
      */
     explicit EEPROM_storage(M24Cxx * const eeprom);
 
-    
+
     bool Check_type(Codes::Module module, Codes::Instance instance);
 
     /**
@@ -106,6 +108,24 @@ public:
      * @return false        Data was not written, memory not accessible
      */
     bool Write_OJIP_calibration(std::array<uint16_t, 1000> &calibration);
+
+    /**
+     * @brief   Read spectrophotometer calibration data from EEPROM
+     *
+     * @param calibration   Location where calibration data will be stored
+     * @return true         Data was read successfully
+     * @return false        Data was not read, memory not accessible or data not valid (empty)
+     */
+    bool Read_spectrophotometer_calibration(std::array<float, 6> &calibration);
+
+    /**
+     * @brief   Write spectrophotometer calibration data to EEPROM
+     *
+     * @param calibration   Calibration data to be written to EEPROM
+     * @return true         Data was written successfully
+     * @return false        Data was not written, memory not accessible
+     */
+    bool Write_spectrophotometer_calibration(std::array<float, 6> &calibration);
 
 private:
     /**
