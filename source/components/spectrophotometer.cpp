@@ -1,16 +1,36 @@
 #include "spectrophotometer.hpp"
 
-Spectrophotometer::Spectrophotometer(I2C_bus &i2c):
+Spectrophotometer::Spectrophotometer(I2C_bus &i2c, EEPROM_storage * const memory):
     Component(Codes::Component::Spectrophotometer),
     Message_receiver(Codes::Component::Spectrophotometer),
     light_sensor(new VEML6040(i2c, 0x10)),
     drivers({new KTD2026(i2c, 0x31), new KTD2026(i2c, 0x30)}),
-    temperature_sensor(new TMP102(i2c, 0x49))
+    temperature_sensor(new TMP102(i2c, 0x49)),
+    memory(memory)
 {
     drivers[0]->Init();
     drivers[1]->Init();
     light_sensor->Mode_set(VEML6040::Mode::Trigger);
     light_sensor->Exposure_time(VEML6040::Exposure::_40_ms);
+    Load_calibration();
+}
+
+bool Spectrophotometer::Load_calibration(){
+    std::array<float, 6> nominal_calibration = {};
+    bool status = memory->Read_spectrophotometer_calibration(nominal_calibration);
+
+    if (status) {
+        Logger::Print("Spectrophotometer calibration data loaded from memory", Logger::Level::Debug);
+    } else {
+        Logger::Print("Failed to load spectrophotometer calibration data from memory", Logger::Level::Error);
+        return false;
+    }
+
+    for (size_t i = 0; i < channels.size(); ++i) {
+        channels.at(static_cast<Channels>(i)).nominal_detection = nominal_calibration[i];
+    }
+
+    return true;
 }
 
 uint16_t Spectrophotometer::Read_detector_raw(Channels channel){
@@ -88,12 +108,29 @@ void Spectrophotometer::Calibrate_channels(){
         Channels::IR,
     };
 
-    Logger::Print("Spectrometer calibration in progress", Logger::Level::Debug);
+    Logger::Print("Spectrophotometer calibration in progress", Logger::Level::Debug);
 
     for (auto channel : channels_to_calibrate) {
         float detected_intensity = Measure_intensity(channel);
         Logger::Print(emio::format("Nominal intensity: {:05.3f}", detected_intensity), Logger::Level::Trace);
         channels[channel].nominal_detection = detected_intensity;
+    }
+
+    std::array<float, 6> nominal_calibration = {
+        channels[Channels::UV].nominal_detection,
+        channels[Channels::Blue].nominal_detection,
+        channels[Channels::Green].nominal_detection,
+        channels[Channels::Orange].nominal_detection,
+        channels[Channels::Red].nominal_detection,
+        channels[Channels::IR].nominal_detection,
+    };
+
+    bool status = memory->Write_spectrophotometer_calibration(nominal_calibration);
+
+    if (status) {
+        Logger::Print("Spectrophotometer calibration data written to memory", Logger::Level::Debug);
+    } else {
+        Logger::Print("Failed to write spectrophotometer calibration data to memory", Logger::Level::Error);
     }
 }
 

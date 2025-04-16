@@ -15,6 +15,7 @@
 #include "components/thermometers/TMP102.hpp"
 #include "etl/array.h"
 #include "etl/unordered_map.h"
+#include "components/memory.hpp"
 #include "logger.hpp"
 
 #include "codes/messages/spectrophotometer/channel_count_response.hpp"
@@ -40,8 +41,8 @@ public:
         UV      = 0,
         Blue    = 1,
         Green   = 2,
-        Red     = 3,
-        Orange  = 4,
+        Orange  = 3,
+        Red     = 4,
         IR      = 5,
     };
 
@@ -94,13 +95,19 @@ private:
      */
     TMP102 * const temperature_sensor;
 
+    /**
+     * @brief   Persistent memory for calibration data
+     */
+    EEPROM_storage * const memory;
+
 public:
     /**
      * @brief Construct a new Spectrophotometer object
      *
-     * @param i2c   I2C bus where sensors are connected
+     * @param i2c       I2C bus where sensors are connected
+     * @param memory    EEPROM storage for calibration data
      */
-    explicit Spectrophotometer(I2C_bus &i2c);
+    explicit Spectrophotometer(I2C_bus &i2c, EEPROM_storage * const memory);
 
     /**
      * @brief   Measure channel and return results as absolute and relative values
@@ -196,9 +203,13 @@ private:
      */
     uint16_t Calculate_absolute(Channels channel, float intensity);
 
-    bool Write_calibration();
-
-    bool Read_calibration();
+    /**
+     * @brief   Load calibration data from EEPROM
+     *
+     * @return true     Calibration data was loaded successfully
+     * @return false    Calibration data was not loaded, memory not accessible or data not valid (empty)
+     */
+    bool Load_calibration();
 
     /**
      * @brief   Perform calibration of emitor intensity for all channels
