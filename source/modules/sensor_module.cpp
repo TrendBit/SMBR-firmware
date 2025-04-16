@@ -51,5 +51,5 @@ void Sensor_module::Setup_fluorometer(){
 }
 
 void Sensor_module::Setup_spectrophotometer(){
-    spectrophotometer = new Spectrophotometer(*i2c);
+    spectrophotometer = new Spectrophotometer(*i2c, memory);
 }
