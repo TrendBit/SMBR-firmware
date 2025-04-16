@@ -9,6 +9,8 @@ Spectrophotometer::Spectrophotometer(I2C_bus &i2c):
 {
     drivers[0]->Init();
     drivers[1]->Init();
+    light_sensor->Mode_set(VEML6040::Mode::Trigger);
+    light_sensor->Exposure_time(VEML6040::Exposure::_40_ms);
 }
 
 uint16_t Spectrophotometer::Read_detector_raw(Channels channel){
@@ -19,23 +21,47 @@ float Spectrophotometer::Read_detector(Channels channel){
     return light_sensor->Measure_relative(channels.at(channel).sensor_channel);
 }
 
-float Spectrophotometer::Measure_relative(Channels channel){
-    float emitor_intensity = channels.at(channel).intensity_compensation;
+float Spectrophotometer::Measure_intensity(Channels channel){
+    float emitor_intensity = channels.at(channel).emitter_intensity;
     VEML6040::Exposure exposure_time = channels.at(channel).exposure_time;
+    uint delay = VEML6040::Measurement_time(exposure_time);
+
+    light_sensor->Disable();
     light_sensor->Exposure_time(exposure_time);
     Set(channel, emitor_intensity);
-    uint delay = VEML6040::Measurement_time(exposure_time);
-    rtos::Delay(2000);
+    light_sensor->Enable();
+    light_sensor->Trigger_now();
+
+    rtos::Delay(delay*1.1);
+
     float detector_value = light_sensor->Measure_relative(channels.at(channel).sensor_channel);
-    float multiplier = channels.at(channel).multiplier;
-    Logger::Print(emio::format("Channel: {}", static_cast<uint8_t>(channel)), Logger::Level::Debug);
-    Logger::Print(emio::format("Detector value: {:05.3f}", detector_value), Logger::Level::Debug);
-    Logger::Print(emio::format("Exposure time: {:d} ms", delay), Logger::Level::Debug);
-    Logger::Print(emio::format("Emitor intensity: {:05.3f}", emitor_intensity), Logger::Level::Debug);
-    Logger::Print(emio::format("Multiplier: {:05.3f}", multiplier), Logger::Level::Debug);
-    detector_value *= multiplier;
     Set(channel, 0.0f);
+
     return detector_value;
+}
+
+Spectrophotometer::Measurement Spectrophotometer::Measure_channel(Channels channel){
+    Measurement measurement;
+    measurement.channel = channel;
+
+    float intensity = Measure_intensity(channel);
+
+    measurement.relative_value = Calculate_relative(channel, intensity);
+    measurement.absolute_value = Calculate_absolute(channel, intensity);
+
+    return measurement;
+}
+
+float Spectrophotometer::Calculate_relative(Channels channel, float intensity){
+    float nominal_detection = channels.at(channel).nominal_detection;
+    return intensity / nominal_detection;
+}
+
+uint16_t Spectrophotometer::Calculate_absolute(Channels channel, float intensity){
+    float emitor_compensated = intensity * 1024.0f * (1.0f / channels.at(channel).emitter_intensity);
+    uint exposure_time = VEML6040::Measurement_time(channels.at(channel).exposure_time);
+    float exposure_compensated = emitor_compensated * (1280.0f / exposure_time);
+    return exposure_compensated;
 }
 
 bool Spectrophotometer::Set(Channels channel, float intensity){
@@ -51,21 +77,7 @@ float Spectrophotometer::Temperature(){
 
 void Spectrophotometer::Calibrate_channels(){
 
-    Logger::Print("Base line", Logger::Level::Notice);
-    light_sensor->Exposure_time(VEML6040::Exposure::_160_ms);
-    Set(Channels::UV, 0.0);
-    Set(Channels::Blue, 1.0);
-    Set(Channels::Green, 0.0);
-    Set(Channels::Orange, 0.0);
-    Set(Channels::Red, 0.0);
-    Set(Channels::IR, 0.0);
-    rtos::Delay(1000);
-    Logger::Print(emio::format("Red: {:05.3f}", light_sensor->Measure_relative(VEML6040::Channels::Red)));
-    Logger::Print(emio::format("Green: {:05.3f}", light_sensor->Measure_relative(VEML6040::Channels::Green)));
-    Logger::Print(emio::format("Blue: {:05.3f}", light_sensor->Measure_relative(VEML6040::Channels::Blue)));
-    Logger::Print(emio::format("White: {:05.3f}", light_sensor->Measure_relative(VEML6040::Channels::White)));
-
-    std::unordered_map<Channels, float> intensity_compensation = {};
+    std::unordered_map<Channels, float> channel_intensity = {};
 
     etl::array<Channels,6> channels_to_calibrate = {
         Channels::UV,
@@ -76,31 +88,12 @@ void Spectrophotometer::Calibrate_channels(){
         Channels::IR,
     };
 
-    for (auto channel : channels_to_calibrate) {
-        intensity_compensation[channel] = channels.at(channel).intensity_compensation;
-    }
+    Logger::Print("Spectrometer calibration in progress", Logger::Level::Debug);
 
     for (auto channel : channels_to_calibrate) {
-        VEML6040::Exposure exposure_time = channels.at(channel).exposure_time;
-        float intensity = channels.at(channel).intensity_compensation;
-        float measurement_time = light_sensor->Exposure_time(exposure_time);
-        Set(channel, intensity);
-        rtos::Delay(2000);
-        intensity_compensation[channel] = Read_detector(channel);
-        Logger::Print(emio::format("Intensity: {:05.3f}", intensity_compensation[channel]));
-        Set(channel, 0.0);
-    }
-
-    float min_intensity = std::max_element(intensity_compensation.begin(), intensity_compensation.end(), [](auto a, auto b){ return a.second > b.second; })->second;
-    float max_intensity = std::min_element(intensity_compensation.begin(), intensity_compensation.end(), [](auto a, auto b){ return a.second < b.second; })->second;
-
-    Logger::Print(emio::format("Min intensity: {:05.3f}", max_intensity));
-    Logger::Print(emio::format("Max intensity: {:05.3f}", max_intensity));
-
-    for (auto channel : channels_to_calibrate) {
-        intensity_compensation[channel] = min_intensity / intensity_compensation[channel];
-        Logger::Print(emio::format("Compensation: {:05.3f}", intensity_compensation[channel]));
-        channels[channel].intensity_compensation = intensity_compensation[channel];
+        float detected_intensity = Measure_intensity(channel);
+        Logger::Print(emio::format("Nominal intensity: {:05.3f}", detected_intensity), Logger::Level::Trace);
+        channels[channel].nominal_detection = detected_intensity;
     }
 }
 
@@ -158,11 +151,19 @@ bool Spectrophotometer::Receive(Application_message message){
 
             Channels channel_name = static_cast<Channels>(request.channel);
 
-            float value = Measure_relative(channel_name);
+            Measurement measurement = Measure_channel(channel_name);
 
             App_messages::Spectrophotometer::Measurement_response response;
-            response.channel = channel_index;
-            response.value = value;
+            response.channel = static_cast<uint8_t>(measurement.channel);
+            response.relative_value = measurement.relative_value;
+            response.absolute_value = measurement.absolute_value;
+
+            Logger::Print(emio::format("Channel: {}, relative {:05.3f}, absolute {}",
+                    static_cast<uint8_t>(measurement.channel),
+                    measurement.relative_value,
+                    measurement.absolute_value
+                    ),
+                Logger::Level::Debug);
 
             Send_CAN_message(response);
             return true;

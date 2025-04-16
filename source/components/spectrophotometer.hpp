@@ -27,6 +27,9 @@
 /**
  * @brief   Spectrophotometer used to measure optical density of suspension
  *          Multispectral component with several channel for different wavelengths.
+ *          To determine relative value of measured channel and relative change in time spectrophotometer uses
+ *              calibration which is saved persistently in EEPROM.
+ *          This calibration should be done with empty cuvette or with cuvette containing grow medium.
  */
 class Spectrophotometer: public Component, public Message_receiver{
 public:
@@ -42,19 +45,25 @@ public:
         IR      = 5,
     };
 
+    struct Measurement {
+        Channels channel;
+        float relative_value;
+        uint16_t absolute_value;
+    };
+
 private:
     /**
      * @brief   Structure containing all information about channel of spectrophotometer
      */
     struct Channel {
-        float central_wavelength;
-        float half_sensitivity_width;
-        float intensity_compensation;
-        float multiplier;
-        uint8_t driver_instance;
-        KTD2026::Channel driver_channel;
-        VEML6040::Channels sensor_channel;
-        VEML6040::Exposure exposure_time;
+        float central_wavelength;           // Central wavelength of channel emitter in nm
+        float half_sensitivity_width;       // Half sensitivity width of channel emitter in nm
+        float emitter_intensity;            // Intensity of emitter used for measurements 0-1.0f
+        float nominal_detection;            // Nominal detection of channel with empty cuvette or grow medium
+        uint8_t driver_instance;            // Driver instance used for controlling emitter
+        KTD2026::Channel driver_channel;    // Driver channel used for controlling emitter
+        VEML6040::Channels sensor_channel;  // Channel of detector used for measuring light intensity
+        VEML6040::Exposure exposure_time;   // Exposure time of sensor used for measuring light intensity
     };
 
 private:
@@ -62,12 +71,12 @@ private:
      * @brief   Mapping between channel and components (emitor, detector and measurement settings)
      */
     static inline etl::unordered_map<Channels, Channel, 6> channels = {
-        {Channels::UV,     {430, 10, 0.91, 1.0, 0, KTD2026::Channel::CH_1, VEML6040::Channels::White, VEML6040::Exposure::_640_ms}},
-        {Channels::Blue,   {480, 10, 1.34, 1.0, 0, KTD2026::Channel::CH_2, VEML6040::Channels::Blue,  VEML6040::Exposure::_80_ms}},
-        {Channels::Green,  {560, 10, 1.00, 1.0, 0, KTD2026::Channel::CH_3, VEML6040::Channels::Green, VEML6040::Exposure::_640_ms}},
-        {Channels::Orange, {630, 10, 0.58, 1.0, 1, KTD2026::Channel::CH_1, VEML6040::Channels::Red,   VEML6040::Exposure::_80_ms}},
-        {Channels::Red,    {675, 10, 0.36, 1.0, 1, KTD2026::Channel::CH_2, VEML6040::Channels::Red,   VEML6040::Exposure::_160_ms}},
-        {Channels::IR,     {870, 10, 0.70, 1.0, 1, KTD2026::Channel::CH_3, VEML6040::Channels::White, VEML6040::Exposure::_40_ms}},
+        {Channels::UV,     {430, 10, 1.00, 0.015, 0, KTD2026::Channel::CH_1, VEML6040::Channels::White,  VEML6040::Exposure::_640_ms}},
+        {Channels::Blue,   {480, 10, 1.00, 0.300, 0, KTD2026::Channel::CH_2, VEML6040::Channels::Blue,  VEML6040::Exposure::_160_ms}},
+        {Channels::Green,  {560, 10, 1.00, 0.020, 0, KTD2026::Channel::CH_3, VEML6040::Channels::Green, VEML6040::Exposure::_640_ms}},
+        {Channels::Orange, {630, 10, 1.00, 0.280, 1, KTD2026::Channel::CH_1, VEML6040::Channels::Red,   VEML6040::Exposure::_160_ms}},
+        {Channels::Red,    {675, 10, 1.00, 0.380, 1, KTD2026::Channel::CH_2, VEML6040::Channels::Red,   VEML6040::Exposure::_320_ms}},
+        {Channels::IR,     {870, 10, 1.00, 0.315, 1, KTD2026::Channel::CH_3, VEML6040::Channels::White, VEML6040::Exposure::_80_ms}},
     };
 
     /**
@@ -94,6 +103,14 @@ public:
     explicit Spectrophotometer(I2C_bus &i2c);
 
     /**
+     * @brief   Measure channel and return results as absolute and relative values
+     *
+     * @param channel        Channel to measure
+     * @return Measurement   Measurement of channel
+     */
+    Measurement Measure_channel(Channels channel);
+
+    /**
      * @brief   Measure relative intensity of given channel at detector
      *          Sets up light source and wait for measurement to be done
      *          With parameters set in channels map
@@ -101,7 +118,7 @@ public:
      * @param channel   Channel to measure
      * @return float    Relative intensity of channel 0-1.0f
      */
-    float Measure_relative(Channels channel);
+    float Measure_intensity(Channels channel);
 
     /**
      * @brief   Measure temperature of emitters
@@ -149,7 +166,7 @@ private:
      */
     virtual bool Receive(CAN::Message message) override final;
 
-        /**
+    /**
      * @brief   Receive message implementation from Message_receiver interface for Application messages (extended frame)
      *          This method is invoked by Message_router when message is determined for this component
      *
@@ -159,7 +176,30 @@ private:
      */
     virtual bool Receive(Application_message message) override final;
 
-private:
+    /**
+     * @brief   Calculate relative value of channel in respect to nominal intensity of channel
+     *          Nominal intensity should be measure with empty cuvette or with cuvette containing grow medium
+     *
+     * @param channel       Measured channel
+     * @param intensity     Intensity of channel
+     * @return float        Relative value of channel in respect to nominal intensity
+     */
+    float Calculate_relative(Channels channel, float intensity);
+
+    /**
+     * @brief   Calculate absolute intensity of channel
+     *          This calculation takes into account exposure time and used emitter intensity
+     *
+     * @param channel     Measured channel
+     * @param intensity   Intensity of channel
+     * @return uint16_t   Absolute value detected on emitter
+     */
+    uint16_t Calculate_absolute(Channels channel, float intensity);
+
+    bool Write_calibration();
+
+    bool Read_calibration();
+
     /**
      * @brief   Perform calibration of emitor intensity for all channels
      */
