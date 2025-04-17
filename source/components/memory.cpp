@@ -73,96 +73,217 @@ bool EEPROM_storage::Check_type(Codes::Module module, Codes::Instance instance){
     return type_check;
 }
 
-bool EEPROM_storage::Write_OJIP_calibration(std::array<uint16_t, 1000> &calibration) {
-    Record_name name = Record_name::OJIP_calibration;
+bool EEPROM_storage::Write_OJIP_calibration_values(std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration) {
+    Record_name name = Record_name::OJIP_calibration_values; // Use correct record name
     auto it = std::find_if(records.begin(), records.end(),
         [name](const auto& pair) { return pair.first == name; });
     if (it == records.end()) {
-        Logger::Print("Record not found", Logger::Level::Error);
-        return false; // Record with this name was not found
+        Logger::Print("Record OJIP_calibration_adc not found", Logger::Level::Error);
+        return false;
     }
 
     const Record& record = it->second;
     uint16_t start_address = record.offset;
-    uint16_t total_length = record.length * 2;  // Each uint16_t is 2 bytes
+    // Use the exact size required by the data array
+    uint16_t data_size_bytes = sizeof(uint16_t) * calibration.size();
 
-    if (total_length < sizeof(uint16_t) * calibration.size()) {
-        Logger::Print("Calibration too large for EEPROM record", Logger::Level::Error);
+    // Check if the record length in EEPROM is sufficient
+    if (record.length < data_size_bytes) {
+        Logger::Print("Calibration ADC data too large for EEPROM record", Logger::Level::Error);
         return false;
     }
 
     const uint8_t* data_ptr = reinterpret_cast<const uint8_t*>(calibration.data());
 
-    constexpr size_t CHUNK_SIZE = 32;  // 32 bytes per write
+    constexpr size_t CHUNK_SIZE = 32;
     size_t bytes_written = 0;
     bool status = true;
 
-    // Split data into chunks with siz similar to EEPROM page size
-    while (bytes_written < total_length && status) {
-        // Calculate current chunk size (may be smaller for the last chunk)
-        size_t current_chunk_size = std::min(CHUNK_SIZE, total_length - bytes_written);
+    while (bytes_written < data_size_bytes && status) {
+        size_t current_chunk_size = std::min(CHUNK_SIZE, data_size_bytes - bytes_written);
         uint16_t current_address = start_address + bytes_written;
-
         status = eeprom->Write(current_address, data_ptr + bytes_written, current_chunk_size);
-
         if (!status) {
-            Logger::Print(emio::format("EEPROM write failed at address 0x{:04x}", current_address), Logger::Level::Error);
+            Logger::Print(emio::format("EEPROM write failed at address 0x{:04x} for ADC data", current_address), Logger::Level::Error);
             return false;
         }
-
         bytes_written += current_chunk_size;
-
-        // Delay to allow EEPROM write cycle to complete
-        rtos::Delay(5);
+        rtos::Delay(5); // Delay for EEPROM write cycle
     }
 
-    Logger::Print(emio::format("EEPROM write succeeded, {} bytes written in {} chunks",
-               total_length, (total_length + CHUNK_SIZE - 1) / CHUNK_SIZE), Logger::Level::Notice);
+    Logger::Print(emio::format("EEPROM ADC calibration write succeeded, {} bytes written", bytes_written), Logger::Level::Debug);
     return true;
 }
 
-bool EEPROM_storage::Read_OJIP_calibration(std::array<uint16_t, 1000> &calibration) {
-    Record_name name = Record_name::OJIP_calibration;
+bool EEPROM_storage::Read_OJIP_calibration_values(std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration) {
+    Record_name name = Record_name::OJIP_calibration_values; // Use correct record name
     auto it = std::find_if(records.begin(), records.end(),
         [name](const auto& pair) { return pair.first == name; });
     if (it == records.end()) {
-        Logger::Print("Record not found", Logger::Level::Error);
+        Logger::Print("Record OJIP_calibration_adc not found", Logger::Level::Error);
         return false;
     }
 
     const Record& record = it->second;
     uint16_t start_address = record.offset;
-    uint16_t total_length = record.length;
+    // Use the exact size required by the data array
+    uint16_t data_size_bytes = sizeof(uint16_t) * calibration.size();
 
-    if (total_length < sizeof(uint16_t) * calibration.size()) {
-        Logger::Print("Calibration record size too small", Logger::Level::Error);
+    // Check if the record length in EEPROM is sufficient
+    if (record.length < data_size_bytes) {
+        Logger::Print("Calibration ADC record size too small", Logger::Level::Error);
         return false;
     }
 
     uint8_t* data_ptr = reinterpret_cast<uint8_t*>(calibration.data());
 
-    constexpr size_t CHUNK_SIZE = 32;  // 32 bytes per read
+    constexpr size_t CHUNK_SIZE = 32;
     size_t bytes_read = 0;
     bool status = true;
 
-    while (bytes_read < total_length && status) {
-        // Calculate current chunk size
-        size_t current_chunk_size = std::min(CHUNK_SIZE, total_length - bytes_read);
+    while (bytes_read < data_size_bytes && status) {
+        size_t current_chunk_size = std::min(CHUNK_SIZE, data_size_bytes - bytes_read);
         uint16_t current_address = start_address + bytes_read;
-
         auto chunk_data = eeprom->Read(current_address, current_chunk_size);
-
         if (!chunk_data.has_value()) {
-            Logger::Print(emio::format("EEPROM read failed at address 0x{:04x}", current_address), Logger::Level::Error);
+            Logger::Print(emio::format("EEPROM read failed at address 0x{:04x} for ADC data", current_address), Logger::Level::Error);
             return false;
         }
-
         std::copy(chunk_data->begin(), chunk_data->end(), data_ptr + bytes_read);
         bytes_read += current_chunk_size;
     }
 
-    Logger::Print(emio::format("EEPROM read succeeded, {} bytes read in {} chunks",
-               bytes_read, (bytes_read + CHUNK_SIZE - 1) / CHUNK_SIZE), Logger::Level::Notice);
+    bool all_zero = true;
+    bool all_ff = true;
+    for (size_t i = 0; i < data_size_bytes; ++i) {
+        if (data_ptr[i] != 0x00) {
+            all_zero = false;
+        }
+        if (data_ptr[i] != 0xFF) {
+            all_ff = false;
+        }
+        if (!all_zero && !all_ff) {
+            break;
+        }
+    }
+
+    if (all_zero) {
+        Logger::Print("EEPROM ADC calibration data appears invalid (all zeros)", Logger::Level::Warning);
+        return false;
+    }
+    if (all_ff) {
+        Logger::Print("EEPROM ADC calibration data appears invalid (all 0xFF)", Logger::Level::Warning);
+        return false;
+    }
+
+    Logger::Print(emio::format("EEPROM ADC calibration read succeeded, {} bytes read", bytes_read), Logger::Level::Debug);
+    return true;
+}
+
+bool EEPROM_storage::Write_OJIP_calibration_timing(std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_timing) {
+    Record_name name = Record_name::OJIP_calibration_timing;
+    auto it = std::find_if(records.begin(), records.end(),
+        [name](const auto& pair) { return pair.first == name; });
+    if (it == records.end()) {
+        Logger::Print("Record OJIP_calibration_timing not found", Logger::Level::Error);
+        return false;
+    }
+
+    const Record& record = it->second;
+    uint16_t start_address = record.offset;
+    // Use the exact size required by the data array
+    uint16_t data_size_bytes = sizeof(uint32_t) * calibration_timing.size();
+
+    // Check if the record length in EEPROM is sufficient
+    if (record.length < data_size_bytes) {
+        Logger::Print("Calibration timing data too large for EEPROM record", Logger::Level::Error);
+        return false;
+    }
+
+    const uint8_t* data_ptr = reinterpret_cast<const uint8_t*>(calibration_timing.data());
+
+    constexpr size_t CHUNK_SIZE = 32;
+    size_t bytes_written = 0;
+    bool status = true;
+
+    while (bytes_written < data_size_bytes && status) {
+        size_t current_chunk_size = std::min(CHUNK_SIZE, data_size_bytes - bytes_written);
+        uint16_t current_address = start_address + bytes_written;
+        status = eeprom->Write(current_address, data_ptr + bytes_written, current_chunk_size);
+        if (!status) {
+            Logger::Print(emio::format("EEPROM write failed at address 0x{:04x} for timing data", current_address), Logger::Level::Error);
+            return false;
+        }
+        bytes_written += current_chunk_size;
+        rtos::Delay(5); // Delay for EEPROM write cycle
+    }
+
+    bool all_zero = true;
+    bool all_ff = true;
+    for (size_t i = 0; i < data_size_bytes; ++i) {
+        if (data_ptr[i] != 0x00) {
+            all_zero = false;
+        }
+        if (data_ptr[i] != 0xFF) {
+            all_ff = false;
+        }
+        if (!all_zero && !all_ff) {
+            break;
+        }
+    }
+
+    if (all_zero) {
+        Logger::Print("EEPROM timing calibration data appears invalid (all zeros)", Logger::Level::Warning);
+        return false;
+    }
+    if (all_ff) {
+        Logger::Print("EEPROM timing calibration data appears invalid (all 0xFF)", Logger::Level::Warning);
+        return false;
+    }
+
+    Logger::Print(emio::format("EEPROM timing calibration write succeeded, {} bytes written", bytes_written), Logger::Level::Debug);
+    return true;
+}
+
+bool EEPROM_storage::Read_OJIP_calibration_timing(std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_timing) {
+    Record_name name = Record_name::OJIP_calibration_timing;
+    auto it = std::find_if(records.begin(), records.end(),
+        [name](const auto& pair) { return pair.first == name; });
+    if (it == records.end()) {
+        Logger::Print("Record OJIP_calibration_timing not found", Logger::Level::Error);
+        return false;
+    }
+
+    const Record& record = it->second;
+    uint16_t start_address = record.offset;
+    // Use the exact size required by the data array
+    uint16_t data_size_bytes = sizeof(uint32_t) * calibration_timing.size();
+
+    // Check if the record length in EEPROM is sufficient
+    if (record.length < data_size_bytes) {
+        Logger::Print("Calibration timing record size too small", Logger::Level::Error);
+        return false;
+    }
+
+    uint8_t* data_ptr = reinterpret_cast<uint8_t*>(calibration_timing.data());
+
+    constexpr size_t CHUNK_SIZE = 32;
+    size_t bytes_read = 0;
+    bool status = true;
+
+    while (bytes_read < data_size_bytes && status) {
+        size_t current_chunk_size = std::min(CHUNK_SIZE, data_size_bytes - bytes_read);
+        uint16_t current_address = start_address + bytes_read;
+        auto chunk_data = eeprom->Read(current_address, current_chunk_size);
+        if (!chunk_data.has_value()) {
+            Logger::Print(emio::format("EEPROM read failed at address 0x{:04x} for timing data", current_address), Logger::Level::Error);
+            return false;
+        }
+        std::copy(chunk_data->begin(), chunk_data->end(), data_ptr + bytes_read);
+        bytes_read += current_chunk_size;
+    }
+
+    Logger::Print(emio::format("EEPROM timing calibration read succeeded, {} bytes read", bytes_read), Logger::Level::Debug);
     return true;
 }
 

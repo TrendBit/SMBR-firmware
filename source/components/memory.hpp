@@ -13,6 +13,8 @@
 #include "logger.hpp"
 #include "rtos/wrappers.hpp"
 
+#include "fluorometer.hpp"
+
 #include <cstdint>
 #include <unordered_map>
 #include <optional>
@@ -31,8 +33,10 @@ public:
         Module_type,
         Instance_enumeration,
         Reserved,
-        OJIP_calibration,
+        OJIP_calibration_values,
+        OJIP_calibration_timing,
         SPM_nominal_calibration, // Spectrophotometer
+
     };
 
 private:
@@ -50,17 +54,21 @@ private:
         uint16_t length = 0;
     };
 
+    static constexpr uint16_t OJIP_ADC_SIZE_BYTES = FLUOROMETER_CALIBRATION_SAMPLES * sizeof(uint16_t);
+    static constexpr uint16_t OJIP_TIMING_SIZE_BYTES = FLUOROMETER_CALIBRATION_SAMPLES * sizeof(uint32_t);
+
     /**
      * @brief   Mapping between record name and its location in EEPROM
      *          In future should even contain in which EEPROM chip
      *          Array of pairs because constexpr std::map does not exist in c++20
      */
-    static constexpr std::array<std::pair<Record_name, Record>, 5> records = {
+    static constexpr std::array<std::pair<Record_name, Record>, 6> records = {
         std::make_pair(Record_name::Module_type,                    Record{0x0000, 1}),
         std::make_pair(Record_name::Instance_enumeration,           Record{0x0001, 1}),
         std::make_pair(Record_name::Reserved,                       Record{0x0002, 2}),
         std::make_pair(Record_name::SPM_nominal_calibration,        Record{0x0300, 24}),
-        std::make_pair(Record_name::OJIP_calibration,               Record{0x0400, 2000}),
+        std::make_pair(Record_name::OJIP_calibration_values,        Record{0x0400, OJIP_ADC_SIZE_BYTES }),
+        std::make_pair(Record_name::OJIP_calibration_timing,        Record{0x0400 + OJIP_ADC_SIZE_BYTES, OJIP_TIMING_SIZE_BYTES }),
     };
 
 public:
@@ -72,7 +80,6 @@ public:
      * @param instance   Instance enumeration of this instance
      */
     explicit EEPROM_storage(M24Cxx * const eeprom);
-
 
     bool Check_type(Codes::Module module, Codes::Instance instance);
 
@@ -91,23 +98,40 @@ public:
     Codes::Instance Instance();
 
     /**
-     * @brief   Read OJIP calibration data from EEPROM
+     * @brief   Read OJIP calibration ADC data from EEPROM
      *
-     * @param calibration   Location where calibration data will be stored
+     * @param calibration_adc Location where calibration ADC data will be stored
      * @return true         Data was read successfully
      * @return false        Data was not read, memory not accessible
      */
-    bool Read_OJIP_calibration(std::array<uint16_t, 1000> &calibration);
+    bool Read_OJIP_calibration_values(std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_adc);
 
     /**
-     * @brief   Write OJIP calibration data to EEPROM
-     *          This is 1000 of ADC samples from fluorometer taken at 50x gain
+     * @brief   Write OJIP calibration ADC data to EEPROM
      *
-     * @param calibration   Calibration data to be written to EEPROM
+     * @param calibration_adc Calibration ADC data to be written to EEPROM
      * @return true         Data was written successfully
      * @return false        Data was not written, memory not accessible
      */
-    bool Write_OJIP_calibration(std::array<uint16_t, 1000> &calibration);
+    bool Write_OJIP_calibration_values(std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_adc);
+
+    /**
+     * @brief   Read OJIP calibration timing data from EEPROM
+     *
+     * @param calibration_timing Location where calibration timing data will be stored
+     * @return true         Data was read successfully
+     * @return false        Data was not read, memory not accessible
+     */
+    bool Read_OJIP_calibration_timing(std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_timing);
+
+    /**
+     * @brief   Write OJIP calibration timing data to EEPROM
+     *
+     * @param calibration_timing Calibration timing data to be written to EEPROM
+     * @return true         Data was written successfully
+     * @return false        Data was not written, memory not accessible
+     */
+    bool Write_OJIP_calibration_timing(std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_timing);
 
     /**
      * @brief   Read spectrophotometer calibration data from EEPROM
