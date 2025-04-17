@@ -446,19 +446,6 @@ bool Fluorometer::Export_data(OJIP * data){
     sample.gain = data->detector_gain;
     sample.emitor_intensity = data->emitor_intensity;
 
-    // --- Filtering (Optional - Apply before export if desired) ---
-    // if (!Filter_OJIP_data(data, 5.0f)) {
-    //     Logger::Print("Failed to filter OJIP data before export", Logger::Level::Warning);
-    //     // Decide if you want to continue without filtering or return false
-    // }
-
-    // --- Offset calculation based on peaks might no longer be relevant ---
-    // --- Consider removing or adapting if needed for other purposes ---
-    // const uint base_estimation_length = 5;
-    // ... existing offset calculation code ...
-    // Logger::Print(emio::format("Offset (peak-based, potentially unused): {:d}", offset), Logger::Level::Debug);
-
-
     if (data->sample_time_us.size() != data->intensity.size()) {
          Logger::Print("OJIP sample intensity and timestamp vectors have different sizes", Logger::Level::Error);
          return false;
@@ -591,9 +578,7 @@ bool Fluorometer::Receive(Application_message message){
             OJIP_data.measurement_id = ojip_request.measurement_id;
             OJIP_data.emitor_intensity = ojip_request.emitor_intensity;
 
-            //Capture_OJIP(ojip_request.detector_gain, ojip_request.emitor_intensity, (ojip_request.length_ms/1000.0f), ojip_request.samples, ojip_request.sample_timing);
-
-            Capture_OJIP(ojip_request.detector_gain, 1.0, 1.0, 1000, ojip_request.sample_timing);
+            Capture_OJIP(ojip_request.detector_gain, ojip_request.emitor_intensity, (ojip_request.length_ms/1000.0f), ojip_request.samples, ojip_request.sample_timing);
 
             OJIP_data.detector_gain = Gain();
 
