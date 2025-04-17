@@ -404,47 +404,76 @@ bool Fluorometer::Receive(CAN::Message message){
     return true;
 }
 
+size_t find_closest_calibration_index(std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> calibration_data, uint32_t target_time_us) {
+    const auto& cal_times = calibration_data;
+    const size_t cal_size = cal_times.size();
+
+    if (cal_size == 0) {
+        return 0; // No calibration data
+    }
+
+    // Use lower_bound to find the first element not less than target_time_us
+    auto it = std::lower_bound(cal_times.begin(), cal_times.end(), target_time_us);
+
+    // Handle edge cases: target_time_us is before the first element
+    if (it == cal_times.begin()) {
+        return 0;
+    }
+
+    // Handle edge cases: target_time_us is after the last element
+    if (it == cal_times.end()) {
+        return cal_size - 1;
+    }
+
+    // We are between two elements: *(it-1) and *it
+    // Check which one is closer
+    uint32_t time_before = *(it - 1);
+    uint32_t time_after = *it;
+    size_t index_before = std::distance(cal_times.begin(), it - 1);
+
+    if ((target_time_us - time_before) < (time_after - target_time_us)) {
+        // Closer to the element before
+        return index_before;
+    } else {
+        // Closer to the element at or after (or equally close)
+        return index_before + 1;
+    }
+}
+
 bool Fluorometer::Export_data(OJIP * data){
-    App_messages::Fluorometer::Data_sample sample;
+   App_messages::Fluorometer::Data_sample sample;
     sample.measurement_id = data->measurement_id;
     sample.gain = data->detector_gain;
     sample.emitor_intensity = data->emitor_intensity;
 
-    const uint base_estimation_length = 5;
+    // --- Filtering (Optional - Apply before export if desired) ---
+    // if (!Filter_OJIP_data(data, 5.0f)) {
+    //     Logger::Print("Failed to filter OJIP data before export", Logger::Level::Warning);
+    //     // Decide if you want to continue without filtering or return false
+    // }
 
-    uint sample_base;
-    uint calibration_base;
+    // --- Offset calculation based on peaks might no longer be relevant ---
+    // --- Consider removing or adapting if needed for other purposes ---
+    // const uint base_estimation_length = 5;
+    // ... existing offset calculation code ...
+    // Logger::Print(emio::format("Offset (peak-based, potentially unused): {:d}", offset), Logger::Level::Debug);
 
-    uint sample_peak = 0;
-    uint calibration_peak = 0;
 
-    uint accumulator = 0;
-
-    int offset = 0;
-
-    for(size_t i = 0; i < base_estimation_length; ++i) {
-        accumulator += data->intensity[i];
-    }
-    sample_base = accumulator / base_estimation_length;
-
-    for(size_t i = 0; i < base_estimation_length; ++i) {
-        accumulator += calibration_data.adc_value[i];
-    }
-    calibration_base = accumulator / base_estimation_length;
-
-    int i;
-    for(i = 0; i < 1000; i++) {
-        if(data->intensity[i] > (sample_base*5)){
-            sample_peak = i;
-            break;
-        }
+    if (data->sample_time_us.size() != data->intensity.size()) {
+         Logger::Print("OJIP sample intensity and timestamp vectors have different sizes", Logger::Level::Error);
+         return false;
     }
 
-    for(i = 0; i < 1000; i++) {
-        if(calibration_data.adc_value[i] > (calibration_base*2)){
-            calibration_peak = i;
-            break;
-        }
+    const size_t calibration_size = calibration_data.adc_value.size();
+    const bool has_calibration = calibration_size > 0 && calibration_data.timing_us.size() == calibration_size;
+    size_t samples_sent = 0;
+    size_t samples_calibrated = 0;
+
+    if (!has_calibration) {
+        Logger::Print("Calibration data invalid or missing, exporting raw data.", Logger::Level::Warning);
+    } else {
+         Logger::Print(emio::format("Exporting {} samples, applying calibration based on closest timestamp ({} calibration points)",
+                     data->sample_time_us.size(), calibration_size), Logger::Level::Notice);
     }
 
     Logger::Print("Reseting watchdog before export", Logger::Level::Notice);
@@ -454,81 +483,55 @@ bool Fluorometer::Export_data(OJIP * data){
 
     Logger::Print(emio::format("Gain compensation: {:.2f}", gain_value), Logger::Level::Notice);
 
-    offset = sample_peak - calibration_peak;
 
-    offset = 0;
+    // Process each captured sample
+    for (size_t i = 0; i < data->sample_time_us.size(); ++i) {
+        uint32_t current_time_us = data->sample_time_us[i];
+        uint16_t current_intensity = data->intensity[i]; // Use raw intensity before filtering if filter applied earlier
 
-    Logger::Print(emio::format("Sample base: {:d}, calibration base: {:d}, offset: {:d}", sample_base, calibration_base, offset), Logger::Level::Notice);
+        // Apply calibration if available
+        if (has_calibration) {
+            // Find the index in calibration data with the closest timestamp
+            size_t cal_idx = find_closest_calibration_index(calibration_data.timing_us,current_time_us);
 
-    if (data->sample_time_us.size() == data->intensity.size()) {
-        // Perform some initial setup calculations
-        const size_t calibration_size = calibration_data.adc_value.size();
-        const bool has_calibration = calibration_size > 0;
-        size_t samples_sent = 0;
-        size_t samples_calibrated = 0;
+            // Get the corresponding calibration ADC value
+            uint16_t correction = calibration_data.adc_value[cal_idx] / gain_value;
 
-        Logger::Print(emio::format("Exporting {} samples with offset {}",
-                    data->sample_time_us.size(), offset), Logger::Level::Notice);
-
-        // Process each sample
-        for (size_t i = 0; i < data->sample_time_us.size(); ++i) {
-            // Prepare sample message
-            sample.time_us = data->sample_time_us[i];
-            sample.sample_value = data->intensity[i];
-            sample.measurement_id = data->measurement_id;
-            sample.gain = data->detector_gain;
-            sample.emitor_intensity = data->emitor_intensity;
-
-            // Apply calibration if available
-            if (has_calibration && i > 1) { // Skip first samples
-                int cal_idx = static_cast<int>(i) - offset;
-
-                // Ensure index is in valid range
-                if (cal_idx >= 0 && cal_idx < static_cast<int>(calibration_size)) {
-                    // Get calibration value for this index
-                    uint16_t correction = calibration_data.adc_value[cal_idx] / gain_value;
-
-                    // Apply correction with underflow protection
-                    if (sample.sample_value > correction) {
-                        sample.sample_value -= correction;
-                        samples_calibrated++;
-                    } else {
-                        sample.sample_value = 0;
-                    }
-                } else if (cal_idx >= static_cast<int>(calibration_size)) {
-                    // Use last available calibration value
-                    uint16_t correction = calibration_data.adc_value[calibration_size - 1] / gain_value;
-
-                    if (sample.sample_value > correction) {
-                        sample.sample_value -= correction;
-                    } else {
-                        sample.sample_value = 0;
-                    }
-                }
-                // For negative indices, we don't apply calibration as those are initial samples
+            // Apply correction with underflow protection
+            if (current_intensity > correction) {
+                current_intensity -= correction;
+                samples_calibrated++;
+            } else {
+                current_intensity = 0;
             }
 
-            // Send message with CAN queue management
-            uint queue = Send_CAN_message(sample);
-            samples_sent++;
-
-            // Manage CAN queue to prevent overflow
-            if (queue > 48) {
-                // CAN queue getting full, add progressive delays
-                rtos::Delay(1);
-
-                if ((i % 20) == 0) {
-                    Logger::Print("CAN queue high level", Logger::Level::Warning);
-                }
-
+            // Optional: Log the mapping occasionally for debugging
+            if (i < 5 || i % 200 == 0 || i == data->sample_time_us.size() - 1) {
+                 Logger::Print(emio::format("Sample {:4d} (t={:8d}us) mapped to Calib {:4d} (t={:8d}us), Corr: {:4d}",
+                               i, current_time_us, cal_idx, calibration_data.timing_us[cal_idx], correction), Logger::Level::Trace);
             }
         }
 
-        Logger::Print(emio::format("OJIP export complete: {}/{} samples sent, {} calibrated",
-                    samples_sent, data->sample_time_us.size(), samples_calibrated), Logger::Level::Notice);
-    } else {
-        Logger::Print("OJIP sample intensity and timestamp vectors have different sizes", Logger::Level::Error);
+        // Prepare the CAN message
+        sample.time_us = current_time_us;
+        sample.sample_value = current_intensity; // Use the (potentially) calibrated value
+
+        // Send message and manage CAN queue
+        uint queue = Send_CAN_message(sample);
+        samples_sent++;
+
+        // Manage CAN queue to prevent overflow
+        if (queue > 48) {
+            rtos::Delay(1);
+            if ((i % 100) == 0) {
+                Logger::Print("CAN queue high level", Logger::Level::Warning);
+            }
+        }
     }
+
+    Logger::Print(emio::format("OJIP export complete: {}/{} samples sent, {} calibrated",
+                samples_sent, data->sample_time_us.size(), samples_calibrated), Logger::Level::Notice);
+
     return true;
 }
 
