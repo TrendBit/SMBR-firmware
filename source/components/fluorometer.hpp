@@ -13,7 +13,7 @@
 #include "can_bus/app_message.hpp"
 #include "can_bus/message_receiver.hpp"
 #include "components/component.hpp"
-#include "components/memory.hpp"
+
 #include "components/thermometers/thermistor.hpp"
 #include "components/thermometers/TMP102.hpp"
 #include "hal/adc/adc_channel.hpp"
@@ -24,8 +24,6 @@
 #include "etl/map.h"
 #include "etl/vector.h"
 #include "etl/array.h"
-
-
 
 #include "hardware/adc.h"
 #include "hardware/pwm.h"
@@ -45,7 +43,10 @@
 #include "codes/messages/fluorometer/sample_request.hpp"
 #include "codes/messages/fluorometer/sample_response.hpp"
 
-#define FLUOROMETER_MAX_SAMPLES 1024
+#define FLUOROMETER_MAX_SAMPLES 4096
+#define FLUOROMETER_CALIBRATION_SAMPLES 1000
+
+class EEPROM_storage;
 
 typedef std::function<bool(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES>&,uint,float)> Timing_generator_interface;
 
@@ -62,10 +63,13 @@ public:
     };
 
     struct Calibration_data{
-        std::array<uint16_t, 1000> adc_value;
+        std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> adc_value;
+        std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> timing_us;
         Fluorometer_config::Gain gain;
-        float intensity;
-        float length;
+        const uint sample_count;
+        const float intensity;
+        const float length;
+        const Fluorometer_config::Timing timing;
     };
 
 private:
@@ -128,7 +132,15 @@ private:
     /**
      * @brief Calibration data for OJIP curve
      */
-    inline static Calibration_data calibration_data = {};
+    inline static Calibration_data calibration_data = {
+        .adc_value = {0},
+        .timing_us = {0},
+        .gain = Fluorometer_config::Gain::x10,
+        .sample_count = 1000,
+        .intensity = 1.0,
+        .length = 1.0,
+        .timing = Fluorometer_config::Timing::Logarithmic
+    };
 
     /**
      * @brief   Temperature sensor next to IR detector
@@ -275,7 +287,18 @@ private:
      */
     float Measure_noise(uint16_t samples, uint period_us);
 
+    /**
+     * @brief   Perform calibration and save data into EEPROM
+     */
     void Calibrate();
+
+    /**
+     * @brief   Load calibration data from eeprom and check for validity
+     *
+     * @return true     Calibration data was loaded successfully
+     * @return false    Calibration data was not loaded, memory not accessible or data not valid (empty)
+     */
+    bool Load_calibration_data();
 
     /**
      * @brief       Sets gain of detector
@@ -298,15 +321,66 @@ private:
      */
     static void Print_curve_data(OJIP * data);
 
+    /**
+     * @brief   Generate timing for OJIP curve based on selected configuration
+     *
+     * @param capture_timing_us     Vector to which are timings written
+     * @param samples               Number of samples to be captured
+     * @param capture_length        Length of capture in seconds
+     * @param timing_type           Type of timing to be generated, sample spacing
+     * @return true                 Timings were generated successfully
+     * @return false                Timings cannot be generated for this configuration
+     */
+    static bool Generate_timing(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length, Fluorometer_config::Timing timing_type);
+
+    /**
+     * @brief   Generate timing for linear sampling, equally spaced samples
+     *          Timings are microseconds between captures, not times of capture
+     *
+     * @param capture_timing_us     Vector to which are timings written
+     * @param samples               Number of samples to be captured
+     * @param capture_length        Length of capture in seconds
+     * @return true                 Timings were generated successfully
+     * @return false                Timings cannot be generated for this configuration
+     */
     static bool Timing_generator_linear(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
 
+    /**
+     * @brief   Generate timing for logarithmic sampling, ideal for OJIP curve
+     *          Timings are microseconds between captures, not times of capture
+     *
+     * @param capture_timing_us     Vector to which are timings written
+     * @param samples               Number of samples to be captured
+     * @param capture_length        Length of capture in seconds
+     * @return true                 Timings were generated successfully
+     * @return false                Timings cannot be generated for this configuration
+     */
     static bool Timing_generator_logarithmic(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
 
+    /**
+     * @brief   Detect of timer for captured sample overflowed during capture
+     *          Timer used for timestamping has 64 bits split into two 32 bits registers
+     *          OJIP DMA capture read only lower register incremented every microsecond
+     *          When calculation time of sample referenced to the start of measurement overflow can cause
+     *              negative time between samples
+     *
+     * @param start             Start time of measurement
+     * @param sample_time_us    Vector of sample times in microseconds
+     * @return true             Timer overflowed during capture, data should be adjusted
+     * @return false            Timer did not overflow during capture
+     */
     static bool Process_timestamps(uint64_t start, etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> &sample_time_us);
 
+    /**
+     * @brief       Export data over CAN bus
+     *
+     * @param data      Pointer to OJIP data
+     * @return true     Data was exported successfully
+     * @return false    Data was not exported, invalid data
+     */
     bool Export_data(OJIP * data);
 
-    etl::map<Fluorometer_config::Timing, Timing_generator_interface, 16> timing_generators = {
+    inline static etl::map<Fluorometer_config::Timing, Timing_generator_interface, 16> timing_generators = {
         {Fluorometer_config::Timing::Linear, Timing_generator_linear},
         {Fluorometer_config::Timing::Logarithmic, Timing_generator_logarithmic}
     };
