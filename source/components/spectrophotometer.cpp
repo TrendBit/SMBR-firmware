@@ -1,12 +1,15 @@
 #include "spectrophotometer.hpp"
 
+#include "threads/spectrophotometer_thread.hpp"
+
 Spectrophotometer::Spectrophotometer(I2C_bus &i2c, EEPROM_storage * const memory):
     Component(Codes::Component::Spectrophotometer),
     Message_receiver(Codes::Component::Spectrophotometer),
     light_sensor(new VEML6040(i2c, 0x10)),
     drivers({new KTD2026(i2c, 0x31), new KTD2026(i2c, 0x30)}),
     temperature_sensor(new TMP102(i2c, 0x49)),
-    memory(memory)
+    memory(memory),
+    spectrophotometer_thread(new Spectrophotometer_thread(this))
 {
     drivers[0]->Init();
     drivers[1]->Init();
@@ -108,7 +111,7 @@ void Spectrophotometer::Calibrate_channels(){
         Channels::IR,
     };
 
-    Logger::Print("Spectrophotometer calibration in progress", Logger::Level::Debug);
+    Logger::Print("Spectrophotometer calibration in progress", Logger::Level::Trace);
 
     for (auto channel : channels_to_calibrate) {
         float detected_intensity = Measure_intensity(channel);
@@ -128,7 +131,7 @@ void Spectrophotometer::Calibrate_channels(){
     bool status = memory->Write_spectrophotometer_calibration(nominal_calibration);
 
     if (status) {
-        Logger::Print("Spectrophotometer calibration data written to memory", Logger::Level::Debug);
+        Logger::Print("Spectrophotometer calibration done, data written to memory", Logger::Level::Notice);
     } else {
         Logger::Print("Failed to write spectrophotometer calibration data to memory", Logger::Level::Error);
     }
@@ -172,43 +175,14 @@ bool Spectrophotometer::Receive(Application_message message){
         }
 
         case Codes::Message_type::Spectrophotometer_measurement_request: {
-            Logger::Print("Spectrophotometer measurement request", Logger::Level::Notice);
-            App_messages::Spectrophotometer::Measurement_request request;
-            if (not request.Interpret_data(message.data)) {
-                Logger::Print("Failed to interpret measurement request", Logger::Level::Error);
-                return false;
-            }
-
-            uint8_t channel_index = request.channel;
-
-            if (channel_index > channels.size()) {
-                Logger::Print("Requested channel out of range", Logger::Level::Error);
-                return false;
-            }
-
-            Channels channel_name = static_cast<Channels>(request.channel);
-
-            Measurement measurement = Measure_channel(channel_name);
-
-            App_messages::Spectrophotometer::Measurement_response response;
-            response.channel = static_cast<uint8_t>(measurement.channel);
-            response.relative_value = measurement.relative_value;
-            response.absolute_value = measurement.absolute_value;
-
-            Logger::Print(emio::format("Channel: {}, relative {:05.3f}, absolute {}",
-                    static_cast<uint8_t>(measurement.channel),
-                    measurement.relative_value,
-                    measurement.absolute_value
-                    ),
-                Logger::Level::Debug);
-
-            Send_CAN_message(response);
+            Logger::Print("Spectrophotometer measurement request enqueued", Logger::Level::Notice);
+            spectrophotometer_thread->Enqueue_message(message);
             return true;
         }
 
         case Codes::Message_type::Spectrophotometer_calibrate: {
-            Logger::Print("Spectrophotometer calibration request", Logger::Level::Notice);
-            Calibrate_channels();
+            Logger::Print("Spectrophotometer calibration request enqueued", Logger::Level::Notice);
+            spectrophotometer_thread->Enqueue_message(message);
             return true;
         }
 

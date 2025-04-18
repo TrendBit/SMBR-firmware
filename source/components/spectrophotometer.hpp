@@ -25,14 +25,21 @@
 #include "codes/messages/spectrophotometer/measurement_response.hpp"
 #include "codes/messages/spectrophotometer/temperature_response.hpp"
 
+class Spectrophotometer_thread;
+
 /**
  * @brief   Spectrophotometer used to measure optical density of suspension
  *          Multispectral component with several channel for different wavelengths.
  *          To determine relative value of measured channel and relative change in time spectrophotometer uses
  *              calibration which is saved persistently in EEPROM.
  *          This calibration should be done with empty cuvette or with cuvette containing grow medium.
+ *          Spectrophotometer has own thread which performs tasks invoked by messages
+ *              When message is routed into spectrometer by common core is placed into buffer.
+ *              Spectrophotometer thread then processes messages in FIFO order.
  */
 class Spectrophotometer: public Component, public Message_receiver{
+    friend class Spectrophotometer_thread;
+
 public:
     /**
      * @brief   Enumeration of all channels of spectrophotometer
@@ -99,6 +106,12 @@ private:
      * @brief   Persistent memory for calibration data
      */
     EEPROM_storage * const memory;
+
+    /**
+     * @brief   Thread for offloading measurement tasks from common thread
+     *          Task processed in this thread takes more time and does not block common thread
+     */
+    Spectrophotometer_thread * const spectrophotometer_thread;
 
 public:
     /**
