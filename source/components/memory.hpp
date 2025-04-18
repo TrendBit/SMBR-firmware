@@ -194,5 +194,34 @@ private:
      * @return false    Data was not written, memory not accessible
      */
     bool Write_record(Record_name name, std::vector<uint8_t> &data);
+
+    /**
+     * @brief   Write big block of data into eeprom, but splits then into chunks according to eeprom block size
+     * @param name              Record name to write to.
+     * @param data_ptr          Pointer to the raw byte data to write.
+     * @param data_size_bytes   Total number of bytes to write.
+     * @return true             Write succeeded.
+     * @return false            Write failed (record not found, size mismatch, or EEPROM error).
+     */
+    bool Write_chunked_data(Record_name name, const uint8_t* data_ptr, size_t data_size_bytes);
+
+    /**
+     * @brief  Read big block of data from eeprom, but splits then into chunks according to eeprom block size
+     * @param name              Record name to read from.
+     * @param data_ptr          Pointer to the buffer where read data will be stored.
+     * @param data_size_bytes   Total number of bytes to read.
+     * @return true             Read succeeded.
+     * @return false            Read failed (record not found, size mismatch, or EEPROM error).
+     */
+    bool Read_chunked_data(Record_name name, uint8_t* data_ptr, size_t data_size_bytes);
+
+    /**
+     * @brief   Checks if a block of memory contains only 0x00 or only 0xFF bytes.
+     * @param data_ptr          Pointer to the data block.
+     * @param data_size_bytes   Size of the data block in bytes.
+     * @return true             If the data is considered valid (not all 0x00 or all 0xFF).
+     * @return false            If the data consists entirely of 0x00 or 0xFF bytes.
+     */
+    bool Is_data_valid(const uint8_t* data_ptr, size_t data_size_bytes);
 };
 
