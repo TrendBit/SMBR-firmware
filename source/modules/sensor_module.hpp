@@ -9,6 +9,7 @@
 
 #include "base_module.hpp"
 #include "codes/codes.hpp"
+#include "mutex.hpp"
 #include "logger.hpp"
 
 #include "components/mini_oled.hpp"
@@ -18,6 +19,8 @@
 #include "components/bottle_temperature.hpp"
 #include "components/fluorometer.hpp"
 #include "components/spectrophotometer.hpp"
+
+namespace fra = cpp_freertos;
 
 /**
  * @brief Sensor module in measuring compartment of device, enables:
@@ -60,6 +63,12 @@ private:
      * @brief  Multi spectral photo meter used for measuring optical density of suspension
      */
     Spectrophotometer * spectrophotometer;
+
+    /**
+     * @brief   Mutex for synchronizing access to cuvette which is shared by multiple components
+     *              and simultaneous measurements can distort results
+     */
+    fra::MutexStandard * cuvette_mutex;
 
 public:
     /**

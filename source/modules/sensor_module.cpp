@@ -3,7 +3,8 @@
 Sensor_module::Sensor_module():
     Base_module(Codes::Module::Sensor_module, Codes::Instance::Exclusive, 24, 10, 11, 13),
     ntc_channel_selector(new GPIO(18, GPIO::Direction::Out)),
-    ntc_thermistors(new Thermistor(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_3, 3.30f), 3950, 10000, 25, 5100))
+    ntc_thermistors(new Thermistor(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_3, 3.30f), 3950, 10000, 25, 5100)),
+    cuvette_mutex(new fra::MutexStandard())
 {
     Setup_components();
 }
@@ -47,9 +48,9 @@ void Sensor_module::Setup_fluorometer(){
     auto led_pwm = new PWM_channel(23, 1000000, 0.0, true);
     uint detector_gain_selector_pin = 21;
 
-    fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors, i2c, memory);
+    fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors, i2c, memory, cuvette_mutex);
 }
 
 void Sensor_module::Setup_spectrophotometer(){
-    spectrophotometer = new Spectrophotometer(*i2c, memory);
+    spectrophotometer = new Spectrophotometer(*i2c, memory, cuvette_mutex);
 }
