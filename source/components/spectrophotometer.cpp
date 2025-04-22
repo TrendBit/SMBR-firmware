@@ -2,14 +2,15 @@
 
 #include "threads/spectrophotometer_thread.hpp"
 
-Spectrophotometer::Spectrophotometer(I2C_bus &i2c, EEPROM_storage * const memory):
+Spectrophotometer::Spectrophotometer(I2C_bus &i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex):
     Component(Codes::Component::Spectrophotometer),
     Message_receiver(Codes::Component::Spectrophotometer),
     light_sensor(new VEML6040(i2c, 0x10)),
     drivers({new KTD2026(i2c, 0x31), new KTD2026(i2c, 0x30)}),
     temperature_sensor(new TMP102(i2c, 0x49)),
     memory(memory),
-    spectrophotometer_thread(new Spectrophotometer_thread(this))
+    spectrophotometer_thread(new Spectrophotometer_thread(this)),
+    cuvette_mutex(cuvette_mutex)
 {
     drivers[0]->Init();
     drivers[1]->Init();

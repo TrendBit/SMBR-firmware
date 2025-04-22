@@ -113,14 +113,20 @@ private:
      */
     Spectrophotometer_thread * const spectrophotometer_thread;
 
+    /**
+     * @brief   Mutex for synchronizing access to cuvette which is shared by multiple components
+     */
+    fra::MutexStandard * const cuvette_mutex;
+
 public:
     /**
      * @brief Construct a new Spectrophotometer object
      *
-     * @param i2c       I2C bus where sensors are connected
-     * @param memory    EEPROM storage for calibration data
+     * @param i2c               I2C bus where sensors are connected
+     * @param memory            EEPROM storage for calibration data
+     * @param cuvette_mutex     Mutex for synchronizing access to cuvette
      */
-    explicit Spectrophotometer(I2C_bus &i2c, EEPROM_storage * const memory);
+    explicit Spectrophotometer(I2C_bus &i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex);
 
     /**
      * @brief   Measure channel and return results as absolute and relative values
