@@ -1,7 +1,5 @@
 #include "spectrophotometer_thread.hpp"
 
-
-
 Spectrophotometer_thread::Spectrophotometer_thread(Spectrophotometer * const spectrophotometer):
     Thread("spectrophotometer_thread", 2048, 7),
     spectrophotometer(spectrophotometer){
@@ -12,6 +10,15 @@ void Spectrophotometer_thread::Run(){
     Logger::Print("Spectrophotometer thread start", Logger::Level::Trace);
 
     while (true) {
+
+        // Locking mutex to prevent access to cuvette while measuring
+        bool lock = spectrophotometer->cuvette_mutex->Lock(0);
+        if (!lock) {
+            Logger::Print("Spectrophotometer waiting for cuvette access", Logger::Level::Warning);
+            spectrophotometer->cuvette_mutex->Lock();
+        }
+        Logger::Print("Spectrophotometer cuvette access granted", Logger::Level::Debug);
+
         while(not message_buffer.empty()){
 
             auto message = message_buffer.front();
@@ -69,11 +76,13 @@ void Spectrophotometer_thread::Run(){
                     break;
             }
         }
+        // Unlocking mutex to allow other components to access cuvette
+        spectrophotometer->cuvette_mutex->Unlock();
+
         // Suspend thread until new message is enqueued
         Suspend();
     }
 }
-
 
 bool Spectrophotometer_thread::Enqueue_message(Application_message &message){
 
