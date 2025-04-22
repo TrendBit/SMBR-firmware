@@ -4,7 +4,8 @@ namespace fra = cpp_freertos;
 
 int main(){
     timer_hw->dbgpause = 0; // Required for SWD debug otherwise timers are alway zero during debug
-
+    watchdog_enable(5000, 1);
+    
     #ifdef CONFIG_LOGGER
         Logger(Logger::Level::Trace, Logger::Color_mode::Prefix);
         Logger::Init_UART(uart0, 0, 1, 961200);
@@ -15,7 +16,7 @@ int main(){
         }
     #endif
 
-    watchdog_enable(5000, 1);
+
 
     new USB_thread();
     new CLI_service();
