@@ -1,8 +1,9 @@
 #include "fluorometer.hpp"
 
 #include "memory.hpp"
+#include "threads/fluorometer_thread.hpp"
 
-Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory):
+Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex):
     Component(Codes::Component::Fluorometer),
     Message_receiver(Codes::Component::Fluorometer),
     ntc_channel_selector(ntc_channel_selector),
@@ -11,7 +12,9 @@ Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * n
     detector_gain(new GPIO(detector_gain_pin)),
     detector_adc(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_1, 3.30f)),
     detector_temperature_sensor(new TMP102(*i2c, 0x48)),
-    memory(memory)
+    memory(memory),
+    fluorometer_thread(new Fluorometer_thread(this)),
+    cuvette_mutex(cuvette_mutex)
 {
     detector_gain->Set_pulls(true, true);
     Gain(Fluorometer_config::Gain::x10);
@@ -144,18 +147,6 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
     capture_timing.fill(0);
 
     Logger::Print("Computing capture timing", Logger::Level::Notice);
-    /*
-    switch (timing) {
-        case Fluorometer_config::Timing::Linear:
-            Timing_generator_linear(capture_timing, samples, capture_length);
-            break;
-        case Fluorometer_config::Timing::Logarithmic:
-            Timing_generator_logarithmic(capture_timing, samples, capture_length);
-            break;
-        default:
-            Logger::Print("Unknown timing requested, using linear", Logger::Level::Error);
-            return 0;
-    }*/
 
     Generate_timing(capture_timing, samples, capture_length, timing);
 
@@ -204,6 +195,7 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
 
     pwm_config pwm_cfg = pwm_get_default_config();
     pwm_set_counter(sampler_trigger_slice, 0);
+    // Increment timer every 1ms
     pwm_config_set_clkdiv(&pwm_cfg, 125.0);
     pwm_init(sampler_trigger_slice, &pwm_cfg, false);
     pwm_set_wrap(sampler_trigger_slice, capture_timing[0]);
@@ -554,35 +546,8 @@ bool Fluorometer::Receive(Application_message message){
         }
 
         case Codes::Message_type::Fluorometer_OJIP_capture_request: {
-            Logger::Print("Fluorometer OJIP Capture", Logger::Level::Notice);
-            App_messages::Fluorometer::OJIP_capture_request ojip_request;
-            ojip_request.Interpret_data(message.data);
-
-            if (not ojip_request.Interpret_data(message.data)) {
-                Logger::Print("Fluorometer OJIP Capture interpretation failed", Logger::Level::Error);
-                return false;
-            }
-
-            if (not ojip_capture_finished) {
-                Logger::Print("Fluorometer OJIP Capture in progress", Logger::Level::Warning);
-                return false;
-            }
-
-            Logger::Print(emio::format("Starting capture with gain: {:2.0f}, intensity: {:04.2f}, length: {:3.1f}s, samples: {:d}",
-                                        Fluorometer_config::gain_values.at(ojip_request.detector_gain),
-                                        ojip_request.emitor_intensity,
-                                        (ojip_request.length_ms/1000.0f),
-                                        ojip_request.samples
-            ));
-
-            OJIP_data.measurement_id = ojip_request.measurement_id;
-            OJIP_data.emitor_intensity = ojip_request.emitor_intensity;
-
-            Capture_OJIP(ojip_request.detector_gain, ojip_request.emitor_intensity, (ojip_request.length_ms/1000.0f), ojip_request.samples, ojip_request.sample_timing);
-
-            OJIP_data.detector_gain = Gain();
-
-            return true;
+            Logger::Print("Fluorometer OJIP Capture request enqueued", Logger::Level::Notice);
+            return fluorometer_thread->Enqueue_message(message);
         }
 
         case Codes::Message_type::Fluorometer_OJIP_completed_request: {
@@ -593,18 +558,8 @@ bool Fluorometer::Receive(Application_message message){
         }
 
         case Codes::Message_type::Fluorometer_OJIP_retrieve_request: {
-            Logger::Print("Fluorometer OJIP retrieve request", Logger::Level::Notice);
-            if(!ojip_capture_finished) {
-                Logger::Print("Fluorometer OJIP capture not finished", Logger::Level::Warning);
-                return true;
-            }
-
-            if(OJIP_data.intensity.size() == 0) {
-                Logger::Print("Fluorometer OJIP data empty", Logger::Level::Warning);
-                return true;
-            }
-
-            return Export_data(&OJIP_data);
+            Logger::Print("Fluorometer OJIP retrieve request enqueued", Logger::Level::Notice);
+            return fluorometer_thread->Enqueue_message(message);
         }
 
         case Codes::Message_type::Fluorometer_detector_info_request: {
@@ -640,8 +595,8 @@ bool Fluorometer::Receive(Application_message message){
         }
 
         case Codes::Message_type::Fluorometer_calibration_request: {
-            Logger::Print("Fluorometer calibration request", Logger::Level::Notice);
-            Calibrate();
+            Logger::Print("Fluorometer calibration request enqueued", Logger::Level::Notice);
+            fluorometer_thread->Enqueue_message(message);
             return true;
         }
 

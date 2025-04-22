@@ -20,6 +20,7 @@
 #include "hal/gpio/gpio.hpp"
 #include "hal/pwm/pwm.hpp"
 #include "logger.hpp"
+#include "mutex.hpp"
 #include "rtos/wrappers.hpp"
 #include "etl/map.h"
 #include "etl/vector.h"
@@ -47,10 +48,12 @@
 #define FLUOROMETER_CALIBRATION_SAMPLES 1000
 
 class EEPROM_storage;
+class Fluorometer_thread;
 
 typedef std::function<bool(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES>&,uint,float)> Timing_generator_interface;
 
 class Fluorometer: public Component, public Message_receiver {
+    friend class Fluorometer_thread;
 public:
 
     struct OJIP{
@@ -152,6 +155,16 @@ private:
      */
     EEPROM_storage * const memory;
 
+    /**
+     *  @brief   Thread for offloading measurement/export tasks from common thread
+     */
+    Fluorometer_thread * const fluorometer_thread;
+
+    /**
+     * @brief   Mutex for synchronizing access to cuvette which is shared by multiple components
+     */
+    fra::MutexStandard * const cuvette_mutex;
+
 public:
     /**
      * @brief Construct a new Fluorometer object
@@ -162,8 +175,9 @@ public:
      * @param ntc_thermistors       ADC channel for measuring temperature of onboard thermistor or Fluoro LED thermistor
      * @param i2c                   I2C bus for temp sensor
      * @param memory                EEPROM storage for calibration data
+     * @param cuvette_mutex         Mutex for synchronizing access to cuvette
      */
-    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory);
+    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex);
 
     /**
      * @brief
