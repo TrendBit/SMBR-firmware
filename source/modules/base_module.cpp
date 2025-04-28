@@ -16,11 +16,12 @@ Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_typ
 
 Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, std::optional<GPIO * const> yellow_led):
     module_type(module_type),
-    can_thread(new CAN_thread()),
     i2c(new I2C_bus(i2c1, i2c_sda, i2c_scl, 100000, true)),
     memory(new EEPROM_storage(new AT24Cxxx(*i2c, 0x50, 64))),
+    adc_mutex(new fra::MutexStandard()),
+    can_thread(new CAN_thread()),
     common_thread(new Common_thread(can_thread, memory)),
-    common_core(new Common_core()),
+    common_core(new Common_core(adc_mutex)),
     heartbeat_thread(new Heartbeat_thread(green_led_pin,200)),
     yellow_led(yellow_led)
 {

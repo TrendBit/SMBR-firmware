@@ -18,6 +18,8 @@
 #include "config.hpp"
 #include "hal/gpio/gpio.hpp"
 
+namespace fra = cpp_freertos;
+
 class Common_thread;
 
 /**
@@ -56,6 +58,12 @@ protected:
      * @brief  Pointer to EEPROM storage which is used for storing persistent data (calibration, etc)
      */
     EEPROM_storage * const memory;
+
+    /**
+     * @brief   Mutex for ADC access, this is used to prevent multiple threads accessing ADC at the same time
+     *              Prevents measurement distortion due to different settings used on each channel
+     */
+    fra::MutexStandard * const adc_mutex;
 
     /**
      * @brief  Pointer to CAN bus manager thread which is responsible for handling of CAN Bus peripheral
@@ -152,7 +160,7 @@ public:
      *
      * @return float    Temperature of board in Celsius
      */
-    virtual float Board_temperature() = 0;
+    virtual std::optional<float> Board_temperature() = 0;
 
     /**
      * @brief Get pointer to this class instance using "singleton" pattern
