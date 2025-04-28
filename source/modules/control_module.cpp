@@ -73,6 +73,13 @@ void Control_module::Setup_mixer(){
     // mixer->RPM(500);
 }
 
-float Control_module::Board_temperature(){
-    return board_thermistor->Temperature();
+std::optional<float> Control_module::Board_temperature(){
+    bool lock = adc_mutex->Lock(0);
+    if (!lock) {
+        Logger::Print("Board temp ADC mutex lock failed", Logger::Level::Warning);
+        return std::nullopt;
+    }
+    float temp = board_thermistor->Temperature();
+    adc_mutex->Unlock();
+    return temp;
 }
