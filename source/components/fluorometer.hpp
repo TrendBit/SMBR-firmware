@@ -165,6 +165,11 @@ private:
      */
     fra::MutexStandard * const cuvette_mutex;
 
+    /**
+     * @brief   Mutex for synchronizing access to cuvette which is shared by multiple components
+     */
+    fra::MutexStandard * const adc_mutex;
+
 public:
     /**
      * @brief Construct a new Fluorometer object
@@ -176,8 +181,9 @@ public:
      * @param i2c                   I2C bus for temp sensor
      * @param memory                EEPROM storage for calibration data
      * @param cuvette_mutex         Mutex for synchronizing access to cuvette
+     *
      */
-    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex);
+    Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex, fra::MutexStandard * const adc_mutex);
 
     /**
      * @brief
@@ -283,7 +289,7 @@ private:
      *
      * @return float    Temperature of emitor LED in °C
      */
-    float Emitor_temperature();
+    std::optional<float> Emitor_temperature();
 
     /**
      * @brief   Get temperature of detector (IR PIN photodiode)

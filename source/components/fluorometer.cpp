@@ -3,7 +3,7 @@
 #include "memory.hpp"
 #include "threads/fluorometer_thread.hpp"
 
-Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex):
+Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex, fra::MutexStandard * const adc_mutex):
     Component(Codes::Component::Fluorometer),
     Message_receiver(Codes::Component::Fluorometer),
     ntc_channel_selector(ntc_channel_selector),
@@ -14,7 +14,8 @@ Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * n
     detector_temperature_sensor(new TMP102(*i2c, 0x48)),
     memory(memory),
     fluorometer_thread(new Fluorometer_thread(this)),
-    cuvette_mutex(cuvette_mutex)
+    cuvette_mutex(cuvette_mutex),
+    adc_mutex(adc_mutex)
 {
     detector_gain->Set_pulls(true, true);
     Gain(Fluorometer_config::Gain::x10);
@@ -120,9 +121,16 @@ float Fluorometer::Detector_temperature(){
     return detector_temperature_sensor->Temperature();
 }
 
-float Fluorometer::Emitor_temperature(){
+std::optional<float> Fluorometer::Emitor_temperature(){
+    bool lock = adc_mutex->Lock(0);
+    if (!lock) {
+        Logger::Print("Fluorometer emitor temperature ADC mutex lock failed", Logger::Level::Warning);
+        return std::nullopt;
+    }
     ntc_channel_selector->Set(false);
-    return ntc_thermistors->Temperature();
+    float temp = ntc_thermistors->Temperature();
+    adc_mutex->Unlock();
+    return temp;
 }
 
 Fluorometer_config::Gain Fluorometer::Gain(){
@@ -303,9 +311,6 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
     Logger::Print("Stopping ADC", Logger::Level::Notice);
     adc_run(false);
     adc_init();
-
-    float temperature = Emitor_temperature();
-    Logger::Print(emio::format("Emitor temperature: {:05.2f}°C", temperature), Logger::Level::Notice);
 
     if(OJIP_data.sample_time_us[0] > OJIP_data.sample_time_us.back()){
         Logger::Print("Timer crosses 32-bit boundary, needs adjusting", Logger::Level::Warning);
@@ -587,9 +592,13 @@ bool Fluorometer::Receive(Application_message message){
 
         case Codes::Message_type::Fluorometer_emitor_temperature_request: {
             Logger::Print("Fluorometer emitor temperature request", Logger::Level::Notice);
-            float temp = Emitor_temperature();
-            Logger::Print(emio::format("LED temperature: {:05.2f}°C", Emitor_temperature()));
-            App_messages::Fluorometer::Emitor_temperature_response response(temp);
+            auto temp = Emitor_temperature();
+            if (!temp) {
+                Logger::Print("Fluorometer emitor temperature not available", Logger::Level::Error);
+                return false;
+            }
+            Logger::Print(emio::format("LED temperature: {:05.2f}°C", temp.value()));
+            App_messages::Fluorometer::Emitor_temperature_response response(temp.value());
             Send_CAN_message(response);
             return true;
         }
