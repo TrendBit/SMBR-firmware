@@ -6,7 +6,6 @@ Bottle_temperature::Bottle_temperature(Thermopile * top_sensor, Thermopile * bot
     top_sensor(top_sensor),
     bottom_sensor(bottom_sensor)
 {
-
 }
 
 float Bottle_temperature::Temperature(){
@@ -35,6 +34,14 @@ bool Bottle_temperature::Receive(CAN::Message message){
 }
 
 bool Bottle_temperature::Receive(Application_message message){
+    // Initialize temperature filters during first request
+    if(not temperature_initialized){
+        Logger::Print("Bottle temperature initialization", Logger::Level::Debug);
+        top_sensor->Init_filters();
+        bottom_sensor->Init_filters();
+        temperature_initialized = true;
+    }
+
     switch (message.Message_type()) {
         case Codes::Message_type::Bottle_temperature_request: {
             App_messages::Bottle_temperature::Temperature_response response(Temperature());

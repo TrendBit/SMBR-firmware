@@ -30,6 +30,8 @@ private:
 public:
     Bottle_temperature(Thermopile * top_sensor, Thermopile * bottom_sensor);
 
+    bool temperature_initialized = false;
+
     float Temperature();
 
     float Top_temperature();
