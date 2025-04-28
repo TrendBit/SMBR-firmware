@@ -11,9 +11,17 @@ void Fluorometer_thread::Run(){
 
     while (true) {
 
-        // Locking mutex to prevent access to cuvette while measuring
-        bool lock = fluorometer->cuvette_mutex->Lock(0);
-        if (!lock) {
+        // Lock adc mutex to prevent access of other component to ADC while measuring
+        bool adc_lock = fluorometer->adc_mutex->Lock(0);
+        if (!adc_lock) {
+            Logger::Print("Fluorometer waiting for ADC access", Logger::Level::Warning);
+            fluorometer->adc_mutex->Lock();
+        }
+        Logger::Print("Fluorometer ADC access granted", Logger::Level::Debug);
+
+        // Locking cuvette mutex to prevent access of other component to cuvette while measuring
+        bool cuvette_lock = fluorometer->cuvette_mutex->Lock(0);
+        if (!cuvette_lock) {
             Logger::Print("Fluorometer waiting for cuvette access", Logger::Level::Warning);
             fluorometer->cuvette_mutex->Lock();
         }
@@ -89,6 +97,7 @@ void Fluorometer_thread::Run(){
         }
         // Unlocking mutex to allow other components to access cuvette
         fluorometer->cuvette_mutex->Unlock();
+        fluorometer->adc_mutex->Unlock();
 
         // Suspend thread until new message is enqueued
         Suspend();
