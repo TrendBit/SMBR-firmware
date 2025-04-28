@@ -10,6 +10,8 @@
 #include "can_bus/app_message.hpp"
 #include "can_bus/message_receiver.hpp"
 #include "hal/gpio/gpio.hpp"
+#include "rtos/delayed_execution.hpp"
+#include "rtos/repeated_execution.hpp"
 
 #include "components/component.hpp"
 #include "components/common_sensors/RP_internal_temperature.hpp"
@@ -79,12 +81,29 @@ private:
      */
     RP_internal_temperature *mcu_internal_temp;
 
-public:
+    /**
+     * @brief   Mutex for ADC access, this is used to prevent multiple threads accessing ADC at the same time
+     *              Prevents measurement distortion due to different settings used on each channel
+     */
+    fra::MutexStandard * const  adc_mutex;
 
     /**
-     * @brief Construct a new Common_core component, this includes registration to message router via Message_receiver interface
+     * @brief   MCU load during last 5 seconds
      */
-    explicit Common_core();
+    float mcu_load = 0.0f;
+
+    /**
+     *  @brief Sampler capturing Idle thread utilization and calculating CPU load
+     */
+    rtos::Repeated_execution * idle_thread_sampler = nullptr;
+
+public:
+    /**
+     * @brief Construct a new Common_core object
+     *
+     * @param adc_mutex     Mutex for ADC access, shared with other components from base module
+     */
+    explicit Common_core(fra::MutexStandard * const adc_mutex);
 
     /**
      * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)
@@ -149,6 +168,12 @@ public:
      */
     bool Core_load();
 
+    /**
+     * @brief   Sample core load based on idle thread utilization
+     *          Intended to be run os FreeRTOS Timer event
+     */
+    void Sample_core_load();
+
 private:
 
     /**
@@ -165,7 +190,7 @@ private:
      *
      * @return float    Current MCU core temperature in Celsius
      */
-    float MCU_core_temperature();
+    std::optional<float> MCU_core_temperature();
 
     /**
      * @brief   Get current MCU core load
@@ -197,4 +222,6 @@ private:
      * @return false    Request is invalid, MCU will continue operation
      */
     bool Reset_MCU();
+
+
 };
