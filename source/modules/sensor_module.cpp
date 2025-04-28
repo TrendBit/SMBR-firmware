@@ -17,9 +17,16 @@ void Sensor_module::Setup_components(){
     Setup_spectrophotometer();
 }
 
-float Sensor_module::Board_temperature(){
+std::optional<float> Sensor_module::Board_temperature(){
+    bool lock = adc_mutex->Lock(0);
+    if (!lock) {
+        Logger::Print("Board temp ADC mutex lock failed", Logger::Level::Warning);
+        return std::nullopt;
+    }
     ntc_channel_selector->Set(true);
-    return ntc_thermistors->Temperature();
+    float temp = ntc_thermistors->Temperature();
+    adc_mutex->Unlock();
+    return temp;
 }
 
 void Sensor_module::Setup_Mini_OLED(){
@@ -48,7 +55,7 @@ void Sensor_module::Setup_fluorometer(){
     auto led_pwm = new PWM_channel(23, 1000000, 0.0, true);
     uint detector_gain_selector_pin = 21;
 
-    fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors, i2c, memory, cuvette_mutex);
+    fluorometer = new Fluorometer(led_pwm, detector_gain_selector_pin, ntc_channel_selector, ntc_thermistors, i2c, memory, cuvette_mutex, adc_mutex);
 }
 
 void Sensor_module::Setup_spectrophotometer(){

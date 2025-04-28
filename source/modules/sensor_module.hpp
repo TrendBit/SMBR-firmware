@@ -87,7 +87,7 @@ public:
      *
      * @return float    Temperature of board in Celsius
      */
-    virtual float Board_temperature() override;
+    virtual std::optional<float> Board_temperature() override;
 
 private:
     /**
