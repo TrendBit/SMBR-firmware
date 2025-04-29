@@ -24,18 +24,18 @@ bool Aerator::Receive(Application_message message){
             App_messages::Aerator::Set_speed set_speed;
 
             if (!set_speed.Interpret_data(message.data)) {
-                Logger::Print("Aerator_set_speed interpretation failed", Logger::Level::Error);
+                Logger::Error("Aerator_set_speed interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Aerator speed set to: {:03.1f}", set_speed.speed), Logger::Level::Debug);
+            Logger::Debug("Aerator speed set to: {:03.1f}", set_speed.speed);
             Speed(set_speed.speed);
             return true;
         }
 
         case Codes::Message_type::Aerator_get_speed_request: {
             App_messages::Aerator::Get_speed_response speed_response(Speed());
-            Logger::Print(emio::format("Aerator pump speed requested, response: {:03.1f}", speed_response.speed), Logger::Level::Debug);
+            Logger::Debug("Aerator pump speed requested, response: {:03.1f}", speed_response.speed);
             Send_CAN_message(speed_response);
             return true;
         }
@@ -44,18 +44,18 @@ bool Aerator::Receive(Application_message message){
             App_messages::Aerator::Set_flowrate set_flowrate;
 
             if (!set_flowrate.Interpret_data(message.data)) {
-                Logger::Print("Aerator_set_flowrate interpretation failed", Logger::Level::Error);
+                Logger::Error("Aerator_set_flowrate interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Aerator pump flowrate set to: {:03.1f}", set_flowrate.flowrate), Logger::Level::Debug);
+            Logger::Debug("Aerator pump flowrate set to: {:03.1f}", set_flowrate.flowrate);
             Flowrate(set_flowrate.flowrate);
             return true;
         }
 
         case Codes::Message_type::Aerator_get_flowrate_request: {
             App_messages::Aerator::Get_flowrate_response flowrate_response(Flowrate());
-            Logger::Print(emio::format("Aerator flowrate requested, response: {:03.1f}", flowrate_response.flowrate), Logger::Level::Debug);
+            Logger::Debug("Aerator flowrate requested, response: {:03.1f}", flowrate_response.flowrate);
             Send_CAN_message(flowrate_response);
             return true;
         }
@@ -64,17 +64,17 @@ bool Aerator::Receive(Application_message message){
             App_messages::Aerator::Move move_message;
 
             if (!move_message.Interpret_data(message.data)) {
-                Logger::Print("Aerator_move interpretation failed", Logger::Level::Error);
+                Logger::Error("Aerator_move interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Aerator pump moving, volume: {:03.1f}, flowrate: {:03.1f}", move_message.volume, move_message.flowrate), Logger::Level::Debug);
+            Logger::Debug("Aerator pump moving, volume: {:03.1f}, flowrate: {:03.1f}", move_message.volume, move_message.flowrate);
             Move(move_message.volume, move_message.flowrate);
             return true;
         }
 
         case Codes::Message_type::Aerator_stop: {
-            Logger::Print("Aerator pump stop requested", Logger::Level::Debug);
+            Logger::Debug("Aerator pump stop requested");
             Stop();
             return true;
         }
@@ -132,12 +132,12 @@ float Aerator::Move(float volume_ml, float flowrate){
         effective_flowrate = std::clamp(flowrate, 0.0f, max_flowrate);
     }
 
-    Logger::Print(emio::format("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate), Logger::Level::Debug);
+    Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate);
 
     // Calculate time of pumping and set stopper executioner
     float pump_time_sec = (std::abs(volume_ml) / effective_flowrate) * 60;
 
-    Logger::Print(emio::format("Pumping time: {:03.1f}, effective_flowrate: {:03.1f}", pump_time_sec, effective_flowrate), Logger::Level::Debug);
+    Logger::Debug("Pumping time: {:03.1f}, effective_flowrate: {:03.1f}", pump_time_sec, effective_flowrate);
 
     // Start pump with effective flowrate
     Flowrate(effective_flowrate);

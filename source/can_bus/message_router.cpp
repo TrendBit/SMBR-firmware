@@ -7,7 +7,7 @@ bool Message_router::Route(CAN::Message message){
 
         Codes::Message_type message_type = app_message.Message_type();
 
-        Logger::Print(emio::format("Routing message: {}", Codes::to_string(message_type)), Logger::Level::Trace);
+        Logger::Trace("Routing message: {}", Codes::to_string(message_type));
 
         // Filter messages by target module if not in bypass list
         auto bypass = bypass_routing_table.find(message_type);
@@ -16,22 +16,22 @@ bool Message_router::Route(CAN::Message message){
             // Check if current module is target module
             Codes::Module target_module = app_message.Module_type();
             if (target_module != Codes::Module::All and target_module != Codes::Module::Any and target_module != Base_module::Module_type()){
-                Logger::Print("Message for different module", Logger::Level::Trace);
+                Logger::Trace("Message for different module");
                 return false;
             } else {
                 if (target_module == Codes::Module::Undefined) {
-                    Logger::Print("Undefined module type", Logger::Level::Warning);
+                    Logger::Warning("Undefined module type");
                 }
             }
 
             // Check if current instance is target instance
             Codes::Instance target_instance = app_message.Instance_enumeration();
             if (target_instance != Codes::Instance::All and target_instance != Base_module::Instance_enumeration()) {
-                Logger::Print("Message for different instance", Logger::Level::Trace);
+                Logger::Trace("Message for different instance");
                 return false;
             } else {
                 if (target_instance == Codes::Instance::Undefined) {
-                    Logger::Print("Undefined instance of module", Logger::Level::Warning);
+                    Logger::Warning("Undefined instance of module");
                 }
             }
         } else {
@@ -40,7 +40,7 @@ bool Message_router::Route(CAN::Message message){
                 instance->Receive(app_message);
                 return true;
             } else {
-                Logger::Print("Message receiver instance not found", Logger::Level::Warning);
+                Logger::Warning("Message receiver instance not found");
                 return false;
             }
         }
@@ -54,11 +54,11 @@ bool Message_router::Route(CAN::Message message){
                 instance->Receive(app_message);
                 return true;
             } else {
-                Logger::Print("Message receiver instance not found", Logger::Level::Warning);
+                Logger::Warning("Message receiver instance not found");
                 return false;
             }
         } else {
-            Logger::Print("Message receiver component not found", Logger::Level::Warning);
+            Logger::Warning("Message receiver component not found");
             return false;
         }
     // Process admin messages
@@ -72,7 +72,7 @@ bool Message_router::Route(CAN::Message message){
                 instance->Receive(message);
                 return true;
             } else {
-                Logger::Print("Command receiver not found", Logger::Level::Warning);
+                Logger::Warning("Command receiver not found");
                 return false;
             }
         }
@@ -84,7 +84,7 @@ void Message_router::Register_receiver(Codes::Component component, Message_recei
     auto record = component_instances.find(component);
     // Overwrite existing record
     if (record != component_instances.end()){
-        Logger::Print("Component already registered, overwriting", Logger::Level::Warning);
+        Logger::Warning("Component already registered, overwriting");
         record->second = receiver;
     } else {
         component_instances[component] = receiver;

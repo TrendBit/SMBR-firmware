@@ -19,10 +19,10 @@ Heater::Heater(uint gpio_in1, uint gpio_in2, float pwm_frequency):
 }
 
 void Heater::Regulation_loop() {
-    Logger::Print("Regulating heater intensity", Logger::Level::Trace);
+    Logger::Trace("Regulating heater intensity");
 
     if (!target_temperature.has_value()) {
-        Logger::Print("No target temperature set, regulation disabled", Logger::Level::Notice);
+        Logger::Notice("No target temperature set, regulation disabled");
         regulation_loop->Disable();
         integral_error = 0.0f;  // Reset integral when regulation is disabled
         return;
@@ -36,7 +36,7 @@ void Heater::Regulation_loop() {
         // Limit intensity based on max temp of heater plate
         float plate_current_temperature = Temperature();
         if (plate_current_temperature > plate_max_temperature) {
-            Logger::Print("Heater plate temperature exceeded, limiting power output", Logger::Level::Warning);
+            Logger::Warning("Heater plate temperature exceeded, limiting power output");
             temp_diff = plate_max_temperature - plate_current_temperature;
         } else {
             temp_diff = target_temperature.value() - bottle_temperature.value();
@@ -71,14 +71,14 @@ void Heater::Regulation_loop() {
         Intensity(new_intensity);
 
         // Enhanced logging with P and I component details
-        Logger::Print(emio::format("Current temp: {:03.1f}, target temp: {:03.1f}, diff: {:+03.1f}",
-                     bottle_temperature.value(), target_temperature.value(), temp_diff), Logger::Level::Notice);
-        Logger::Print(emio::format("PI-control: P={:+04.2f}, I={:+04.2f}, desired={:+04.2f}, step={:+04.2f}, new={:04.2f}",
-                     p_component, i_component, desired_intensity, step_size, new_intensity), Logger::Level::Notice);
+        Logger::Notice("Current temp: {:03.1f}, target temp: {:03.1f}, diff: {:+03.1f}",
+                     bottle_temperature.value(), target_temperature.value(), temp_diff);
+        Logger::Notice("PI-control: P={:+04.2f}, I={:+04.2f}, desired={:+04.2f}, step={:+04.2f}, new={:04.2f}",
+                     p_component, i_component, desired_intensity, step_size, new_intensity);
 
         bottle_temperature = std::nullopt;
     } else {
-        Logger::Print("No bottle temperature received, regulation disabled", Logger::Level::Warning);
+        Logger::Warning("No bottle temperature received, regulation disabled");
         Intensity(0);
         return;
     }
@@ -112,7 +112,7 @@ float Heater::Intensity(float requested_intensity){
     // Apply sign for heating/cooling
     compensated_intensity = std::copysign(compensated_intensity, intensity);
 
-    Logger::Print(emio::format("Heater requested: {:03.1f}, scaled: {:03.1f}, compensated: {:03.1f} ", requested_intensity, scaled_intensity, compensated_intensity), Logger::Level::Notice);
+    Logger::Notice("Heater requested: {:03.1f}, scaled: {:03.1f}, compensated: {:03.1f} ", requested_intensity, scaled_intensity, compensated_intensity);
 
     // Start heater fan if heater is in use
     if(requested_intensity != 0){
@@ -155,10 +155,10 @@ bool Heater::Receive(Application_message message){
             App_messages::Heater::Set_intensity set_intensity;
 
             if (!set_intensity.Interpret_data(message.data)){
-                Logger::Print("Heater_set_intensity interpretation failed", Logger::Level::Error);
+                Logger::Error("Heater_set_intensity interpretation failed");
                 return false;
             }
-            Logger::Print(emio::format("Heater intensity set to: {:03.1f}", set_intensity.intensity), Logger::Level::Debug);
+            Logger::Debug("Heater intensity set to: {:03.1f}", set_intensity.intensity);
             Intensity(set_intensity.intensity);
             return true;
         }
@@ -172,10 +172,10 @@ bool Heater::Receive(Application_message message){
         case Codes::Message_type::Heater_set_target_temperature:{
             App_messages::Heater::Set_target_temperature set_target_temperature;
             if (!set_target_temperature.Interpret_data(message.data)){
-                Logger::Print("Heater_set_target_temperature interpretation failed", Logger::Level::Error);
+                Logger::Error("Heater_set_target_temperature interpretation failed");
                 return false;
             }
-            Logger::Print(emio::format("Heater target temperature set to: {:05.2f}˚C", set_target_temperature.temperature), Logger::Level::Debug);
+            Logger::Debug("Heater target temperature set to: {:05.2f}˚C", set_target_temperature.temperature);
             target_temperature = set_target_temperature.temperature;
             Request_bottle_temperature();
             regulation_loop->Enable();
@@ -184,7 +184,7 @@ bool Heater::Receive(Application_message message){
 
         case Codes::Message_type::Heater_get_target_temperature_request:{
             float target_temp = target_temperature.value_or(std::numeric_limits<float>::quiet_NaN());
-            Logger::Print(emio::format("Heater target is temperature: {:05.2f}˚C", target_temp), Logger::Level::Debug);
+            Logger::Debug("Heater target is temperature: {:05.2f}˚C", target_temp);
             App_messages::Heater::Get_target_temperature_response target_temperature_response(target_temp);
             Send_CAN_message(target_temperature_response);
             return true;
@@ -192,14 +192,14 @@ bool Heater::Receive(Application_message message){
 
         case Codes::Message_type::Heater_get_plate_temperature_request:{
             float temp = Temperature();
-            Logger::Print(emio::format("Heater plate temperature: {:05.2f}˚C", temp), Logger::Level::Debug);
+            Logger::Debug("Heater plate temperature: {:05.2f}˚C", temp);
             App_messages::Heater::Get_plate_temperature_response plate_temperature(temp);
             Send_CAN_message(plate_temperature);
             return true;
         }
 
         case Codes::Message_type::Heater_turn_off:{
-            Logger::Print("Heater turned off", Logger::Level::Debug);
+            Logger::Debug("Heater turned off");
             Turn_off();
             return true;
         }
@@ -207,11 +207,11 @@ bool Heater::Receive(Application_message message){
         case Codes::Message_type::Bottle_temperature_response:{
             App_messages::Bottle_temperature::Temperature_response temperature_response;
             if (!temperature_response.Interpret_data(message.data)){
-                Logger::Print("Bottle_temperature_response interpretation failed", Logger::Level::Error);
+                Logger::Error("Bottle_temperature_response interpretation failed");
                 return false;
             }
             bottle_temperature = temperature_response.temperature;
-            Logger::Print(emio::format("Bottle temperature: {:05.2f}˚C", bottle_temperature.value_or(0.0)), Logger::Level::Debug);
+            Logger::Debug("Bottle temperature: {:05.2f}˚C", bottle_temperature.value_or(0.0));
             return true;
         }
 

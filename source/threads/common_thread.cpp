@@ -6,26 +6,25 @@ Common_thread::Common_thread(CAN_thread * can_thread, EEPROM_storage * const mem
     can_thread(can_thread),
     memory(memory)
 {
-    Logger::Print("Common thread created", Logger::Level::Debug);
+    Logger::Debug("Common thread created");
     Start();
 }
 
 void Common_thread::Run(){
-    Logger::Print("Common thread start", Logger::Level::Debug);
+    Logger::Debug("Common thread start");
 
     bool memory_status = memory->Check_type(Base_module::Module_type(), Base_module::Instance_enumeration());
 
     if (!memory_status) {
-        Logger::Print("Memory type check failed", Logger::Level::Error);
+        Logger::Error("Memory type check failed");
     } else {
-        Logger::Print("Memory type check passed", Logger::Level::Trace);
+        Logger::Debug("Memory type check passed");
     }
 
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1));
 
         while(can_thread->Message_available()) {
-            //Logger::Print("Message available", Logger::Level::Trace);
             auto message_in = can_thread->Read_message();
             if (message_in.has_value()) {
                 Message_router::Route(message_in.value());

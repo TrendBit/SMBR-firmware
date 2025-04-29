@@ -12,6 +12,7 @@
 #include "hal/gpio/gpio.hpp"
 #include "rtos/delayed_execution.hpp"
 #include "rtos/repeated_execution.hpp"
+#include "rtos/execute_until.hpp"
 
 #include "components/component.hpp"
 #include "components/common_sensors/RP_internal_temperature.hpp"

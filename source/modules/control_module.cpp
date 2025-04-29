@@ -19,7 +19,7 @@ void Control_module::Setup_components(){
 }
 
 void Control_module::Setup_LEDs(){
-    Logger::Print("LED initialization", Logger::Level::Debug);
+    Logger::Debug("LED initialization");
 
     PWM_channel * r_pwm = new PWM_channel(17, 100, 0.00, true);
     PWM_channel * g_pwm = new PWM_channel(16, 100, 0.00, true);
@@ -46,7 +46,7 @@ void Control_module::Setup_LEDs(){
 }
 
 void Control_module::Setup_heater(){
-    Logger::Print("Heater initialization", Logger::Level::Debug);
+    Logger::Debug("Heater initialization");
 
     GPIO * heater_vref = new GPIO(20, GPIO::Direction::Out);
     heater_vref->Set(true);
@@ -56,18 +56,18 @@ void Control_module::Setup_heater(){
 }
 
 void Control_module::Setup_cuvette_pump(){
-    Logger::Print("Cuvette_pump initialization", Logger::Level::Debug);
+    Logger::Debug("Cuvette_pump initialization");
     PWM_channel * cuvettte_pump_vref_pwm = new PWM_channel(10, 2000, 0.2, true);
     cuvette_pump = new Cuvette_pump(22, 8, 100.0, 20.0, 0.2, 250.0f);
 }
 
 void Control_module::Setup_aerator(){
-    Logger::Print("Aerator initialization", Logger::Level::Debug);
+    Logger::Debug("Aerator initialization");
     aerator = new Aerator(3, 2, 2500.0, 0.12, 50.0f);
 }
 
 void Control_module::Setup_mixer(){
-    Logger::Print("Mixer initialization", Logger::Level::Debug);
+    Logger::Debug("Mixer initialization");
     auto mixer_tacho = new RPM_counter_PIO(PIO_machine(pio0,1),7, 10000.0,100,2);
     mixer = new Mixer(13, mixer_tacho, 2500.0, 6000.0, 0.0);
     // mixer->RPM(500);
@@ -76,7 +76,7 @@ void Control_module::Setup_mixer(){
 std::optional<float> Control_module::Board_temperature(){
     bool lock = adc_mutex->Lock(0);
     if (!lock) {
-        Logger::Print("Board temp ADC mutex lock failed", Logger::Level::Warning);
+        Logger::Warning("Board temp ADC mutex lock failed");
         return std::nullopt;
     }
     float temp = board_thermistor->Temperature();

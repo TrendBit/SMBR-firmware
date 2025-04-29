@@ -36,7 +36,7 @@ bool Bottle_temperature::Receive(CAN::Message message){
 bool Bottle_temperature::Receive(Application_message message){
     // Initialize temperature filters during first request
     if(not temperature_initialized){
-        Logger::Print("Bottle temperature initialization", Logger::Level::Debug);
+        Logger::Debug("Bottle temperature initialization");
         top_sensor->Init_filters();
         bottom_sensor->Init_filters();
         temperature_initialized = true;
@@ -45,35 +45,35 @@ bool Bottle_temperature::Receive(Application_message message){
     switch (message.Message_type()) {
         case Codes::Message_type::Bottle_temperature_request: {
             App_messages::Bottle_temperature::Temperature_response response(Temperature());
-            Logger::Print(emio::format("Bottle temperature: {:05.2f}°C", response.temperature), Logger::Level::Debug);
+            Logger::Debug("Bottle temperature: {:05.2f}°C", response.temperature);
             Send_CAN_message(response);
             return true;
         }
 
         case Codes::Message_type::Bottle_top_measured_temperature_request: {
             App_messages::Bottle_temperature::Top_measured_temperature_response response(Top_temperature());
-            Logger::Print(emio::format("Top measured temperature: {:05.2f}°C", response.temperature), Logger::Level::Debug);
+            Logger::Debug("Top measured temperature: {:05.2f}°C", response.temperature);
             Send_CAN_message(response);
             return true;
         }
 
         case Codes::Message_type::Bottle_bottom_measured_temperature_request: {
             App_messages::Bottle_temperature::Bottom_measured_temperature_response response(Bottom_temperature());
-            Logger::Print(emio::format("Bottom measured temperature: {:05.2f}°C", response.temperature), Logger::Level::Debug);
+            Logger::Debug("Bottom measured temperature: {:05.2f}°C", response.temperature);
             Send_CAN_message(response);
             return true;
         }
 
         case Codes::Message_type::Bottle_top_sensor_temperature_request: {
             App_messages::Bottle_temperature::Top_sensor_temperature_response response(Top_sensor_temperature());
-            Logger::Print(emio::format("Top sensor temperature: {:05.2f}°C", response.temperature), Logger::Level::Debug);
+            Logger::Debug("Top sensor temperature: {:05.2f}°C", response.temperature);
             Send_CAN_message(response);
             return true;
         }
 
         case Codes::Message_type::Bottle_bottom_sensor_temperature_request: {
             App_messages::Bottle_temperature::Bottom_sensor_temperature_response response(Bottom_sensor_temperature());
-            Logger::Print(emio::format("Bottom sensor temperature: {:05.2f}°C", response.temperature), Logger::Level::Debug);
+            Logger::Debug("Bottom sensor temperature: {:05.2f}°C", response.temperature);
             Send_CAN_message(response);
             return true;
         }

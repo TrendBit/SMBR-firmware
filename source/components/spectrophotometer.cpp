@@ -24,9 +24,9 @@ bool Spectrophotometer::Load_calibration(){
     bool status = memory->Read_spectrophotometer_calibration(nominal_calibration);
 
     if (status) {
-        Logger::Print("Spectrophotometer calibration data loaded from memory", Logger::Level::Debug);
+        Logger::Debug("Spectrophotometer calibration data loaded from memory");
     } else {
-        Logger::Print("Failed to load spectrophotometer calibration data from memory", Logger::Level::Error);
+        Logger::Error("Failed to load spectrophotometer calibration data from memory");
         return false;
     }
 
@@ -112,11 +112,11 @@ void Spectrophotometer::Calibrate_channels(){
         Channels::IR,
     };
 
-    Logger::Print("Spectrophotometer calibration in progress", Logger::Level::Trace);
+    Logger::Trace("Spectrophotometer calibration in progress");
 
     for (auto channel : channels_to_calibrate) {
         float detected_intensity = Measure_intensity(channel);
-        Logger::Print(emio::format("Nominal intensity: {:05.3f}", detected_intensity), Logger::Level::Trace);
+        Logger::Trace("Nominal intensity: {:05.3f}", detected_intensity);
         channels[channel].nominal_detection = detected_intensity;
     }
 
@@ -132,16 +132,16 @@ void Spectrophotometer::Calibrate_channels(){
     bool status = memory->Write_spectrophotometer_calibration(nominal_calibration);
 
     if (status) {
-        Logger::Print("Spectrophotometer calibration done, data written to memory", Logger::Level::Notice);
+        Logger::Notice("Spectrophotometer calibration done, data written to memory");
     } else {
-        Logger::Print("Failed to write spectrophotometer calibration data to memory", Logger::Level::Error);
+        Logger::Error("Failed to write spectrophotometer calibration data to memory");
     }
 }
 
 bool Spectrophotometer::Receive(Application_message message){
     switch (message.Message_type()) {
         case Codes::Message_type::Spectrophotometer_channel_count_request: {
-            Logger::Print("Spectrophotometer channel count request", Logger::Level::Notice);
+            Logger::Notice("Spectrophotometer channel count request");
             App_messages::Spectrophotometer::Channel_count_response response;
             response.channel_count = channels.size();
             Send_CAN_message(response);
@@ -149,17 +149,17 @@ bool Spectrophotometer::Receive(Application_message message){
         }
 
         case Codes::Message_type::Spectrophotometer_channel_info_request: {
-            Logger::Print("Spectrophotometer channel info request", Logger::Level::Notice);
+            Logger::Notice("Spectrophotometer channel info request");
             App_messages::Spectrophotometer::Channel_info_request request;
             if (not request.Interpret_data(message.data)) {
-                Logger::Print("Failed to interpret channel info request", Logger::Level::Error);
+                Logger::Error("Failed to interpret channel info request");
                 return false;
             }
 
             uint8_t channel_index = request.channel;
 
             if (channel_index > channels.size()) {
-                Logger::Print("Requested channel out of range", Logger::Level::Error);
+                Logger::Error("Requested channel out of range");
                 return false;
             }
 
@@ -176,19 +176,19 @@ bool Spectrophotometer::Receive(Application_message message){
         }
 
         case Codes::Message_type::Spectrophotometer_measurement_request: {
-            Logger::Print("Spectrophotometer measurement request enqueued", Logger::Level::Notice);
+            Logger::Notice("Spectrophotometer measurement request enqueued");
             spectrophotometer_thread->Enqueue_message(message);
             return true;
         }
 
         case Codes::Message_type::Spectrophotometer_calibrate: {
-            Logger::Print("Spectrophotometer calibration request enqueued", Logger::Level::Notice);
+            Logger::Notice("Spectrophotometer calibration request enqueued");
             spectrophotometer_thread->Enqueue_message(message);
             return true;
         }
 
         case Codes::Message_type::Spectrophotometer_temperature_request: {
-            Logger::Print("Spectrophotometer temperature request", Logger::Level::Notice);
+            Logger::Notice("Spectrophotometer temperature request");
             App_messages::Spectrophotometer::Temperature_response response;
             response.temperature = Temperature();
             Send_CAN_message(response);

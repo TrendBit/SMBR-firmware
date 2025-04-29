@@ -7,17 +7,17 @@ Spectrophotometer_thread::Spectrophotometer_thread(Spectrophotometer * const spe
 }
 
 void Spectrophotometer_thread::Run(){
-    Logger::Print("Spectrophotometer thread start", Logger::Level::Trace);
+    Logger::Trace("Spectrophotometer thread start");
 
     while (true) {
 
         // Locking mutex to prevent access to cuvette while measuring
         bool lock = spectrophotometer->cuvette_mutex->Lock(0);
         if (!lock) {
-            Logger::Print("Spectrophotometer waiting for cuvette access", Logger::Level::Warning);
+            Logger::Warning("Spectrophotometer waiting for cuvette access");
             spectrophotometer->cuvette_mutex->Lock();
         }
-        Logger::Print("Spectrophotometer cuvette access granted", Logger::Level::Debug);
+        Logger::Debug("Spectrophotometer cuvette access granted");
 
         while(not message_buffer.empty()){
 
@@ -28,23 +28,23 @@ void Spectrophotometer_thread::Run(){
 
             //Check if message type is supported
             if (std::find(supported_messages.begin(), supported_messages.end(), message_type) == supported_messages.end()){
-                Logger::Print(emio::format("Spectrophotometer thread does not support Message type: {}", Codes::to_string(message_type)), Logger::Level::Error);
+                Logger::Error("Spectrophotometer thread does not support Message type: {}", Codes::to_string(message_type));
                 continue;
             }
 
             switch(message_type){
                 case Codes::Message_type::Spectrophotometer_measurement_request: {
-                    Logger::Print("Spectrophotometer measurement start", Logger::Level::Notice);
+                    Logger::Notice("Spectrophotometer measurement start");
                     App_messages::Spectrophotometer::Measurement_request request;
                     if (not request.Interpret_data(message.data)) {
-                        Logger::Print("Failed to interpret spectrophotometer measurement request", Logger::Level::Error);
+                        Logger::Error("Failed to interpret spectrophotometer measurement request");
                         continue;
                     }
 
                     uint8_t channel_index = request.channel;
 
                     if (channel_index > spectrophotometer->channels.size()) {
-                        Logger::Print("Requested spectrophotometer channel out of range", Logger::Level::Error);
+                        Logger::Error("Requested spectrophotometer channel out of range");
                         continue;
                     }
 
@@ -57,18 +57,17 @@ void Spectrophotometer_thread::Run(){
                     response.relative_value = measurement.relative_value;
                     response.absolute_value = measurement.absolute_value;
 
-                    Logger::Print(emio::format("Channel: {}, relative {:05.3f}, absolute {}",
-                            static_cast<uint8_t>(measurement.channel),
-                            measurement.relative_value,
-                            measurement.absolute_value
-                            ),
-                        Logger::Level::Debug);
+                    Logger::Debug("Channel: {}, relative {:05.3f}, absolute {}",
+                            (int)static_cast<short>(measurement.channel),
+                            (float)measurement.relative_value,
+                            (int)measurement.absolute_value
+                            );
 
                     spectrophotometer->Send_CAN_message(response);
                 } break;
 
                 case Codes::Message_type::Spectrophotometer_calibrate: {
-                    Logger::Print("Spectrophotometer calibration started", Logger::Level::Notice);
+                    Logger::Notice("Spectrophotometer calibration started");
                     spectrophotometer->Calibrate_channels();
                 } break;
 
@@ -88,12 +87,12 @@ bool Spectrophotometer_thread::Enqueue_message(Application_message &message){
 
     // Check if message type is supported
     if (std::find(supported_messages.begin(), supported_messages.end(), message.Message_type()) == supported_messages.end()){
-        Logger::Print(emio::format("Message type {} not supported", Codes::to_string(message.Message_type())), Logger::Level::Error);
+        Logger::Error("Message type {} not supported", Codes::to_string(message.Message_type()));
         return false;
     }
 
     if (message_buffer.full()){
-        Logger::Print("Spectrophotometer thread message buffer full", Logger::Level::Error);
+        Logger::Error("Spectrophotometer thread message buffer full");
         return false;
     }
 

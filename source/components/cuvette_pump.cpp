@@ -23,18 +23,18 @@ bool Cuvette_pump::Receive(Application_message message){
             App_messages::Cuvette_pump::Set_speed set_speed;
 
             if (!set_speed.Interpret_data(message.data)) {
-                Logger::Print("Cuvette_pump_set_speed interpretation failed", Logger::Level::Error);
+                Logger::Error("Cuvette_pump_set_speed interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Cuvette pump speed set to: {:03.1f}", set_speed.speed), Logger::Level::Debug);
+            Logger::Debug("Cuvette pump speed set to: {:03.1f}", set_speed.speed);
             Speed(set_speed.speed);
             return true;
         }
 
         case Codes::Message_type::Cuvette_pump_get_speed_request: {
             App_messages::Cuvette_pump::Get_speed_response speed_response(Speed());
-            Logger::Print(emio::format("Cuvette pump speed requested, response: {:03.1f}", speed_response.speed), Logger::Level::Debug);
+            Logger::Debug("Cuvette pump speed requested, response: {:03.1f}", speed_response.speed);
             Send_CAN_message(speed_response);
             return true;
         }
@@ -43,18 +43,18 @@ bool Cuvette_pump::Receive(Application_message message){
             App_messages::Cuvette_pump::Set_flowrate set_flowrate;
 
             if (!set_flowrate.Interpret_data(message.data)) {
-                Logger::Print("Cuvette_pump_set_flowrate interpretation failed", Logger::Level::Error);
+                Logger::Error("Cuvette_pump_set_flowrate interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Cuvette pump flowrate set to: {:03.1f}", set_flowrate.flowrate), Logger::Level::Debug);
+            Logger::Debug("Cuvette pump flowrate set to: {:03.1f}", set_flowrate.flowrate);
             Flowrate(set_flowrate.flowrate);
             return true;
         }
 
         case Codes::Message_type::Cuvette_pump_get_flowrate_request: {
             App_messages::Cuvette_pump::Get_flowrate_response flowrate_response(Flowrate());
-            Logger::Print(emio::format("Cuvette pump flowrate requested, response: {:03.1f}", flowrate_response.flowrate), Logger::Level::Debug);
+            Logger::Debug("Cuvette pump flowrate requested, response: {:03.1f}", flowrate_response.flowrate);
             Send_CAN_message(flowrate_response);
             return true;
         }
@@ -63,29 +63,29 @@ bool Cuvette_pump::Receive(Application_message message){
             App_messages::Cuvette_pump::Move move_message;
 
             if (!move_message.Interpret_data(message.data)) {
-                Logger::Print("Cuvette_pump_move interpretation failed", Logger::Level::Error);
+                Logger::Error("Cuvette_pump_move interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Cuvette pump moving, volume: {:03.1f}, flowrate: {:03.1f}", move_message.volume, move_message.flowrate), Logger::Level::Debug);
+            Logger::Debug("Cuvette pump moving, volume: {:03.1f}, flowrate: {:03.1f}", move_message.volume, move_message.flowrate);
             Move(move_message.volume, move_message.flowrate);
             return true;
         }
 
         case Codes::Message_type::Cuvette_pump_stop: {
-            Logger::Print("Cuvette pump stop requested", Logger::Level::Debug);
+            Logger::Debug("Cuvette pump stop requested");
             Stop();
             return true;
         }
 
         case Codes::Message_type::Cuvette_pump_prime: {
-            Logger::Print("Cuvette pump prime requested", Logger::Level::Debug);
+            Logger::Debug("Cuvette pump prime requested");
             Prime();
             return true;
         }
 
         case Codes::Message_type::Cuvette_pump_purge: {
-            Logger::Print("Cuvette pump purge requested", Logger::Level::Debug);
+            Logger::Debug("Cuvette pump purge requested");
             Purge();
             return true;
         }
@@ -114,12 +114,12 @@ float Cuvette_pump::Move(float volume_ml, float flowrate){
         effective_flowrate = std::clamp(flowrate, 0.0f, max_flowrate);
     }
 
-    Logger::Print(emio::format("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate));
+    Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate);
 
     // Calculate time of pumping and set stopper executioner
     float pump_time_sec = (std::abs(volume_ml) / effective_flowrate) * 60;
 
-    Logger::Print(emio::format("Pumping time: {:03.1f}, effective_flowrate: {:03.1f}", pump_time_sec, effective_flowrate));
+    Logger::Debug("Pumping time: {:03.1f}, effective_flowrate: {:03.1f}", pump_time_sec, effective_flowrate);
 
     if (volume_ml > 0) {
         Flowrate(effective_flowrate);

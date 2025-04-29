@@ -68,15 +68,6 @@ void Logger::Print(std::string message, Level level){
     Print_to_UART(text);
 }
 
-void Logger::Print(std::string message, std::function<std::string(const std::string&)> colorizer, Level level){
-    if (level < current_log_level) {
-        return;
-    }
-
-    message = colorizer(message);
-    Print(message, level);
-}
-
 void Logger::Print_raw(std::string message){
     Print_to_USB(message);
     Print_to_UART(message);

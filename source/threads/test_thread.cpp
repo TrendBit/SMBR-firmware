@@ -41,7 +41,7 @@ Test_thread::Test_thread()
 };
 
 void Test_thread::Run(){
-    Logger::Print("Test thread init");
+    Logger::Debug("Test thread init");
 
     // I2C_bus *i2c = new I2C_bus(i2c1, 10, 11, 100000, true);
     // Calibrate_VEML_lux(*i2c);
@@ -74,8 +74,8 @@ void Test_thread::Calibrate_VEML_lux(I2C_bus &i2c){
 
     float white_compensation = green / white;
 
-    Logger::Print(emio::format("Green/white values: {:05.3f}/{:05.3f}", green, white));
-    Logger::Print(emio::format("White compensation: {:05.3f}", white_compensation));
+    Logger::Debug("Green/white values: {:05.3f}/{:05.3f}", green, white);
+    Logger::Debug("White compensation: {:05.3f}", white_compensation);
 
     led_driver_0->Intensity(KTD2026::Channel::CH_3, 0.0f);
 
@@ -89,8 +89,8 @@ void Test_thread::Calibrate_VEML_lux(I2C_bus &i2c){
 
     float red_compensation = white / red;
 
-    Logger::Print(emio::format("White/red values: {:05.3f}/{:05.3f}", white, red));
-    Logger::Print(emio::format("Red compensation: {:05.3f}", red_compensation));
+    Logger::Debug("White/red values: {:05.3f}/{:05.3f}", white, red);
+    Logger::Debug("Red compensation: {:05.3f}", red_compensation);
 
     led_driver_1->Intensity(KTD2026::Channel::CH_1, 0.0f);
 
@@ -103,8 +103,8 @@ void Test_thread::Calibrate_VEML_lux(I2C_bus &i2c){
 
     float blue_compensation = white / blue;
 
-    Logger::Print(emio::format("White/blue values: {:05.3f}/{:05.3f}", white, blue));
-    Logger::Print(emio::format("Blue compensation: {:05.3f}", blue_compensation));
+    Logger::Debug("White/blue values: {:05.3f}/{:05.3f}", white, blue);
+    Logger::Debug("Blue compensation: {:05.3f}", blue_compensation);
 
     led_driver_0->Intensity(KTD2026::Channel::CH_2, 0.0f);
 }
@@ -115,23 +115,23 @@ void Test_thread::EEPROM_Test(I2C_bus &i2c){
     auto read = eeprom->Read(0, 2);
 
     if (read.has_value()) {
-        Logger::Print(emio::format("EEPROM read: 0x{:02x} 0x{:02x}", read.value()[0], read.value()[1]));
+        Logger::Debug("EEPROM read: 0x{:02x} 0x{:02x}", read.value()[0], read.value()[1]);
     } else {
-        Logger::Print("EEPROM read failed");
+        Logger::Debug("EEPROM read failed");
     }
 
     if (eeprom->Write(0, { 0x01, 0x02 })) {
-        Logger::Print("EEPROM write success");
+        Logger::Debug("EEPROM write success");
     } else {
-        Logger::Print("EEPROM write failed");
+        Logger::Debug("EEPROM write failed");
     }
 
     read = eeprom->Read(0, 2);
 
     if (read.has_value()) {
-        Logger::Print(emio::format("EEPROM read: 0x{:02x} 0x{:02x}", read.value()[0], read.value()[1]));
+        Logger::Debug("EEPROM read: 0x{:02x} 0x{:02x}", read.value()[0], read.value()[1]);
     } else {
-        Logger::Print("EEPROM read failed");
+        Logger::Debug("EEPROM read failed");
     }
 }
 
@@ -151,16 +151,16 @@ void Test_thread::Thermopile_test(I2C_bus &i2c){
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1000));
 
-        Logger::Print(emio::format("Thermistor top    voltage: {:05.3f}V", adc_ch0->Read_voltage()));
-        Logger::Print(emio::format("Thermopile top    voltage: {:05.3f}V", adc_ch1->Read_voltage()));
-        Logger::Print(emio::format("Thermistor bottom voltage: {:05.3f}V", adc_ch2->Read_voltage()));
-        Logger::Print(emio::format("Thermopile bottom voltage: {:05.3f}V", adc_ch3->Read_voltage()));
-        Logger::Print("-------");
-        Logger::Print(emio::format("Thermistor top    temperature: {:05.2f}°C", thermopile_top->Ambient()));
-        Logger::Print(emio::format("Thermopile top    temperature: {:05.2f}°C", thermopile_top->Temperature()));
-        Logger::Print(emio::format("Thermistor bottom temperature: {:05.2f}°C", thermopile_bottom->Ambient()));
-        Logger::Print(emio::format("Thermopile bottom temperature: {:05.2f}°C", thermopile_bottom->Temperature()));
-        Logger::Print("-------");
+        Logger::Debug("Thermistor top    voltage: {:05.3f}V", adc_ch0->Read_voltage());
+        Logger::Debug("Thermopile top    voltage: {:05.3f}V", adc_ch1->Read_voltage());
+        Logger::Debug("Thermistor bottom voltage: {:05.3f}V", adc_ch2->Read_voltage());
+        Logger::Debug("Thermopile bottom voltage: {:05.3f}V", adc_ch3->Read_voltage());
+        Logger::Debug("-------");
+        Logger::Debug("Thermistor top    temperature: {:05.2f}°C", thermopile_top->Ambient());
+        Logger::Debug("Thermopile top    temperature: {:05.2f}°C", thermopile_top->Temperature());
+        Logger::Debug("Thermistor bottom temperature: {:05.2f}°C", thermopile_bottom->Ambient());
+        Logger::Debug("Thermopile bottom temperature: {:05.2f}°C", thermopile_bottom->Temperature());
+        Logger::Debug("-------");
     }
 }
 
@@ -185,15 +185,15 @@ void Test_thread::Fluoro_buck_test(){
 
     Thermistor *flr_ntc = new Thermistor(ntc_adc, 3950, 10000, 25, 5100, 3.3f);
 
-    Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+    Logger::Debug("LED temperature: {:05.2f}°C", flr_ntc->Temperature());
 
     rtos::Delay(500);
 
-    Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+    Logger::Debug("LED temperature: {:05.2f}°C", flr_ntc->Temperature());
 
     rtos::Delay(500);
 
-    Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+    Logger::Debug("LED temperature: {:05.2f}°C", flr_ntc->Temperature());
 
     auto led_pwm = new PWM_channel(23, 100000, 0.0, true);
     led_pwm->Duty_cycle(1.0);
@@ -204,7 +204,7 @@ void Test_thread::Fluoro_buck_test(){
 
     while(true){
         DelayUntil(fra::Ticks::MsToTicks(500));
-        Logger::Print(emio::format("LED temperature: {:05.2f}°C", flr_ntc->Temperature()));
+        Logger::Debug("LED temperature: {:05.2f}°C", flr_ntc->Temperature());
     }
 }
 
@@ -223,7 +223,7 @@ void Test_thread::RGBW_sensor_test(I2C_bus &i2c){
         uint16_t det_white = rgb_sensor->Measure(VEML6040::Channels::White);
         rtos::Delay(10);
 
-        Logger::Print(emio::format("RGBW: {:5d} {:5d} {:5d} {:5d}", det_red, det_green, det_blue, det_white));
+        Logger::Debug("RGBW: {:5d} {:5d} {:5d} {:5d}", det_red, det_green, det_blue, det_white);
     }
 }
 
@@ -243,12 +243,12 @@ void Test_thread::Temp_sensor_test(I2C_bus &i2c){
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1000));
 
-        Logger::Print(emio::format("Board temperature: {:05.2f}°C", ntc->Temperature()));
-        Logger::Print(emio::format("MCU temperature: {:05.2f}°C", mcu_internal_temp->Temperature()));
-        Logger::Print(emio::format("M2_inner temperature: {:05.2f}°C", temp_1->Temperature()));
-        Logger::Print(emio::format("M2_outer temperature: {:05.2f}°C", temp_2->Temperature()));
-        Logger::Print(emio::format("M3_driver temperature: {:05.2f}°C", temp_3->Temperature()));
-        Logger::Print("-------");
+        Logger::Debug("Board temperature: {:05.2f}°C", ntc->Temperature());
+        Logger::Debug("MCU temperature: {:05.2f}°C", mcu_internal_temp->Temperature());
+        Logger::Debug("M2_inner temperature: {:05.2f}°C", temp_1->Temperature());
+        Logger::Debug("M2_outer temperature: {:05.2f}°C", temp_2->Temperature());
+        Logger::Debug("M3_driver temperature: {:05.2f}°C", temp_3->Temperature());
+        Logger::Debug("-------");
     }
 }
 
@@ -288,13 +288,13 @@ void Test_thread::Spectrophotometer_test(I2C_bus &i2c){
     rgb_sensor->Exposure_time(VEML6040::Exposure::_320_ms);
     rtos::Delay(500);
 
-    Logger::Print(emio::format("Blue: {:05d} ", rgb_sensor->Measure(VEML6040::Channels::Blue)));
-    Logger::Print(emio::format("Blue: {:05.1f} lux", rgb_sensor->Measure_lux(VEML6040::Channels::Blue)));
+    Logger::Debug("Blue: {:05d} ", rgb_sensor->Measure(VEML6040::Channels::Blue));
+    Logger::Debug("Blue: {:05.1f} lux", rgb_sensor->Measure_lux(VEML6040::Channels::Blue));
 
     rgb_sensor->Exposure_time(VEML6040::Exposure::_160_ms);
     rtos::Delay(500);
-    Logger::Print(emio::format("Blue: {:05d} ", rgb_sensor->Measure(VEML6040::Channels::Blue)));
-    Logger::Print(emio::format("Blue: {:05.1f} lux", rgb_sensor->Measure_lux(VEML6040::Channels::Blue)));
+    Logger::Debug("Blue: {:05d} ", rgb_sensor->Measure(VEML6040::Channels::Blue));
+    Logger::Debug("Blue: {:05.1f} lux", rgb_sensor->Measure_lux(VEML6040::Channels::Blue));
 
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(5000));
@@ -314,7 +314,7 @@ void Test_thread::Spectrophotometer_test(I2C_bus &i2c){
             uint16_t det_blue  = rgb_sensor->Measure(VEML6040::Channels::Blue);
             uint16_t det_white = rgb_sensor->Measure(VEML6040::Channels::White);
 
-            Logger::Notice(emio::format("RGBW: {:6d} {:6d} {:6d} {:6d}", det_red, det_green, det_blue, det_white));
+            Logger::Debug("RGBW: {:6d} {:6d} {:6d} {:6d}", det_red, det_green, det_blue, det_white);
 
         }
         led_driver_0->Intensity(KTD2026::Channel::CH_1, 0.0f);
@@ -343,9 +343,9 @@ void Test_thread::Gain_detector_test(){
     while (true) {
         DelayUntil(fra::Ticks::MsToTicks(1000));
 
-        Logger::Print(emio::format("ES_VOLT: {:05.3f}V", es_det->Read_voltage()));
-        Logger::Print(emio::format("TS_VOLT: {:05.3f}V", ts_det->Read_voltage()));
-        Logger::Print("-------");
+        Logger::Debug("ES_VOLT: {:05.3f}V", es_det->Read_voltage());
+        Logger::Debug("TS_VOLT: {:05.3f}V", ts_det->Read_voltage());
+        Logger::Debug("-------");
     }
 }
 
@@ -360,38 +360,32 @@ void Test_thread::Transmissive_IR_test(I2C_bus &i2c){
 
     auto ts_det = new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_2, 3.30f);
 
-    //Logger::Print(emio::format("Gain: {:3d}", 1));
     Logger::Print_raw("\r\n\r\n");
 
     for (float intensity = 0.0f; intensity <= 1.0f; intensity+= 0.1f) {
         led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.2f);
         rtos::Delay(50);
-        //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
         Logger::Print_raw(emio::format("{:3.1f}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
     }
 
     ts_gain->Set_direction(GPIO::Direction::Out);
     ts_gain->Set(false);
 
-    //Logger::Print(emio::format("Gain: {:3d}", 10));
     Logger::Print_raw("\r\n\r\n");
 
     for (float intensity = 0.0f; intensity <= 1.0f; intensity+= 0.1f) {
         led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.2f);
         rtos::Delay(50);
-        //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
         Logger::Print_raw(emio::format("{:3.1f}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
     }
 
     ts_gain->Set(true);
 
-    //Logger::Print(emio::format("Gain: {:3d}", 50));
     Logger::Print_raw("\r\n\r\n");
 
     for (float intensity = 0.0f; intensity <= 1.0f; intensity+= 0.1f) {
         led_driver_1->Intensity(KTD2026::Channel::CH_3, 0.2f);
         rtos::Delay(50);
-        //Logger::Print(emio::format("Intensity: {:3d}, TS_VOLT: {:05.3f}V", intensity, ts_det->Read_voltage()));
         Logger::Print_raw(emio::format("{:3.1f}\t{:05.3f}\r\n", intensity, ts_det->Read_voltage()/3.3f));
     }
 
@@ -453,9 +447,6 @@ void Test_thread::Sample_timing_generator(uint32_t sample_count, float total_dur
         sample_intervals[i] = static_cast<uint32_t>(timings[i]-timings[i-1]);
     }
 
-    for (unsigned int i = 0; i < sample_count; ++i) {
-        //Logger::Print(emio::format("Timing: {:10.1f} {:10d}", timings[i] ,sample_intervals[i]));
-    }
 }
 
 void Test_thread::Fluoro_sampler_test(){
@@ -532,21 +523,15 @@ void Test_thread::Fluoro_sampler_test(){
 
     uint64_t start_time = to_us_since_boot(get_absolute_time());
 
-    // GPIO *es_gain = new GPIO(21, GPIO::Direction::Out);
-    // es_gain->Set_pulls(false, false);
-    // es_gain->Set(false);
-
     const bool boost = false;
 
     auto led_pwm = new PWM_channel(23, 10000000, 0.0, true);
-    //GPIO *led_pwm  = new GPIO(23, GPIO::Direction::Out);
 
     GPIO *LED_en  = new GPIO(22, GPIO::Direction::Out);
     GPIO *LED_pwm = new GPIO(25, GPIO::Direction::Out);
 
     if (not boost) {
         led_pwm->Duty_cycle(1.0);
-        //led_pwm->Set(true);
     } else {
         LED_en->Set(true);
         LED_pwm->Set(true);
@@ -563,7 +548,6 @@ void Test_thread::Fluoro_sampler_test(){
     if (not boost) {
         led_pwm->Duty_cycle(0.0);
         led_pwm->Stop();
-        //led_pwm->Set(false);
     } else {
         LED_pwm->Set(false);
         LED_en->Set(false);
@@ -575,16 +559,11 @@ void Test_thread::Fluoro_sampler_test(){
     uint64_t stop_time = to_us_since_boot(get_absolute_time());
     uint64_t duration  = stop_time - start_time;
 
-    // Logger::Print(emio::format("Start time: {:d} us", start_time));
-    // Logger::Print(emio::format("Stop time: {:d} us", stop_time));
-    // Logger::Print(emio::format("Duration: {:d} us", duration));
-
     uint32_t start_timestamp = timestamp_buffer[0] - 3;
     uint32_t start_offset_us    = 20;
 
     // Print captured data
     for (size_t i = 0; i < samples; i++) {
-        //Logger::Print(emio::format("Sample {:3d}: {:6d}, {:4d}", i, timestamp_buffer[i] - start_timestamp, adc_buffer[i]));
         timestamp_buffer[i] = timestamp_buffer[i] - start_timestamp;
         if(timestamp_buffer[i] < start_offset_us){
             timestamp_buffer[i] = 0;
@@ -622,10 +601,10 @@ void Test_thread::Pacing_timestamp_fast_test(){
     // Set the timer using dma_timer_set_fraction (ensuring it fits in uint16_t)
     dma_timer_set_fraction(timer, (uint16_t) numerator, (uint16_t) denominator);
 
-    Logger::Print(emio::format("Clock frequency: {:d}", clock_freq));
-    Logger::Print(emio::format("Cycle period: {:d}", cycles));
-    Logger::Print(emio::format("Numerator: {:d}", numerator));
-    Logger::Print(emio::format("Denominator: {:d}", denominator));
+    Logger::Debug("Clock frequency: {:d}", clock_freq);
+    Logger::Debug("Cycle period: {:d}", cycles);
+    Logger::Debug("Numerator: {:d}", numerator);
+    Logger::Debug("Denominator: {:d}", denominator);
 
     dma_channel_config config = dma_channel_get_default_config(dma_channel);
 
@@ -658,13 +637,13 @@ void Test_thread::Pacing_timestamp_fast_test(){
     uint64_t stop_time = to_us_since_boot(get_absolute_time());
     uint64_t duration  = stop_time - start_time;
 
-    Logger::Print(emio::format("Start time: {:d} us", start_time));
-    Logger::Print(emio::format("Stop time: {:d} us", stop_time));
-    Logger::Print(emio::format("Duration: {:d} us", duration));
+    Logger::Debug("Start time: {:d} us", start_time);
+    Logger::Debug("Stop time: {:d} us", stop_time);
+    Logger::Debug("Duration: {:d} us", duration);
 
     // Print captured data
     for (size_t i = 0; i < BUFFER_SIZE; i++) {
-        Logger::Print(emio::format("Sample {:3d}: {:5d}", i, timestamp_buffer[i]));
+        Logger::Debug("Sample {:3d}: {:5d}", (int)i, (int)timestamp_buffer[i]);
     }
 }                                                     // Test_thread::Pacing_timestamp_fast_test
 
@@ -707,13 +686,13 @@ void Test_thread::Pacing_timestamp_slow_test(){
     uint64_t stop_time = to_us_since_boot(get_absolute_time());
     uint64_t duration  = stop_time - start_time;
 
-    Logger::Print(emio::format("Start time: {:d} us", start_time));
-    Logger::Print(emio::format("Stop time: {:d} us", stop_time));
-    Logger::Print(emio::format("Duration: {:d} us", duration));
+    Logger::Debug("Start time: {:d} us", start_time);
+    Logger::Debug("Stop time: {:d} us", stop_time);
+    Logger::Debug("Duration: {:d} us", duration);
 
     // Print captured data
     for (size_t i = 0; i < BUFFER_SIZE; i++) {
-        Logger::Print(emio::format("Sample {:3d}: {:5d}", i, timestamp_buffer[i]));
+        Logger::Debug("Sample {:3d}: {:5d}", (int)i, (int)timestamp_buffer[i]);
     }
 }                                                               // Test_thread::Pacing_timestamp_slow_test
 
@@ -776,12 +755,12 @@ void Test_thread::Pacing_timestamp_nonlinear_test(){
     uint64_t stop_time = to_us_since_boot(get_absolute_time());
     uint64_t duration  = stop_time - start_time;
 
-    Logger::Print(emio::format("Start time: {:d} us", start_time));
-    Logger::Print(emio::format("Stop time: {:d} us", stop_time));
-    Logger::Print(emio::format("Duration: {:d} us", duration));
+    Logger::Debug("Start time: {:d} us", start_time);
+    Logger::Debug("Stop time: {:d} us", stop_time);
+    Logger::Debug("Duration: {:d} us", duration);
 
     // Print captured data
     for (size_t i = 0; i < samples; i++) {
-        Logger::Print(emio::format("Sample {:3d}: {:5d}", i, timestamp_buffer[i]));
+        Logger::Debug("Sample {:3d}: {:5d}", (int)i, (int)timestamp_buffer[i]);
     }
 }  // Test_thread::Pacing_timestamp_nonlinear_test

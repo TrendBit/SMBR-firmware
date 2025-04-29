@@ -59,12 +59,12 @@ bool Common_core::Receive(Application_message message){
 bool Common_core::Ping(Application_message message){
     App_messages::Common::Ping_request ping_request;
     if (!ping_request.Interpret_data(message.data)){
-        Logger::Print("Ping_request interpretation failed", Logger::Level::Error);
+        Logger::Error("Ping_request interpretation failed");
         return false;
     }
 
     uint8_t sequence_number = ping_request.sequence_number;
-    Logger::Print(emio::format("Ping request, sequence number: {}", sequence_number), Logger::Level::Debug);
+    Logger::Debug("Ping request, sequence number: {}", sequence_number);
     App_messages::Common::Ping_response ping_response(sequence_number);
     Send_CAN_message(ping_response);
     return true;
@@ -73,11 +73,11 @@ bool Common_core::Ping(Application_message message){
 bool Common_core::Core_temperature(){
     auto temp = MCU_core_temperature();
     if (not temp.has_value()) {
-        Logger::Print("Core temperature not available", Logger::Level::Error);
+        Logger::Error("Core temperature not available");
         return false;
     }
 
-    Logger::Print(emio::format("MCU_temp: {:05.2f}˚C", temp.value()), Logger::Level::Debug);
+    Logger::Debug("MCU_temp: {:05.2f}˚C", temp.value());
     auto temp_response = App_messages::Common::Core_temp_response(temp.value());
 
     Send_CAN_message(temp_response);
@@ -89,12 +89,28 @@ bool Common_core::Board_temperature(){
     if(not module_instance){
         return false;
     }
+
     auto temp = module_instance->Board_temperature();
     if (not temp.has_value()) {
-        Logger::Print("Board temperature not available", Logger::Level::Error);
+        Logger::Warning("Board temperature not available");
+        auto lambda = [this, module_instance]()-> bool {
+            auto temp = module_instance->Board_temperature();
+            if (temp.has_value()){
+                Logger::Notice("Board until temperature available");
+                Logger::Debug("Board temperature: {:05.2f}˚C", temp.value());
+                auto temp_response = App_messages::Common::Board_temp_response(temp.value());
+                Send_CAN_message(temp_response);
+                return true;
+            } else {
+                Logger::Warning("Board until temperature not available");
+                return false;
+            }
+        };
+        new rtos::Execute_until(lambda, 500, true, true);
         return false;
+
     }
-    Logger::Print(emio::format("Board temperature: {:05.2f}˚C", temp.value()), Logger::Level::Debug);
+    Logger::Debug("Board temperature: {:05.2f}˚C", temp.value());
     auto temp_response = App_messages::Common::Board_temp_response(temp.value());
     Send_CAN_message(temp_response);
     return true;
@@ -103,14 +119,14 @@ bool Common_core::Board_temperature(){
 bool Common_core::Probe_modules(){
     auto uid = UID();
     auto probe_response = App_messages::Common::Probe_modules_response(uid);
-    Logger::Print(emio::format("UID: {:02x} {:02x} {:02x} {:02x} {:02x} {:02x}", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]), Logger::Level::Debug);
+    Logger::Debug("UID: {:02x} {:02x} {:02x} {:02x} {:02x} {:02x}", uid[0], uid[1], uid[2], uid[3], uid[4], uid[5]);
     Send_CAN_message(probe_response);
     return true;
 }
 
 bool Common_core::Core_load(){
     float load = mcu_load;
-    Logger::Print(emio::format("MCU load request: {:05.2f}%", load*100.0f), Logger::Level::Debug);
+    Logger::Debug("MCU load request: {:05.2f}%", load*100.0f);
     auto load_response = App_messages::Common::Core_load_response(load);
     Send_CAN_message(load_response);
     return true;
@@ -130,7 +146,7 @@ std::array<uint8_t, CANBUS_UUID_LEN> Common_core::UID(){
 std::optional<float> Common_core::MCU_core_temperature(){
     bool lock = adc_mutex->Lock(0);
     if (!lock) {
-        Logger::Print("Core temp ADC mutex lock failed", Logger::Level::Warning);
+        Logger::Warning("Core temp ADC mutex lock failed");
         return std::nullopt;
     }
     float temp = mcu_internal_temp->Temperature();
@@ -154,9 +170,9 @@ float Common_core::MCU_core_utilization(){
     float cpuLoad = 100.0f * (1.0f - ((float)thread_runtime / (float)total_runtime));
 
     // Print the CPU load
-    Logger::Print(emio::format("Total runtime: {} ticks", total_runtime), Logger::Level::Debug);
-    Logger::Print(emio::format("Thread runtime: {} ticks", thread_runtime), Logger::Level::Debug);
-    Logger::Print(emio::format("CPU load: {:05.2f}%", cpuLoad), Logger::Level::Debug);
+    Logger::Debug("Total runtime: {} ticks", total_runtime);
+    Logger::Debug("Thread runtime: {} ticks", thread_runtime);
+    Logger::Debug("CPU load: {:05.2f}%", cpuLoad);
 
     return cpuLoad;
 }

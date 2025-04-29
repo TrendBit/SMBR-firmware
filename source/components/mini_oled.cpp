@@ -23,7 +23,7 @@ Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, uint32_t dat
           Send_CAN_message(target_temp_request);
           Send_CAN_message(plate_temp_request);
 
-          Logger::Print("Mini-OLED update messages dispatched", Logger::Level::Trace);
+          Logger::Trace("Mini-OLED update messages dispatched");
       };
 
     Message_router::Register_bypass(Codes::Message_type::Core_SID_response, Codes::Component::Mini_OLED);
@@ -48,11 +48,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Core::SID_response sid_response;
 
             if (!sid_response.Interpret_data(message.data)) {
-                Logger::Print("SID_response interpretation failed", Logger::Level::Error);
+                Logger::Error("SID_response interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Received SID: 0x{:04x}", sid_response.sid), Logger::Level::Debug);
+            Logger::Debug("Received SID: 0x{:04x}", sid_response.sid);
             lvgl_thread->Update_SID(sid_response.sid);
             return true;
         }
@@ -61,11 +61,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Core::Serial_response serial_response;
 
             if (!serial_response.Interpret_data(message.data)) {
-                Logger::Print("Serial_response interpretation failed", Logger::Level::Error);
+                Logger::Error("Serial_response interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Received serial: {}", serial_response.serial_number), Logger::Level::Debug);
+            Logger::Debug("Received serial: {}", serial_response.serial_number);
             lvgl_thread->Update_serial(serial_response.serial_number);
             return true;
         }
@@ -74,11 +74,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Core::Hostname_response hostname_response;
 
             if (!hostname_response.Interpret_data(message.data)) {
-                Logger::Print("Hostname_response interpretation failed", Logger::Level::Error);
+                Logger::Error("Hostname_response interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Received hostname: {}", hostname_response.hostname), Logger::Level::Debug);
+            Logger::Debug("Received hostname: {:s}", hostname_response.hostname);
             lvgl_thread->Update_hostname(hostname_response.hostname);
             return true;
         }
@@ -87,11 +87,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Core::IP_address_response ip_response;
 
             if (!ip_response.Interpret_data(message.data)) {
-                Logger::Print("IP_response interpretation failed", Logger::Level::Error);
+                Logger::Error("IP_response interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Received IP: {}.{}.{}.{}", ip_response.IP_address[0], ip_response.IP_address[1], ip_response.IP_address[2], ip_response.IP_address[3]), Logger::Level::Debug);
+            Logger::Debug("Received IP: {}.{}.{}.{}", ip_response.IP_address[0], ip_response.IP_address[1], ip_response.IP_address[2], ip_response.IP_address[3]);
             lvgl_thread->Update_ip(ip_response.IP_address);
             return true;
         }
@@ -100,11 +100,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Mini_OLED::Clear_custom_text clear_custom_text;
 
             if (!clear_custom_text.Interpret_data(message.data)) {
-                Logger::Print("Clear_custom_text interpretation failed", Logger::Level::Error);
+                Logger::Error("Clear_custom_text interpretation failed");
                 return false;
             }
 
-            Logger::Print("Clearing custom text", Logger::Level::Debug);
+            Logger::Debug("Clearing custom text");
             lvgl_thread->Clear_custom_text();
             return true;
         }
@@ -113,11 +113,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Mini_OLED::Print_custom_text print_custom_text;
 
             if (!print_custom_text.Interpret_data(message.data)) {
-                Logger::Print("Print_custom_text interpretation failed", Logger::Level::Error);
+                Logger::Error("Print_custom_text interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Printing custom text: {}", print_custom_text.text), Logger::Level::Debug);
+            Logger::Debug("Printing custom text: {}", print_custom_text.text);
 
             if (not print_custom_text.text.empty()) {
                 lvgl_thread->Print_custom_text(print_custom_text.text);
@@ -130,11 +130,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Heater::Get_target_temperature_response target_temperature_response;
 
             if (!target_temperature_response.Interpret_data(message.data)) {
-                Logger::Print("Heater_get_target_temperature_response interpretation failed", Logger::Level::Error);
+                Logger::Error("Heater_get_target_temperature_response interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Received target temperature: {:05.2f}˚C", target_temperature_response.temperature), Logger::Level::Debug);
+            Logger::Debug("Received target temperature: {:05.2f}˚C", target_temperature_response.temperature);
             lvgl_thread->Set_target_temperature(target_temperature_response.temperature);
             return true;
         }
@@ -143,11 +143,11 @@ bool Mini_OLED::Receive(Application_message message){
             App_messages::Heater::Get_plate_temperature_response plate_temperature_response;
 
             if (!plate_temperature_response.Interpret_data(message.data)) {
-                Logger::Print("Heater_get_plate_temperature_response interpretation failed", Logger::Level::Error);
+                Logger::Error("Heater_get_plate_temperature_response interpretation failed");
                 return false;
             }
 
-            Logger::Print(emio::format("Received plate temperature: {:05.2f}˚C", plate_temperature_response.temperature), Logger::Level::Debug);
+            Logger::Debug("Received plate temperature: {:05.2f}˚C", plate_temperature_response.temperature);
             lvgl_thread->Set_plate_temperature(plate_temperature_response.temperature);
             lvgl_thread->Set_bottle_temperature(bottle_temp_sensor->Temperature());
             lvgl_thread->Update_temps();

@@ -1,7 +1,7 @@
 /**
  * @file logger.hpp
  * @author Petr Malaník (TheColonelYoung(at)gmail(dot)com)
- * @version 0.1
+ * @version 0.1.3
  * @date 01.06.2024
  */
 
@@ -10,6 +10,7 @@
 #include <string>
 #include <functional>
 #include <map>
+#include <type_traits>
 
 #include "tusb.h"
 #include "emio/emio.hpp"
@@ -134,6 +135,30 @@ public:
      */
     static void Init_USB(uint usb_interface_id);
 
+private:
+    /**
+     * @brief   Perform formating of function and convert template severity level to variable
+     *          Decay of arguments is required in order to handle references and implicit conversions
+     *
+     * @tparam level     Severity level of message
+     * @tparam Args      Type of format arguments, deducted then decayed
+     * @param fmt        Format specifier for emio
+     * @param args       Arguments for formater
+     */
+    template <Level level, typename... Args>
+    static void Print(const emio::format_string<std::decay_t<Args>...> fmt, Args&&... args){
+        if (level >= current_log_level) {
+            auto message = emio::format(fmt, std::forward<Args>(args)...);
+
+            if(message.has_error()){
+                auto error = message.error();
+                Print<Logger::Level::Error>("Logger formatting error, emio: {}", emio::to_string(error));
+            } else if(message.has_value()){
+                Print(message.value(), level);
+            }
+        }
+    }
+
     /**
      * @brief Print message to UART and USB with timestamp
      *
@@ -142,50 +167,78 @@ public:
      */
     static void Print(std::string message, Level level = Level::Notice);
 
+public:
     /**
-     * @brief Print message to UART and USB with color and timestamp
+     * @brief           Print message with Trace level
      *
-     * @param message   Message which will be printed
-     * @param colorizer Function which will colorize message
-     * @param level     Level of message
+     * @tparam Args     Type of format arguments, deducted
+     * @param fmt       Format specifier for emio
+     * @param args      Arguments for formater
      */
-    static void Print(std::string message, std::function<std::string(const std::string&)> colorizer, Level level = Level::Notice);
+    template <typename... Args>
+    static void Trace(const emio::format_string<std::decay_t<Args>...> fmt, Args&&... args) {
+        Print<Level::Trace>(fmt, std::forward<Args>(args)...);
+    }
 
     /**
-     * @brief Print trace level message
-     * @param message Message to print
+     * @brief           Print message with Debug level
+     *
+     * @tparam Args     Type of format arguments, deducted
+     * @param fmt       Format specifier for emio
+     * @param args      Arguments for formater
      */
-    static void Trace(std::string message) { Print(message, Level::Trace); }
+    template <typename... Args>
+    static void Debug(const emio::format_string<std::decay_t<Args>...> fmt, Args&&... args) {
+        Print<Level::Debug>(fmt, std::forward<Args>(args)...);
+    }
 
     /**
-     * @brief Print debug level message
-     * @param message Message to print
+     * @brief           Print message with Notice level
+     *
+     * @tparam Args     Type of format arguments, deducted
+     * @param fmt       Format specifier for emio
+     * @param args      Arguments for formater
      */
-    static void Debug(std::string message) { Print(message, Level::Debug); }
+    template <typename... Args>
+    static void Notice(const emio::format_string<std::decay_t<Args>...> fmt, Args&&... args) {
+        Print<Level::Notice>(fmt, std::forward<Args>(args)...);
+    }
 
     /**
-     * @brief Print notice level message
-     * @param message Message to print
+     * @brief           Print message with Warning level
+     *
+     * @tparam Args     Type of format arguments, deducted
+     * @param fmt       Format specifier for emio
+     * @param args      Arguments for formater
      */
-    static void Notice(std::string message) { Print(message, Level::Notice); }
+    template <typename... Args>
+    static void Warning(const emio::format_string<std::decay_t<Args>...> fmt, Args&&... args) {
+        Print<Level::Warning>(fmt, std::forward<Args>(args)...);
+    }
 
     /**
-     * @brief Print warning level message
-     * @param message Message to print
+     * @brief           Print message with Error level
+     *
+     * @tparam Args     Type of format arguments, deducted
+     * @param fmt       Format specifier for emio
+     * @param args      Arguments for formater
      */
-    static void Warning(std::string message) { Print(message, Level::Warning); }
+    template <typename... Args>
+    static void Error(const emio::format_string<std::decay_t<Args>...> fmt, Args&&... args) {
+        Print<Level::Error>(fmt, std::forward<Args>(args)...);
+    }
 
     /**
-     * @brief Print error level message
-     * @param message Message to print
+     * @brief           Print message with Critical level
+     *
+     * @tparam Args     Type of format arguments, deducted
+     * @param fmt       Format specifier for emio
+     * @param args      Arguments for formater
      */
-    static void Error(std::string message) { Print(message, Level::Error); }
-
-    /**
-     * @brief Print critical level message
-     * @param message Message to print
-     */
-    static void Critical(std::string message) { Print(message, Level::Critical); }
+    template <typename... Args>
+    static void Critical(const emio::format_string<std::decay_t<Args>...> fmt, Args&&... args) {
+        Print<Level::Critical>(fmt, std::forward<Args>(args)...);
+    }
 
     /**
      * @brief   Print message into UART and USB without any formatting or timestamp

@@ -5,14 +5,14 @@ namespace fra = cpp_freertos;
 int main(){
     timer_hw->dbgpause = 0; // Required for SWD debug otherwise timers are alway zero during debug
     watchdog_enable(5000, 1);
-    
+
     #ifdef CONFIG_LOGGER
-        Logger(Logger::Level::Trace, Logger::Color_mode::Prefix);
+        Logger(Logger::Level::Debug, Logger::Color_mode::Prefix);
         Logger::Init_UART(uart0, 0, 1, 961200);
         Logger::Print_raw("\r\n");
-        Logger::Print("Logger UART Initialized", Logger::Level::Notice);
+        Logger::Notice("Logger UART Initialized");
         if(watchdog_enable_caused_reboot()){
-            Logger::Print("Watchdog caused reboot", Logger::Level::Error);
+            Logger::Error("Watchdog caused reboot");
         }
     #endif
 

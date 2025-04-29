@@ -10,7 +10,7 @@ Sensor_module::Sensor_module():
 }
 
 void Sensor_module::Setup_components(){
-    Logger::Print("Sensor module component setup", Logger::Level::Debug);
+    Logger::Debug("Sensor module component setup");
     Setup_bottle_thermometers();
     Setup_Mini_OLED();
     Setup_fluorometer();
@@ -20,7 +20,7 @@ void Sensor_module::Setup_components(){
 std::optional<float> Sensor_module::Board_temperature(){
     bool lock = adc_mutex->Lock(0);
     if (!lock) {
-        Logger::Print("Board temp ADC mutex lock failed", Logger::Level::Warning);
+        Logger::Warning("Board temp ADC mutex lock failed");
         return std::nullopt;
     }
     ntc_channel_selector->Set(true);
@@ -30,12 +30,12 @@ std::optional<float> Sensor_module::Board_temperature(){
 }
 
 void Sensor_module::Setup_Mini_OLED(){
-    Logger::Print("Setting up Mini OLED", Logger::Level::Debug);
+    Logger::Debug("Setting up Mini OLED");
     mini_oled = new Mini_OLED(bottle_temperature, 5);
 }
 
 void Sensor_module::Setup_bottle_thermometers(){
-    Logger::Print("Setting up bottle thermometers", Logger::Level::Debug);
+    Logger::Debug("Setting up bottle thermometers");
 
     TLA2024 *adc = new TLA2024(*i2c, 0x4b);
 
@@ -51,7 +51,7 @@ void Sensor_module::Setup_bottle_thermometers(){
 }
 
 void Sensor_module::Setup_fluorometer(){
-    Logger::Print("Setting up fluorometer", Logger::Level::Debug);
+    Logger::Debug("Setting up fluorometer");
     auto led_pwm = new PWM_channel(23, 1000000, 0.0, true);
     uint detector_gain_selector_pin = 21;
 
