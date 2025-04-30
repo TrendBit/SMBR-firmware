@@ -41,9 +41,45 @@ comment "Development configurations"
 
 config LOGGER
     bool "Logger output"
-    default n
+    default y
     help
-        Enable debug output to serial line (baudrate: 115200)
+        Enable debug output to serial line (baudrate: 961200)
+
+choice
+    prompt "Logger level"
+    depends on LOGGER
+    default LOGGER_LEVEL_NOTICE
+    help
+        Severity of log messages which will be printed, lower are discarded
+    config LOGGER_LEVEL_TRACE
+        bool "Trace"
+    config LOGGER_LEVEL_DEBUG
+        bool "Debug"
+    config LOGGER_LEVEL_NOTICE
+        bool "Notice"
+    config LOGGER_LEVEL_WARNING
+        bool "Warning"
+    config LOGGER_LEVEL_ERROR
+        bool "Error"
+    config LOGGER_LEVEL_CRITICAL
+        bool "Critical"
+endchoice
+
+config LOGGER_LEVEL
+    int
+    default 0 if LOGGER_LEVEL_TRACE
+    default 1 if LOGGER_LEVEL_DEBUG
+    default 2 if LOGGER_LEVEL_NOTICE
+    default 3 if LOGGER_LEVEL_WARNING
+    default 4 if LOGGER_LEVEL_ERROR
+    default 5 if LOGGER_LEVEL_CRITICAL
+    default 2
+
+config WATCHDOG
+    bool "Enable watchdog"
+    default y
+    help
+        Enable watchdog timer to reset the system when it hangs
 
 config TEST_THREAD
     bool "Test thread execution"
