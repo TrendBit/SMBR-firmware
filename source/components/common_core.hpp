@@ -17,6 +17,7 @@
 #include "components/component.hpp"
 #include "components/common_sensors/RP_internal_temperature.hpp"
 
+#include "codes/messages/base_message.hpp"
 #include "codes/messages/common/ping_request.hpp"
 #include "codes/messages/common/ping_response.hpp"
 #include "codes/messages/common/probe_modules_response.hpp"
@@ -61,6 +62,13 @@
  *          Should be same for katapult and for application to keep same UUID
  */
 #define KATAPULT_HASH_SEED    0xA16231A7
+
+/**
+ * @brief   Universal key which can be used to perform restart on bootloader entry of module
+ *          This should be used when module id is not known and cannot be determined (which is very limited case)
+ *          But every module should perform request if issued with his ID or this
+ */
+#define UNIVERSAL_CONTROL_KEY { 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe}
 
 #define CANBUS_UUID_LEN       6
 #define PICO_UUID_LEN         8
@@ -182,9 +190,9 @@ private:
      *          Hashes pico uid using fash-hash and reduce it to 6 bytes in order to have same output as katapult
      *              This is made in order to distinguish modules but has same ui in bootloader and normal mode
      *
-     * @return etl::array<uint8_t, CANBUS_UUID_LEN> Unique ID of module, reduced to 6 bytes (CANBUS_UUID_LEN)
+     * @return UID_t Unique ID of module, reduced to 6 bytes (CANBUS_UUID_LEN)
      */
-    std::array<uint8_t, CANBUS_UUID_LEN> UID();
+    UID_t UID();
 
     /**
      * @brief   Get current MCU core temperature
@@ -218,11 +226,46 @@ private:
 
     /**
      * @brief   Reset MCU
-     *
+     * @param uid
      * @return true     Request is valid MCU will reset
      * @return false    Request is invalid, MCU will continue operation
      */
+
     bool Reset_MCU();
 
+    /**
+     * @brief   Execute function when message contains valid UID as confirmation to perform action
+     *          Actions behind this check are generally not experiment safe and require confirmation
+     *          But for development purposes there is bypass code for any module command
+     *
+     * @tparam Func     Function type
+     * @param message   Received message with UID
+     * @param func      Function to execute when UID is valid
+     * @return bool     Return value of function if UID is valid, false otherwise
+     */
+    bool Execute_when_valid_UID(const Application_message& message, std::function<bool()> func) {
+        if(message.data.size() != CANBUS_UUID_LEN){
+            Logger::Error("Core request UID size mismatch");
+            return false;
+        }
 
+        UID_t uid_remote;
+        std::copy(message.data.begin(), message.data.end(), uid_remote.begin());
+
+        UID_t uid_local = UID();
+        UID_t uid_backup = UNIVERSAL_CONTROL_KEY;
+
+        bool local_check = std::equal(uid_local.begin(), uid_local.end(), uid_remote.begin());
+        bool backup_check =  std::equal(uid_backup.begin(), uid_backup.end(), uid_remote.begin());
+
+        if (local_check) {
+            return func();
+        } else if (backup_check) {
+            Logger::Debug("Backup UID used as Core request confirmation");
+            return func();
+        } else {
+            Logger::Error("Core request UID validation failed");
+            return false;
+        }
+    }
 };

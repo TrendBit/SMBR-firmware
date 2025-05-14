@@ -43,13 +43,16 @@ bool Common_core::Receive(Application_message message){
             return Probe_modules();
 
         case Codes::Message_type::Device_reset:
-            return Reset_MCU();
+            return Execute_when_valid_UID(message,
+                std::bind(&Common_core::Reset_MCU, this));
 
         case Codes::Message_type::Device_usb_bootloader:
-            return Enter_USB_bootloader();
+            return Execute_when_valid_UID(message,
+                std::bind(&Common_core::Enter_USB_bootloader, this));
 
         case Codes::Message_type::Device_can_bootloader:
-            return Enter_CAN_bootloader();
+            return Execute_when_valid_UID(message,
+                std::bind(&Common_core::Enter_CAN_bootloader, this));
 
         default:
             return false;
@@ -132,9 +135,9 @@ bool Common_core::Core_load(){
     return true;
 }
 
-std::array<uint8_t, CANBUS_UUID_LEN> Common_core::UID(){
+UID_t Common_core::UID(){
     std::array<uint8_t, PICO_UUID_LEN> pico_uid;
-    std::array<uint8_t, CANBUS_UUID_LEN> fast_hash_uid;
+    UID_t fast_hash_uid;
 
     pico_get_unique_board_id((pico_unique_board_id_t*)pico_uid.data());
     uint64_t hash = fasthash64(pico_uid.data(), PICO_UUID_LEN, KATAPULT_HASH_SEED);
@@ -178,12 +181,14 @@ float Common_core::MCU_core_utilization(){
 }
 
 bool Common_core::Enter_USB_bootloader(){
+    Logger::Critical("Entering USB bootloader based on CAN request");
     watchdog_disable();
     reset_usb_boot(0, 0);
     return true;
 }
 
 bool Common_core::Enter_CAN_bootloader(){
+    Logger::Critical("Entering CAN bootloader based on CAN request");
     watchdog_disable();
     uint32_t *bl_vectors = (uint32_t *)(KATAPULT_BOOT_ADDRESS);
     uint64_t *req_sig = (uint64_t *)bl_vectors[0];
@@ -194,6 +199,7 @@ bool Common_core::Enter_CAN_bootloader(){
 }
 
 bool Common_core::Reset_MCU(){
+    Logger::Critical("Resetting MCU based on CAN request");
     watchdog_enable(1, 1);  // Enable watchdog with loop time 1ms
     while (1);              // Loop until watchdog triggers reset
     return true;
