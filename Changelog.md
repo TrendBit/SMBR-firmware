@@ -1,6 +1,25 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.8 (measurement_regulation)
+- Add parallel processing for non-dependant messages
+  - Higher bandwidth for of quick messages
+  - Lower processing time for long messages like fluorometer or spectrophotometer measurements
+  - Special threads are used for mutually exclusion resources (cuvette, adc)
+- Add delayed repeated processing for failed measurements instead of dropping request
+  - For example in case when ADC cannot measure MCU temperature because is used for OJIP sampling
+- Add PI control for heater, which can hold temperature more precisely with minimal oscillations
+- Add proportional regulation for mixer
+  - This leads is more precise speed at higher RPM
+- Add persistent calibration data for fluorometer and spectrophotometer
+  - Saved in EEPROM memory and loader after startup
+- Add configurable logging in KConfig
+- Update watchdog handling to prevents unintended restarts
+- Update thermopile initialization with filtered data are used for
+  - Removed quick changes of measured temperature after startup
+- Update handling of CAN bus queues
+  - Input and output queues can increase processing priority when filling up
+
 # 0.7 (sensor_module)
 - Add custom messages for mini-oled
 - Add regulation loop for heater based on sensor-module temperature reports
