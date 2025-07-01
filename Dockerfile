@@ -54,7 +54,7 @@ EXPOSE 3333
 ARG SDK_PATH=/usr/share/pico_sdk
 ENV PICO_SDK_PATH=$SDK_PATH
 
-RUN git clone --recursive --branch 2.1.0 https://github.com/raspberrypi/pico-sdk $SDK_PATH && \
+RUN git clone --recursive --branch 2.1.1 https://github.com/raspberrypi/pico-sdk $SDK_PATH && \
     cd $SDK_PATH && \
     git submodule update --init
 
