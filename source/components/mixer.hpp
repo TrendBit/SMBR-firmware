@@ -27,6 +27,9 @@
 #include "codes/messages/mixer/stir.hpp"
 #include "codes/messages/mixer/stop.hpp"
 
+#include "qlibs.h"
+#include "queue.h"
+
 /**
  * @brief   Mixer component is realized using fan with pwm controlled speed and techometric sensor for measurement of speed
  */
@@ -38,17 +41,44 @@ private:
     float max_rpm;
 
     /**
-     * @brief   Minimum speed at which is pump moving of pump in range 0-1
-     *          Opposite direction is assumed to be the same just negative
+     * @brief   PID controller for regulation of mixer speed
      */
-    float min_speed = 0.0f;
+    qlibs::pidController * control;
 
     /**
-     * @brief  Proportional gain of regulation loop
+     * @brief   First stage filter for RPM
+     *          Reduces effect of incorrect RPM reading at low speeds due to control signal alias
      */
-    float p_gain = 0.05f;
+    qlibs::smootherLPF2 * filter1;
 
+    /**
+     * @brief   Second stage filter for RPM
+     *          General smoothing filter for RPM measurement
+     */
+    qlibs::smootherLPF2 * filter2;
+
+    /**
+     * @brief   Window for moving average of RPM, used for smoothing of RPM measurement
+     *          This is used to reduce noise in RPM measurement
+     */
+    float window[10] = {0.0f};
+
+    /**
+     * @brief   Minimum speed at which is mixer moving in range 0-1
+     *          This assumes magnetic stirrer is placed inside algae culture in bottle.
+     */
+    float min_speed = 0.3f;
+
+    /**
+     * @brief   Target RPM of mixer
+     */
     float target_rpm = 0.0f;
+
+    /**
+     * @brief
+     *
+     */
+    float current_rpm = 0.0f;
 
     /**
      * @brief Timer function which stops mixer after defined time, used for stirring command
@@ -98,7 +128,7 @@ public:
     /**
      * @brief   Get current speed of mixer in RPM, derived from RPM counter
      */
-    using Fan_RPM::RPM;
+    virtual float RPM() override;
 
     /**
      * @brief   Stop mixer
@@ -140,3 +170,4 @@ private:
     void Regulation_loop();
 
 };
+

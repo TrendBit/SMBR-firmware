@@ -11,32 +11,52 @@ Mixer::Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float max_rpm
           Stop();
     };
 
+    gpio_set_slew_rate(pwm_pin, GPIO_SLEW_RATE_FAST);
+    gpio_set_drive_strength(pwm_pin, GPIO_DRIVE_STRENGTH_8MA);
+
     mixer_stopper = new rtos::Delayed_execution(stopper_lamda);
 
     // Prepare regulation loop, do not start it until target temperature is set
     auto regulation_lambda = [this](){ this->Regulation_loop(); };
-    regulation_loop = new rtos::Repeated_execution(regulation_lambda, 500, false);
+    regulation_loop = new rtos::Repeated_execution(regulation_lambda, 50, true);
+
+    control = new qlibs::pidController();
+    filter1 = new qlibs::smootherLPF2();
+    filter2 = new qlibs::smootherLPF2();
+
+    filter1->setup(0.2 );
+    filter2->setup(0.6 );
+
+    //control->setup(0.00003,0.000017,0.000001,0.05);
+    control->setup(0.00015,0.0002,0.000000,0.05);
+    control->setSaturation(0.00, 1.0);
 }
 
 void Mixer::Regulation_loop(){
     Logger::Trace("Mixer regulation loop");
 
-    float current_rpm = RPM();
+    float real_rpm = Fan_RPM::RPM();
 
-    int target_error = static_cast<int>(target_rpm - current_rpm);
+    float current_rpm_fast = filter2->smooth(real_rpm);
 
-    float current_speed = Speed();
+    float current_rpm_slow;
 
-    float speed_adjustment = target_error * p_gain / max_rpm;
+    if(real_rpm < 2){
+        current_rpm_slow = current_rpm_fast;
+    } else {
+        current_rpm_slow = real_rpm;
+    }
 
-    float new_speed = current_speed + speed_adjustment;
+    current_rpm = filter1->smooth(current_rpm_slow);
 
-    new_speed = std::clamp(new_speed, 0.0f, 1.0f);
+    if(target_rpm > 0){
+        float output = control->control(target_rpm, current_rpm);
 
-    Speed(new_speed);
+        Speed(output);
 
-    // Log detailed information
-    Logger::Debug("Target={:4.0f}, Current={:4.0f}, Error={:4d}, Previous={:.3f}, Adjustment={:.3f}, New={:.3f}", target_rpm, current_rpm, target_error, current_speed, speed_adjustment, new_speed);
+        // Log detailed information
+        Logger::Notice("Target={:4.0f}, Real={:4.0f}, Current={:4.0f}, CurrentF={:4.0f}, Output={:.3f}", target_rpm, real_rpm, current_rpm_slow, current_rpm, output);
+    }
 }
 
 bool Mixer::Receive(CAN::Message message){
@@ -81,7 +101,7 @@ bool Mixer::Receive(Application_message message){
 
         case Codes::Message_type::Mixer_get_rpm_request: {
             App_messages::Mixer::Get_rpm_response rpm_response(RPM());
-            Logger::Debug("Mixer RPM requested, response: {:03.1f}", rpm_response.rpm);
+            Logger::Notice("Mixer RPM requested, response: {:03.1f}", rpm_response.rpm);
             Send_CAN_message(rpm_response);
             return true;
         }
@@ -139,6 +159,10 @@ float Mixer::RPM(float rpm){
     return Speed(startup_speed);
 }
 
+float Mixer::RPM(){
+    return current_rpm;
+}
+
 void Mixer::Stir(float rpm, float time_s){
     RPM(rpm);
     mixer_stopper->Execute(time_s * 1000);
@@ -147,7 +171,6 @@ void Mixer::Stir(float rpm, float time_s){
 void Mixer::Stop(){
     target_rpm = 0;
     mixer_stopper->Abort();
-    regulation_loop->Disable();
     Off();
 }
 
