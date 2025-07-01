@@ -71,6 +71,7 @@ target_link_libraries(${TARGET} freertos-addons)
 target_link_libraries(${TARGET} iir_filters)
 target_link_libraries(${TARGET} fast-hash)
 target_link_libraries(${TARGET} lvgl::lvgl)
+target_link_libraries(${TARGET} qlibs-cpp)
 
 # Create output directory
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/out)

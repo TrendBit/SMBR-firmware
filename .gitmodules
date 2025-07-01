@@ -34,3 +34,6 @@
 [submodule "library/lvgl"]
 	path = library/lvgl
 	url = git@github.com:lvgl/lvgl.git
+[submodule "library/qlibs-cpp"]
+	path = library/qlibs-cpp
+	url = https://github.com/kmilo17pet/qlibs-cpp.git

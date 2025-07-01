@@ -7,3 +7,4 @@ source/config.hpp
 binaries/
 out/
 smpbr_firmware_v*.zip
+.clangd
