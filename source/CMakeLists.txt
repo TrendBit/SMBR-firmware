@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 pico_sdk_init()
 
 execute_process(
-    COMMAND git describe --abbrev=7 --dirty --always
+    COMMAND git rev-parse --short HEAD
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     OUTPUT_VARIABLE GIT_COMMIT_HASH
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -17,9 +17,45 @@ execute_process(
     ERROR_QUIET
 )
 
+# Handle no tag existence
 if(NOT RESULT EQUAL 0)
-    set(GIT_LAST_TAG "None")
+    set(GIT_LAST_TAG "v0.0")
 endif()
+
+# Extract version components
+string(REGEX REPLACE "^v([0-9]+)\\..*" "\\1" FW_VERSION_MAJOR "${GIT_LAST_TAG}")
+string(REGEX REPLACE "^v[0-9]+\\.([0-9]+).*" "\\1" FW_VERSION_MINOR "${GIT_LAST_TAG}")
+string(REGEX REPLACE "^v[0-9]+\\.[0-9]+-([0-9]+).*" "\\1" FW_VERSION_PATCH "${GIT_LAST_TAG}")
+if("${FW_VERSION_PATCH}" STREQUAL "${GIT_LAST_TAG}")
+    set(FW_VERSION_PATCH 0) # Default to 0 if no patch version is present v0.8 with no commit above
+endif()
+
+# Extract dirty flag for repo
+execute_process(
+    COMMAND git status --porcelain
+    OUTPUT_VARIABLE GIT_STATUS
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
+if("${GIT_STATUS}" STREQUAL "")
+    set(FW_GIT_DIRTY false)
+else()
+    set(FW_GIT_DIRTY true)
+endif()
+
+# Print extracted variables to the terminal
+message(STATUS "FW_VERSION_MAJOR: ${FW_VERSION_MAJOR}")
+message(STATUS "FW_VERSION_MINOR: ${FW_VERSION_MINOR}")
+message(STATUS "FW_VERSION_PATCH: ${FW_VERSION_PATCH}")
+message(STATUS "GIT_COMMIT_HASH: ${GIT_COMMIT_HASH}")
+message(STATUS "FW_GIT_DIRTY: ${FW_GIT_DIRTY}")
+
+# Add definitions for compilation
+add_definitions("-DFW_VERSION_MAJOR=${FW_VERSION_MAJOR}")
+add_definitions("-DFW_VERSION_MINOR=${FW_VERSION_MINOR}")
+add_definitions("-DFW_VERSION_PATCH=${FW_VERSION_PATCH}")
+add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+add_definitions("-DFW_GIT_DIRTY=${FW_GIT_DIRTY}")
 
 set(COMPILER arm-none-eabi-)
 
@@ -35,11 +71,9 @@ file(GLOB_RECURSE SOURCE_FILES
     "./*.c"
 )
 
-string(APPEND CMAKE_EXE_LINKER_FLAGS "-Wl,--undefined=uxTopUsedPriority -Wl,--print-memory-usage ")
+add_definitions("-DFW_COMPILER_NAME=\"${COMPILER}gcc\"")
 
-add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
-add_definitions("-DFW_VERSION=\"${GIT_LAST_TAG}\"")
-add_definitions("-DCOMPILER_NAME=\"${COMPILER}gcc\"")
+string(APPEND CMAKE_EXE_LINKER_FLAGS "-Wl,--undefined=uxTopUsedPriority -Wl,--print-memory-usage ")
 
 add_executable(${TARGET} ${SOURCE_FILES} )
 
