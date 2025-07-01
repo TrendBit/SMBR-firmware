@@ -28,7 +28,9 @@
 #include "codes/messages/mixer/stop.hpp"
 
 #include "qlibs.h"
-#include "queue.h"
+#include "etl/queue.h"
+
+class Mixer_rpm_filter;
 
 /**
  * @brief   Mixer component is realized using fan with pwm controlled speed and techometric sensor for measurement of speed
@@ -56,6 +58,8 @@ private:
      *          General smoothing filter for RPM measurement
      */
     qlibs::smootherLPF2 * filter2;
+
+    Mixer_rpm_filter * rpm_filter;
 
     /**
      * @brief   Window for moving average of RPM, used for smoothing of RPM measurement
@@ -171,3 +175,41 @@ private:
 
 };
 
+class Mixer_rpm_filter{
+
+    qlibs::smootherLPF2 input_filter;
+
+    qlibs::smootherLPF2 output_filter;
+
+    const float accept_threshold = 0.95f;
+
+    float filter_value = 0.0f;
+
+public:
+    Mixer_rpm_filter(){
+        input_filter.setup(0.3f);
+        output_filter.setup(0.1f);
+    }
+
+    float Value() const {
+        return filter_value;
+    }
+
+    float Smooth(float input_value){
+        float rpm = 0;
+        if(roundf(input_value) != 300){
+            rpm = input_value;
+        }
+
+        float smooth_input = input_filter.smooth(rpm);
+
+        if((input_value > (accept_threshold * smooth_input)) or (smooth_input < 5.0f)){
+            filter_value = output_filter.smooth(rpm);
+        }
+
+        // Logger::Notice("Input={:4.1f}, InputF={:4.1f}, OutputF={:4.1f}", roundf(input_value), smooth_input, filter_value);
+
+        return filter_value;
+    }
+
+};
