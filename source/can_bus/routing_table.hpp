@@ -34,6 +34,9 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Core_temperature_request,                   Codes::Component::Common_core        },
     { Codes::Message_type::Core_load_request,                          Codes::Component::Common_core        },
     { Codes::Message_type::Board_temperature_request,                  Codes::Component::Common_core        },
+    { Codes::Message_type::Core_fw_version_request,                    Codes::Component::Common_core        },
+    { Codes::Message_type::Core_fw_hash_request,                       Codes::Component::Common_core        },
+    { Codes::Message_type::Core_fw_dirty_request,                      Codes::Component::Common_core        },
     // LED panel
     { Codes::Message_type::LED_set_intensity,                          Codes::Component::LED_panel          },
     { Codes::Message_type::LED_get_intensity_request,                  Codes::Component::LED_panel          },
