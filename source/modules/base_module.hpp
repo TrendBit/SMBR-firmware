@@ -17,6 +17,7 @@
 #include "threads/heartbeat_thread.hpp"
 #include "config.hpp"
 #include "hal/gpio/gpio.hpp"
+#include "hal/adc/adc_channel.hpp"
 
 namespace fra = cpp_freertos;
 
@@ -91,6 +92,11 @@ protected:
      */
     const std::optional<GPIO * const> yellow_led = {};
 
+    /**
+     * @brief   ADC channel reading version dividers voltage of module
+     */
+    ADC_channel * version_voltage_channel = nullptr;
+
 protected:
     /**
      * @brief Construct a new Base_module object, must be called from constructor of derived class
@@ -161,6 +167,13 @@ public:
      * @return float    Temperature of board in Celsius
      */
     virtual std::optional<float> Board_temperature() = 0;
+
+    /**
+     * @brief   Get voltage on version pin of module, this is used to determine hardware version of module
+     *
+     * @return  std::optional<float>    Voltage on version divider resistor which is mapped to hw version
+     */
+    virtual std::optional<float> Version_voltage() const ;
 
     /**
      * @brief Get pointer to this class instance using "singleton" pattern

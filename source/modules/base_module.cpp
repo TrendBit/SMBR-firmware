@@ -23,7 +23,8 @@ Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_typ
     common_thread(new Common_thread(can_thread, memory)),
     common_core(new Common_core(adc_mutex)),
     heartbeat_thread(new Heartbeat_thread(green_led_pin,200)),
-    yellow_led(yellow_led)
+    yellow_led(yellow_led),
+    version_voltage_channel(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_0, 3.30f))
 {
     this->instance = this;
     this->instance_enumeration = instance_type;
@@ -71,4 +72,15 @@ uint Base_module::Send_CAN_message(CAN::Message const &message) {
     } else {
         return 0;
     }
+}
+
+std::optional<float> Base_module::Version_voltage() const{
+    bool lock = adc_mutex->Lock(0);
+    if (!lock) {
+        Logger::Warning("HW version ADC mutex lock failed");
+        return std::nullopt;
+    }
+    float version_voltage = version_voltage_channel->Read_voltage();
+    adc_mutex->Unlock();
+    return version_voltage;
 }
