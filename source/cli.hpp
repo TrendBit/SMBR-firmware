@@ -20,16 +20,27 @@
 #include "pico/unique_id.h"
 #include "hardware/watchdog.h"
 
-#define DEVICE_NAME "SMBR - TestBed"
+#define DEVICE_NAME "SMPBR - TestBed"
 #define VENDOR_NAME "TrendBit s.r.o."
-#ifndef FW_VERSION
-    #define FW_VERSION "unknown"
+
+#ifndef FW_VERSION_MAJOR
+    #define FW_VERSION_MAJOR 0
 #endif
-#ifndef GIT_COMMIT_HASH
-    #define GIT_COMMIT_HASH "unknown"
+
+#ifndef FW_VERSION_MINOR
+    #define FW_VERSION_MINOR 0
 #endif
-#ifndef COMPILER_NAME
-    #define COMPILER_NAME "unknown"
+
+#ifndef FW_VERSION_PATCH
+    #define FW_VERSION_PATCH 0
+#endif
+
+#ifndef FW_GIT_COMMIT_HASH_STR
+    #define FW_GIT_COMMIT_HASH_STR "unknown"
+#endif
+
+#ifndef FW_COMPILER_NAME
+    #define FW_COMPILER_NAME "unknown"
 #endif
 
 class CLI_service{

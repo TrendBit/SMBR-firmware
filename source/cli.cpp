@@ -40,9 +40,9 @@ std::string CLI_service::Device_info(){
     device_info += emio::format("Unique ID: {}\r\n", unique_id);
     device_info += emio::format("Vendor: {}\r\n", VENDOR_NAME);
     device_info += emio::format("Build timestamp: {}\r\n", __TIMESTAMP__);
-    device_info += emio::format("Firmware version: {}\r\n", FW_VERSION);
-    device_info += emio::format("Git commit hash: {}\r\n", GIT_COMMIT_HASH);
-    device_info += emio::format("Compiler: {} {}.{}.{}\r\n", COMPILER_NAME, __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+    device_info += emio::format("Firmware version: {}.{}.{}\r\n", FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_PATCH);
+    device_info += emio::format("Git commit hash: {}\r\n", FW_GIT_COMMIT_HASH_STR);
+    device_info += emio::format("Compiler: {} {}.{}.{}\r\n", FW_COMPILER_NAME, __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
     return device_info;
 };
 
