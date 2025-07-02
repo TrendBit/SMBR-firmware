@@ -54,6 +54,15 @@ bool Common_core::Receive(Application_message message){
             return Execute_when_valid_UID(message,
                 std::bind(&Common_core::Enter_CAN_bootloader, this));
 
+        case Codes::Message_type::Core_fw_version_request:
+            return FW_version();
+
+        case Codes::Message_type::Core_fw_hash_request:
+            return FW_hash();
+
+        case Codes::Message_type::Core_fw_dirty_request:
+            return FW_dirty();
+
         default:
             return false;
     }
@@ -202,6 +211,27 @@ bool Common_core::Reset_MCU(){
     Logger::Critical("Resetting MCU based on CAN request");
     watchdog_enable(1, 1);  // Enable watchdog with loop time 1ms
     while (1);              // Loop until watchdog triggers reset
+    return true;
+}
+
+bool Common_core::FW_version(){
+    Logger::Debug("Firmware version request: {}.{}.{}", fw_version.major, fw_version.minor, fw_version.patch);
+    App_messages::Common::FW_version_response fw_version_response(fw_version.major, fw_version.minor, fw_version.patch);
+    Send_CAN_message(fw_version_response);
+    return true;
+}
+
+bool Common_core::FW_hash(){
+    Logger::Debug("Firmware hash request: {:07x}", fw_hash);
+    App_messages::Common::FW_hash_response fw_hash_response(fw_hash);
+    Send_CAN_message(fw_hash_response);
+    return true;
+}
+
+bool Common_core::FW_dirty(){
+    Logger::Debug("Firmware dirty request: {}", fw_dirty ? "true" : "false");
+    App_messages::Common::FW_dirty_response fw_dirty_response(fw_dirty);
+    Send_CAN_message(fw_dirty_response);
     return true;
 }
 

@@ -24,6 +24,9 @@
 #include "codes/messages/common/core_temp_response.hpp"
 #include "codes/messages/common/core_load_response.hpp"
 #include "codes/messages/common/board_temp_response.hpp"
+#include "codes/messages/common/fw_version_response.hpp"
+#include "codes/messages/common/fw_hash_response.hpp"
+#include "codes/messages/common/fw_dirty_response.hpp"
 
 #include "pico/unique_id.h"
 #include "pico/bootrom.h"
@@ -70,7 +73,46 @@
  */
 #define UNIVERSAL_CONTROL_KEY { 0xca, 0xfe, 0xca, 0xfe, 0xca, 0xfe}
 
+/**
+ * @brief   Firmware version information - Major version number
+ */
+#ifndef FW_VERSION_MAJOR
+    #define FW_VERSION_MAJOR 0
+#endif
+
+/**
+ * @brief   Firmware version information - Minor version number
+ */
+#ifndef FW_VERSION_MINOR
+    #define FW_VERSION_MINOR 0
+#endif
+
+/**
+ * @brief   Firmware version information - Patch version number
+ */
+#ifndef FW_VERSION_PATCH
+    #define FW_VERSION_PATCH 0
+#endif
+
+/**
+ * @brief   Firmware version information - Git commit hash as uint64_t
+ */
+#ifndef FW_GIT_COMMIT_HASH_HEX
+    #define FW_GIT_COMMIT_HASH_HEX 0x0000000
+#endif
+
+#ifndef FW_GIT_DIRTY
+    #define FW_GIT_DIRTY true
+#endif
+
+/**
+ * @brief   Length of UUID used in CANBUS messages, based on katapult UUID
+ */
 #define CANBUS_UUID_LEN       6
+
+/**
+ * @brief   Length of general PICO unique ID, used for module identification, obtained form Flash memory serial number
+ */
 #define PICO_UUID_LEN         8
 
 /**
@@ -105,6 +147,25 @@ private:
      *  @brief Sampler capturing Idle thread utilization and calculating CPU load
      */
     rtos::Repeated_execution * idle_thread_sampler = nullptr;
+
+    /**
+     * @brief  Structure holding firmware version information passed by compiler based on git tags
+     */
+    const struct{
+        uint16_t major = FW_VERSION_MAJOR;
+        uint16_t minor = FW_VERSION_MINOR;
+        uint16_t patch = FW_VERSION_PATCH;
+    } fw_version ;
+
+    /**
+     * @brief Actual commit hash of firmware as uint64_t
+     */
+    const uint64_t fw_hash = FW_GIT_COMMIT_HASH_HEX;
+
+    /**
+     * @brief Flag indicating if firmware repository is dirty (modified)
+     */
+    const bool fw_dirty = FW_GIT_DIRTY;
 
 public:
     /**
@@ -182,6 +243,12 @@ public:
      *          Intended to be run os FreeRTOS Timer event
      */
     void Sample_core_load();
+
+    bool FW_version();
+
+    bool FW_hash();
+
+    bool FW_dirty();
 
 private:
 
