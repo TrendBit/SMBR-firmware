@@ -10,7 +10,7 @@ execute_process(
 )
 
 execute_process(
-    COMMAND git describe --tags --abbrev=0 --dirty
+    COMMAND git describe --tags
     OUTPUT_VARIABLE GIT_LAST_TAG
     RESULT_VARIABLE RESULT
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -47,14 +47,15 @@ endif()
 message(STATUS "FW_VERSION_MAJOR: ${FW_VERSION_MAJOR}")
 message(STATUS "FW_VERSION_MINOR: ${FW_VERSION_MINOR}")
 message(STATUS "FW_VERSION_PATCH: ${FW_VERSION_PATCH}")
-message(STATUS "GIT_COMMIT_HASH: ${GIT_COMMIT_HASH}")
+message(STATUS "FW_GIT_COMMIT_HASH: ${GIT_COMMIT_HASH}")
 message(STATUS "FW_GIT_DIRTY: ${FW_GIT_DIRTY}")
 
 # Add definitions for compilation
 add_definitions("-DFW_VERSION_MAJOR=${FW_VERSION_MAJOR}")
 add_definitions("-DFW_VERSION_MINOR=${FW_VERSION_MINOR}")
 add_definitions("-DFW_VERSION_PATCH=${FW_VERSION_PATCH}")
-add_definitions("-DGIT_COMMIT_HASH=\"${GIT_COMMIT_HASH}\"")
+add_definitions("-DFW_GIT_COMMIT_HASH_STR=\"${GIT_COMMIT_HASH}\"")
+add_definitions("-DFW_GIT_COMMIT_HASH_HEX=0x${GIT_COMMIT_HASH}")
 add_definitions("-DFW_GIT_DIRTY=${FW_GIT_DIRTY}")
 
 set(COMPILER arm-none-eabi-)
