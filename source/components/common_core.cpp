@@ -63,6 +63,9 @@ bool Common_core::Receive(Application_message message){
         case Codes::Message_type::Core_fw_dirty_request:
             return FW_dirty();
 
+        case Codes::Message_type::Core_hw_version_request:
+            return HW_version();
+
         default:
             return false;
     }
@@ -235,6 +238,15 @@ bool Common_core::FW_dirty(){
     return true;
 }
 
+bool Common_core::HW_version(){
+    auto hw_version = Read_hw_info();
+
+    Logger::Debug("Hardware version: {}.{}", hw_version.major, hw_version.minor);
+    App_messages::Common::HW_version_response hw_version_response(hw_version.major, hw_version.minor);
+    Send_CAN_message(hw_version_response);
+    return true;
+}
+
 void Common_core::Sample_core_load(){
     static uint32_t last_runtime_sample = 0;
     static uint32_t last_idle_thread_sample = 0;
@@ -265,4 +277,19 @@ void Common_core::Sample_core_load(){
     // Update last samples for the next iteration
     last_runtime_sample = current_runtime_sample;
     last_idle_thread_sample = current_idle_thread_sample;
+}
+
+Common_core::hw_version Common_core::Read_hw_info(){
+    auto version_voltage = Base_module::Instance()->Version_voltage().value_or(0.0f);
+
+    float voltage_margin = 0.05f; // Margin for voltage reading
+
+    for (const auto& [voltage, version] : hw_versions) {
+        if (version_voltage >= voltage - voltage_margin && version_voltage <= voltage + voltage_margin) {
+            return version;
+        }
+    }
+
+    Logger::Warning("Hardware version not found for voltage: {:05.2f}V", version_voltage);
+    return {0, 0}; // Default reserved version if not found
 }
