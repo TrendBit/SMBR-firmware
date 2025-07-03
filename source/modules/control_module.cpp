@@ -70,7 +70,7 @@ void Control_module::Setup_mixer(){
 
     Logger::Debug("Mixer initialization");
     auto mixer_tacho = new RPM_counter_PIO(PIO_machine(pio0,1),7, 10000.0, 280,2);
-    mixer = new Mixer(13, mixer_tacho, 8, 6000.0, 0.0);
+    mixer = new Mixer(13, mixer_tacho, 8, 300.0, 6000.0);
 }
 
 std::optional<float> Control_module::Board_temperature(){
