@@ -15,6 +15,7 @@
 #include "rtos/delayed_execution.hpp"
 #include "logger.hpp"
 #include "can_bus/app_message.hpp"
+#include "tools/motor_transfer_function.hpp"
 
 #include "codes/messages/aerator/set_speed.hpp"
 #include "codes/messages/aerator/set_flowrate.hpp"
@@ -37,6 +38,11 @@ private:
      * @brief   Maximum flowrate of air pump in ml/min
      */
     float max_flowrate;
+
+    Motor_transfer_function speed_flowrate_curve = Motor_transfer_function(
+        {0, 0.2, 0.4, 0.6, 0.8, 1.0},
+        {0, 200, 500, 1000, 1750, 2500}
+    );
 
     /**
      * @brief   Minimum speed at which is pump moving of pump in range 0-1
@@ -127,4 +133,22 @@ public:
      */
     virtual bool Receive(Application_message message) override final;
 
+private:
+    /**
+     * @brief   Maximal reliable flowrate of pump in ml/min
+     *
+     * @return float    Maximal reliable flowrate of pump in ml/min
+     */
+    float Max_flowrate() const {
+        return speed_flowrate_curve.Max_rate();
+    };
+
+    /**
+     * @brief   Minimal reliable flowrate of pump in ml/min
+     *
+     * @return float    Minimal reliable flowrate of pump in ml/min
+     */
+    float Min_flowrate() const {
+        return speed_flowrate_curve.Min_rate();
+    };
 };

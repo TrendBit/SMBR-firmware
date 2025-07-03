@@ -3,7 +3,7 @@
 Aerator::Aerator(uint gpio_in1, uint gpio_in2, float max_flowrate, float min_speed, float pwm_frequency) :
     Component(Codes::Component::Bottle_aerator),
     Message_receiver(Codes::Component::Bottle_aerator),
-    DC_HBridge(gpio_in1, gpio_in2, pwm_frequency),
+    DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
     max_flowrate(max_flowrate),
     min_speed(min_speed)
 {
@@ -79,42 +79,24 @@ bool Aerator::Receive(Application_message message){
             return true;
         }
 
-
         default:
             return false;
     }
 }
 
 float Aerator::Flowrate(float flowrate){
-    float limited_flowrate = std::clamp(flowrate, 0.0f, max_flowrate);
-    float speed = limited_flowrate / max_flowrate;  // normalizes to 0.0 to 1.0
-
-    if (speed < 0.001f) {
-        return 0.0f;
-    }
-
-    // Interpolate between min_speed and 1.0 for positive values
-    speed = min_speed + speed * (1.0f - min_speed);
-
-    Speed(speed);
-    return limited_flowrate;
+    float motor_speed = speed_flowrate_curve.To_speed(flowrate);
+    Speed(motor_speed);
+    return motor_speed;
 }
 
 float Aerator::Flowrate(){
-    float speed = Speed();
 
-    if (speed < min_speed) {
-        return 0.0f;
-    }
-
-    // De-interpolate to get original flowrate
-    float normalized_speed = (speed - min_speed) / (1.0f - min_speed);
-
-    return normalized_speed * max_flowrate;
+    return speed_flowrate_curve.To_rate(Speed());
 }
 
 float Aerator::Move(float volume_ml){
-    return Move(volume_ml, max_flowrate);
+    return Move(volume_ml, Max_flowrate());
 }
 
 float Aerator::Move(float volume_ml, float flowrate){
@@ -124,13 +106,7 @@ float Aerator::Move(float volume_ml, float flowrate){
     }
 
     // Limit effective flow rate to non-zero positive value lower them max flowrate of pump
-    float effective_flowrate;
-
-    if (flowrate <= 0) {
-        effective_flowrate = max_flowrate;
-    } else {
-        effective_flowrate = std::clamp(flowrate, 0.0f, max_flowrate);
-    }
+    float effective_flowrate = std::clamp(flowrate, Min_flowrate(), Max_flowrate());
 
     Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate);
 
@@ -150,5 +126,5 @@ float Aerator::Move(float volume_ml, float flowrate){
 
 void Aerator::Stop(){
     pump_stopper->Abort();
-    Coast();
+    Brake();
 }
