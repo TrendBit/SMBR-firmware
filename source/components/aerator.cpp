@@ -79,6 +79,14 @@ bool Aerator::Receive(Application_message message){
             return true;
         }
 
+        case Codes::Message_type::Aerator_info_request: {
+            App_messages::Aerator::Info_response info_response(Min_flowrate(), Max_flowrate());
+            Logger::Debug("Aerator pump info requested, response: min_flowrate: {:d}, max_flowrate: {:d}",
+                          info_response.min_flowrate, info_response.max_flowrate);
+            Send_CAN_message(info_response);
+            return true;
+        }
+
         default:
             return false;
     }

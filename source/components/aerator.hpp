@@ -25,6 +25,7 @@
 #include "codes/messages/aerator/get_flowrate_response.hpp"
 #include "codes/messages/aerator/move.hpp"
 #include "codes/messages/aerator/stop.hpp"
+#include "codes/messages/aerator/info_response.hpp"
 
 /**
  * @brief   Aerator is component which is used to aerate liquid in bottle
