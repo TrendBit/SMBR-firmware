@@ -65,7 +65,7 @@ public:
      * @return float    Speed of motor in range of transfer table
      */
     float To_speed(const float rate) {
-        float limited_rate = std::clamp(rate, transfer_table_rate.front(), transfer_table_rate.back());
+        float limited_rate = std::clamp(rate, Min_rate(), Max_rate());
         return to_speed.get(limited_rate);
     };
 
