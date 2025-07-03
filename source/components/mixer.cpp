@@ -1,11 +1,11 @@
 #include "mixer.hpp"
 
-Mixer::Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float max_rpm, float min_speed):
+Mixer::Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float min_rpm, float max_rpm):
     Component(Codes::Component::Bottle_mixer),
     Message_receiver(Codes::Component::Bottle_mixer),
     Fan_RPM(new PWM_channel(pwm_pin, frequency, 0.0f, true), tacho),
-    max_rpm(max_rpm),
-    min_speed(min_speed)
+    min_rpm(min_rpm),
+    max_rpm(max_rpm)
 {
     auto stopper_lamda = [this](){
           Stop();
@@ -110,6 +110,12 @@ bool Mixer::Receive(Application_message message){
             return true;
         }
 
+        case Codes::Message_type::Mixer_info_request: {
+            App_messages::Mixer::Info_response info_response(Min_speed(), Max_speed());
+            Logger::Debug("Mixer info requested, response: min={:d}, max={:d}", info_response.min_rpm, info_response.max_rpm);
+            Send_CAN_message(info_response);
+            return true;
+        }
 
         default:
             return false;
@@ -117,26 +123,17 @@ bool Mixer::Receive(Application_message message){
 }
 
 float Mixer::Speed(float speed){
-    float clamped_speed = std::clamp(speed, 0.0f, 1.0f);
-
-    float limited_speed = 0;
-    if(speed > 0){
-        limited_speed = min_speed + clamped_speed * (1.0f - min_speed);
-    }
-
+    float limited_speed = std::clamp(speed, 0.0f, 1.0f);
     Intensity(limited_speed);
-
     return limited_speed;
 }
 
 float Mixer::Speed(){
-    float speed = Intensity();
-    return (speed - min_speed) / (1.0f - min_speed);
+    return Intensity();
 }
 
 float Mixer::RPM(float rpm){
     target_rpm = rpm;
-
     return target_rpm;
 }
 

@@ -26,6 +26,7 @@
 #include "codes/messages/mixer/get_rpm_response.hpp"
 #include "codes/messages/mixer/stir.hpp"
 #include "codes/messages/mixer/stop.hpp"
+#include "codes/messages/mixer/info_response.hpp"
 
 #include "qlibs.h"
 #include "etl/queue.h"
@@ -38,40 +39,26 @@ class Mixer_rpm_filter;
 class Mixer: public Component, public Message_receiver, private Fan_RPM {
 private:
     /**
-     * @brief   Maximum RPM of mixer at full speed
+     * @brief   Minimal RPM of mixer which can be reliable regulated with load
      */
-    float max_rpm;
+    const float min_rpm;
 
     /**
-     * @brief   PID controller for regulation of mixer speed
+     * @brief   Maximum RPM of mixer at full speed
+     *          This value is limited by used magnetic stirred and density of liquid.
+     *          Generaly wil be much lower than real maximum RPM of fan without load.
+     */
+    const float max_rpm;
+
+    /**
+     * @brief   PID controller used for regulation of mixer speed
      */
     qlibs::pidController * control;
 
     /**
-     * @brief   First stage filter for RPM
-     *          Reduces effect of incorrect RPM reading at low speeds due to control signal alias
+     * @brief   Two stage RPM filter used for control of mixer rpm
      */
-    qlibs::smootherLPF2 * filter1;
-
-    /**
-     * @brief   Second stage filter for RPM
-     *          General smoothing filter for RPM measurement
-     */
-    qlibs::smootherLPF2 * filter2;
-
     Mixer_rpm_filter * rpm_filter;
-
-    /**
-     * @brief   Window for moving average of RPM, used for smoothing of RPM measurement
-     *          This is used to reduce noise in RPM measurement
-     */
-    float window[10] = {0.0f};
-
-    /**
-     * @brief   Minimum speed at which is mixer moving in range 0-1
-     *          This assumes magnetic stirrer is placed inside algae culture in bottle.
-     */
-    float min_speed = 0.3f;
 
     /**
      * @brief   Target RPM of mixer
@@ -79,8 +66,7 @@ private:
     float target_rpm = 0.0f;
 
     /**
-     * @brief
-     *
+     * @brief   Current filtered RPM of mixer
      */
     float current_rpm = 0.0f;
 
@@ -101,10 +87,10 @@ public:
      * @param pwm_pin       GPIO pin for control of mixer
      * @param tacho         RPM counter for measurement of mixer speed
      * @param frequency     Frequency of PWM signal for control of mixer
-     * @param max_rpm       Maximum RPM of mixer at full speed
-     * @param min_speed     Minimum speed at which is fan moving in range 0-1
+     * @param min_rpm       Minimum speed at which mixer can be reliably regulated
+     * @param max_rpm       Maximum RPM of fan at full speed (without load)
      */
-    Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float max_rpm, float min_speed = 0.0f);
+    Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float min_rpm = 300.0f, float max_rpm = 6000.0f);
 
     /**
      * @brief   Set speed of mixer in range from 0 to 1.0
@@ -170,11 +156,36 @@ public:
     virtual bool Receive(Application_message message) override final;
 
 private:
-
+    /**
+     * @brief   Periodically executed function which filters RPMs and regulates speed of mixer is target RPM is set
+     */
     void Regulation_loop();
+
+    /**
+     * @brief   Maximal supported speed of mixer in RPM
+     *          Valid when magnetic stirrer is placed inside algae culture in bottle in reactor.
+     *          This is used to limit speed of mixer when setting speed in range 0-
+     *
+     * @return float
+     */
+    float Max_speed() const { return max_rpm;}
+
+    /**
+     * @brief   Minimal supported speed of mixer in RPM
+     *          Valid when magnetic stirrer is placed inside algae culture in bottle in reactor.
+     *          Lower values then this cannot be reliably measured and regulated.
+     *
+     * @return float
+     */
+    float Min_speed() const { return min_rpm;}
 
 };
 
+/**
+ * @brief   Dual stage low-pass filter for RPM measurement
+ *          First stage filter is used to reduce effect of incorrect RPM reading at low speeds.
+ *          Second stage filter is used for general smoothing of RPM measurement for control purposes.
+ */
 class Mixer_rpm_filter{
 
     qlibs::smootherLPF2 input_filter;
