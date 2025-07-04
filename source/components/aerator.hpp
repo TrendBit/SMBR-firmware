@@ -37,6 +37,7 @@ class Aerator: public Component, public Message_receiver, private DC_HBridge {
 private:
     /**
      * @brief   Maximum flowrate of air pump in ml/min
+     * @deprecated Can be obtained from speed_flowrate_curve
      */
     float max_flowrate;
 
@@ -48,6 +49,7 @@ private:
     /**
      * @brief   Minimum speed at which is pump moving of pump in range 0-1
      *          Opposite direction is assumed to be the same just negative
+     * @deprecated Can be obtained from speed_flowrate_curve
      */
     float min_speed = 0.0f;
 
@@ -62,8 +64,8 @@ public:
      *
      * @param gpio_in1      GPIO pin for control of first input of H-bridge, Forward
      * @param gpio_in2      GPIO pin for control of second input of H-bridge, Reverse
-     * @param max_flowrate  Maximum flowrate of pump in ml/min
-     * @param min_speed     Minimum speed at which is pump moving of pump in range 0-1
+     * @param max_flowrate  Maximum flowrate of pump in ml/min @deprecated
+     * @param min_speed     Minimum speed at which is pump moving of pump in range 0-1 @deprecated
      * @param pwm_frequency Frequency of PWM signal for control of motor
      */
     Aerator(uint gpio_in1, uint gpio_in2, float max_flowrate, float min_speed = 0.0f, float pwm_frequency = 50.0f);
@@ -110,7 +112,7 @@ public:
     /**
      * @brief   Stop pump immediately by coasting
      */
-    void Stop();
+    void Stop() override final;
 
     /**
      * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)
@@ -136,20 +138,20 @@ public:
 
 private:
     /**
-     * @brief   Maximal reliable flowrate of pump in ml/min
-     *
-     * @return float    Maximal reliable flowrate of pump in ml/min
-     */
-    float Max_flowrate() const {
-        return speed_flowrate_curve.Max_rate();
-    };
-
-    /**
      * @brief   Minimal reliable flowrate of pump in ml/min
      *
      * @return float    Minimal reliable flowrate of pump in ml/min
      */
-    float Min_flowrate() const {
+    float Minimal_flowrate() const {
         return speed_flowrate_curve.Min_rate();
+    };
+
+    /**
+     * @brief   Maximal reliable flowrate of pump in ml/min
+     *
+     * @return float    Maximal reliable flowrate of pump in ml/min
+     */
+    float Maximal_flowrate() const {
+        return speed_flowrate_curve.Max_rate();
     };
 };

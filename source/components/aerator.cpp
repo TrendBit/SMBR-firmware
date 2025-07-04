@@ -80,7 +80,7 @@ bool Aerator::Receive(Application_message message){
         }
 
         case Codes::Message_type::Aerator_info_request: {
-            App_messages::Aerator::Info_response info_response(Min_flowrate(), Max_flowrate());
+            App_messages::Aerator::Info_response info_response(Minimal_flowrate(), Maximal_flowrate());
             Logger::Debug("Aerator pump info requested, response: min_flowrate: {:d}, max_flowrate: {:d}",
                           info_response.min_flowrate, info_response.max_flowrate);
             Send_CAN_message(info_response);
@@ -99,12 +99,11 @@ float Aerator::Flowrate(float flowrate){
 }
 
 float Aerator::Flowrate(){
-
     return speed_flowrate_curve.To_rate(Speed());
 }
 
 float Aerator::Move(float volume_ml){
-    return Move(volume_ml, Max_flowrate());
+    return Move(volume_ml, Maximal_flowrate());
 }
 
 float Aerator::Move(float volume_ml, float flowrate){
@@ -114,7 +113,7 @@ float Aerator::Move(float volume_ml, float flowrate){
     }
 
     // Limit effective flow rate to non-zero positive value lower them max flowrate of pump
-    float effective_flowrate = std::clamp(flowrate, Min_flowrate(), Max_flowrate());
+    float effective_flowrate = std::clamp(flowrate, Minimal_flowrate(), Maximal_flowrate());
 
     Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate);
 
