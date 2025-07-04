@@ -11,11 +11,11 @@
 
 #include "can_bus/message_receiver.hpp"
 #include "components/component.hpp"
-#include "components/motors/peristaltic_pump.hpp"
+#include "components/motors/dc_hbridge.hpp"
 #include "rtos/delayed_execution.hpp"
 #include "logger.hpp"
 #include "can_bus/app_message.hpp"
-
+#include "tools/motor_transfer_function.hpp"
 
 #include "codes/messages/cuvette_pump/set_speed.hpp"
 #include "codes/messages/cuvette_pump/get_speed_request.hpp"
@@ -32,12 +32,17 @@
  * @brief   Wrapper for peristaltic pump which controls suspense in cuvette
  *          In addition to the normal peristaltic pump allows to prime and purge cuvette system
  */
-class Cuvette_pump: public Component, public Message_receiver, private Peristaltic_pump{
+class Cuvette_pump: public Component, public Message_receiver, private DC_HBridge{
 private:
     /**
      * @brief  Volume of cuvette system in ml, this amount will be primed or purged
      */
     const float cuvette_system_volume;
+
+    Motor_transfer_function speed_flowrate_curve = Motor_transfer_function(
+        {0, 0.5, 0.6, 0.7, 0.8, 1.0},
+        {0, 0, 10, 50, 80, 100}
+    );
 
     /**
      * @brief Timer function which stops pump after defined time, used for moving volumes of liquid
@@ -58,19 +63,29 @@ public:
     Cuvette_pump(uint gpio_in1, uint gpio_in2, float max_flowrate, float cuvette_system_volume, float min_speed = 0, float pwm_frequency = 50.0f);
 
     /**
-     * @brief Set speed of pump, derived from Peristaltic_pump::Speed
+     * @brief Set speed of pump, derived from DC_HBridge::Speed
      */
-    using Peristaltic_pump::Speed;
+    using DC_HBridge::Speed;
+
+    /*
+     * @brief   Set flowrate of pump
+     *
+     * @param flowrate  Flowrate of pump in ml/min, limited to max flow rate of pump
+     * @return float    Flowrate of pump in ml/min
+     */
+    float Flowrate(float flowrate);
 
     /**
-     * @brief Set flowrate of pump, derived from Peristaltic_pump::Flowrate
+     * @brief   Get current flowrate of pump
+     *
+     * @return float    Current flowrate of pump in ml/min
      */
-    using Peristaltic_pump::Flowrate;
+    float Flowrate();
 
     /**
      * @brief   Stop pump immediately by coasting
      */
-    void Stop();
+    void Stop() override final;
 
     /**
      * @brief   Move given volume of liquid with given flowrate into the cuvette or out of cuvette when volume is negative
@@ -93,13 +108,15 @@ public:
 
     /**
      * @brief   Prime cuvette system, move liquid from bottle to cuvette
+     * @deprecated      Same can be achieved by Macros in webcontrol
      *
      * @return float    Time of pumping in seconds
      */
     float Prime();
 
     /**
-     * @brief   Purge cuvette system, move liquid from cuvette to bottle
+     * @brief           Purge cuvette system, move liquid from cuvette to bottle
+     * @deprecated      Same can be achieved by Macros in webcontrol
      *
      * @return float    Time of pumping in seconds
      */
@@ -126,4 +143,24 @@ public:
      * @return false    Message cannot be processed by this component
      */
     virtual bool Receive(Application_message message) override final;
+
+private:
+    /**
+     * @brief   Minimal reliable flowrate of pump in ml/min
+     *
+     * @return float    Minimal reliable flowrate of pump in ml/min
+     */
+    float Minimal_flowrate() const {
+        return speed_flowrate_curve.Min_rate();
+    };
+
+    /**
+     * @brief   Maximal reliable flowrate of pump in ml/min
+     *
+     * @return float    Maximal reliable flowrate of pump in ml/min
+     */
+    float Maximal_flowrate() const {
+        return speed_flowrate_curve.Max_rate();
+    };
+
 };

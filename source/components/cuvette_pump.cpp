@@ -3,7 +3,7 @@
 Cuvette_pump::Cuvette_pump(uint gpio_in1, uint gpio_in2, float max_flowrate, float cuvette_system_volume, float min_speed, float pwm_frequency) :
     Component(Codes::Component::Cuvette_pump),
     Message_receiver(Codes::Component::Cuvette_pump),
-    Peristaltic_pump(gpio_in1, gpio_in2, max_flowrate, min_speed, pwm_frequency),
+    DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
     cuvette_system_volume(cuvette_system_volume)
 {
     auto stopper_lamda = [this](){
@@ -97,24 +97,34 @@ bool Cuvette_pump::Receive(Application_message message){
 
 void Cuvette_pump::Stop(){
     pump_stopper->Abort();
-    Coast();
+    DC_HBridge::Stop();
+}
+
+float Cuvette_pump::Flowrate(float flowrate){
+    float motor_speed = speed_flowrate_curve.To_speed(abs(flowrate));
+    float direction = flowrate >= 0.0f ? 1.0f : -1.0f;
+    float speed = motor_speed*= direction;
+    Speed(speed);
+    return speed;
+}
+
+float Cuvette_pump::Flowrate(){
+    float speed = Speed();
+    float direction = speed >= 0.0f ? 1.0f : -1.0f;
+    float flowrate = speed_flowrate_curve.To_rate(abs(speed));
+    flowrate *= direction;
+    return flowrate;
 }
 
 float Cuvette_pump::Move(float volume_ml){
-    return Move(volume_ml, max_flowrate);
+    return Move(volume_ml, Maximal_flowrate());
 }
 
 float Cuvette_pump::Move(float volume_ml, float flowrate){
     // Limit effective flow rate to non-zero positive value lower them max flowrate of pump
-    float effective_flowrate;
+    float effective_flowrate = std::clamp(flowrate, Minimal_flowrate(), Maximal_flowrate());
 
-    if (flowrate <= 0) {
-        effective_flowrate = max_flowrate;
-    } else {
-        effective_flowrate = std::clamp(flowrate, 0.0f, max_flowrate);
-    }
-
-    Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate);
+    Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", Maximal_flowrate(), flowrate);
 
     // Calculate time of pumping and set stopper executioner
     float pump_time_sec = (std::abs(volume_ml) / effective_flowrate) * 60;
