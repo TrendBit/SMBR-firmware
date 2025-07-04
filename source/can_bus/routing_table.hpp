@@ -58,6 +58,7 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Cuvette_pump_prime,                         Codes::Component::Cuvette_pump       },
     { Codes::Message_type::Cuvette_pump_purge,                         Codes::Component::Cuvette_pump       },
     { Codes::Message_type::Cuvette_pump_stop,                          Codes::Component::Cuvette_pump       },
+    { Codes::Message_type::Cuvette_pump_info_request,                  Codes::Component::Cuvette_pump       },
     // Aerator
     { Codes::Message_type::Aerator_set_speed,                          Codes::Component::Bottle_aerator     },
     { Codes::Message_type::Aerator_get_speed_request,                  Codes::Component::Bottle_aerator     },
@@ -65,6 +66,7 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Aerator_get_flowrate_request,               Codes::Component::Bottle_aerator     },
     { Codes::Message_type::Aerator_move,                               Codes::Component::Bottle_aerator     },
     { Codes::Message_type::Aerator_stop,                               Codes::Component::Bottle_aerator     },
+    { Codes::Message_type::Aerator_info_request,                       Codes::Component::Bottle_aerator     },
     // Mixer
     { Codes::Message_type::Mixer_set_speed,                            Codes::Component::Bottle_mixer       },
     { Codes::Message_type::Mixer_get_speed_request,                    Codes::Component::Bottle_mixer       },
@@ -72,6 +74,7 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Mixer_get_rpm_request,                      Codes::Component::Bottle_mixer       },
     { Codes::Message_type::Mixer_stir,                                 Codes::Component::Bottle_mixer       },
     { Codes::Message_type::Mixer_stop,                                 Codes::Component::Bottle_mixer       },
+    { Codes::Message_type::Mixer_info_request,                         Codes::Component::Bottle_mixer       },
     // Bottle temperature
     { Codes::Message_type::Bottle_temperature_request,                 Codes::Component::Bottle_temperature },
     { Codes::Message_type::Bottle_top_measured_temperature_request,    Codes::Component::Bottle_temperature },
