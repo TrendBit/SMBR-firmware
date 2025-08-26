@@ -8,12 +8,15 @@ choice
         bool "control_module"
     config SENSOR_MODULE
         bool "sensor_module"
+     config PUMP_MODULE
+        bool "pump_module"
 endchoice
 
 config MODULE_TYPE
     string
     default "control_module" if CONTROL_MODULE
     default "sensor_module" if SENSOR_MODULE
+    default "pump_module" if PUMP_MODULE
 
 config CANBUS_SPEED
     int "CAN bus speed"
