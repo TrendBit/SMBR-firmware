@@ -2,20 +2,21 @@
 
 #include "threads/common_thread.hpp"
 
-Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl):
-Base_module(module_type, instance_type, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
+Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl):
+Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
 {
 
 }
 
-Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, uint yellow_led_pin):
-    Base_module(module_type, instance_type, green_led_pin, i2c_sda, i2c_scl, std::optional<GPIO * const>(new GPIO(yellow_led_pin, GPIO::Direction::Out)))
+Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl, uint yellow_led_pin):
+    Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::optional<GPIO * const>(new GPIO(yellow_led_pin, GPIO::Direction::Out)))
 {
 
 }
 
-Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, std::optional<GPIO * const> yellow_led):
+Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl, std::optional<GPIO * const> yellow_led):
     module_type(module_type),
+    enumerator(enumerator),
     i2c(new I2C_bus(i2c1, i2c_sda, i2c_scl, 100000, true)),
     memory(new EEPROM_storage(new AT24Cxxx(*i2c, 0x50, 64))),
     adc_mutex(new fra::MutexStandard()),
@@ -27,7 +28,7 @@ Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_typ
     version_voltage_channel(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_0, 3.30f))
 {
     this->instance = this;
-    this->instance_enumeration = instance_type;
+    this->instance_enumeration = Codes::Instance::Undefined;
 
     #ifdef CONFIG_TEST_THREAD
         new Test_thread();

@@ -9,6 +9,7 @@
 
 #include "codes/codes.hpp"
 #include "components/memory.hpp"
+#include "components/enumerator.hpp"
 #include "components/memory/AT24Cxxx.hpp"
 #include "logger.hpp"
 #include "components/common_core.hpp"
@@ -39,6 +40,8 @@ protected:
      * @brief Pointer to this class used for singleton pattern accessing of module type and instance enumeration
      */
     static inline Base_module * instance;
+
+    Enumerator * const enumerator;
 
     /**
      * @brief Type of module, initialized by derived class calling constructor of this class with its type
@@ -105,7 +108,7 @@ protected:
      * @param instance_type Instance enumeration of module which is derived from this class
      * @param green_led_pin GPIO pin of green LED
      */
-    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl);
+    Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl);
 
     /**
      * @brief Construct a new Base_module object, must be called from constructor of derived class
@@ -115,7 +118,7 @@ protected:
      * @param green_led_pin  GPIO pin of green LED
      * @param yellow_led_pin GPIO pin of yellow LED
      */
-    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, uint yellow_led_pin);
+    Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl, uint yellow_led_pin);
 
 private:
     /**
@@ -126,7 +129,7 @@ private:
      * @param green_led_pin GPIO pin number of green LED passed to heartbeat thread
      * @param yellow_led    Optional pointer to GPIO object representing yellow LED
      */
-    Base_module(Codes::Module module_type, Codes::Instance instance_type, uint green_led_pin, uint i2c_sda, uint i2c_scl, std::optional<GPIO * const> yellow_led);
+    Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl, std::optional<GPIO * const> yellow_led);
 
 public:
     /**
