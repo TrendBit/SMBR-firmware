@@ -48,7 +48,7 @@ export KCONFIG_CONFIG=config/.config
 cp ${KCONFIG_CONFIG} config/.config.backup
 
 # Array of module names
-modules=("CONTROL_MODULE" "SENSOR_MODULE")
+modules=("CONTROL_MODULE" "SENSOR_MODULE" "PUMP_MODULE")
 
 # Generate default configuration
 alldefconfig config/Kconfig
