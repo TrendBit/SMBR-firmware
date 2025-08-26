@@ -13,6 +13,7 @@
 
 #include "modules/control_module.hpp"
 #include "modules/sensor_module.hpp"
+#include "modules/pump_module.hpp"
 
 #include "cli.hpp"
 #include "logger.hpp"

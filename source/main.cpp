@@ -27,6 +27,8 @@ int main(){
         new Control_module();
     #elifdef CONFIG_SENSOR_MODULE
         new Sensor_module();
+    #elifdef CONFIG_PUMP_MODULE
+        new Pump_module();
     #else
         #error "No module defined, use 'make menuconfig' to select module"
     #endif
