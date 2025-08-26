@@ -29,14 +29,14 @@ EEPROM_storage::EEPROM_storage(M24Cxx * const eeprom)
     static_assert(EEPROM_storage::Check_for_overlapping_records(), "Records are overlapping");
 }
 
-bool EEPROM_storage::Check_type(Codes::Module module, Codes::Instance instance){
+bool EEPROM_storage::Check_type(Codes::Module module_type, Codes::Instance module_instance){
     bool type_check = true;
 
     // Check if module is in program is same as in EEPROM
     Codes::Module current_module = Module();
     if(current_module != Codes::Module::Undefined) {
         Logger::Trace("EEPROM storage already contains module");
-        if(current_module != module) {
+        if(current_module != module_type) {
             Logger::Error("EEPROM storage contains data for another module");
             type_check = false;
         } else {
@@ -45,7 +45,7 @@ bool EEPROM_storage::Check_type(Codes::Module module, Codes::Instance instance){
     } else {
         Logger::Error("EEPROM does not contain module type");
         Logger::Trace("Reseting module type in EEPROM");
-        std::vector<uint8_t> data = {static_cast<uint8_t>(module)};
+        std::vector<uint8_t> data = {static_cast<uint8_t>(module_type)};
         Write_record(Record_name::Module_type, data);
         type_check = false;
         rtos::Delay(5);
@@ -55,19 +55,24 @@ bool EEPROM_storage::Check_type(Codes::Module module, Codes::Instance instance){
     Codes::Instance current_instance = Instance();
     if(current_instance != Codes::Instance::Undefined) {
         Logger::Trace("EEPROM storage already contains instance");
-        if(current_instance != instance) {
+        if(current_instance != module_instance) {
             Logger::Error("EEPROM storage contains data for another instance");
             type_check = false;
         } else {
             Logger::Trace("EEPROM storage contains data for the same instance");
         }
     } else {
-        Logger::Error("EEPROM does not contain instance enumeration");
-        Logger::Trace("Reseting instance enumeration in EEPROM");
-        std::vector<uint8_t> data = {static_cast<uint8_t>(instance)};
-        Write_record(Record_name::Instance_enumeration, data);
-        type_check = false;
-        rtos::Delay(5);
+        // Real module instance can be undefined at start for non-initialized enumeration modules
+        if (module_instance == Codes::Instance::Undefined) {
+            Logger::Trace("EEPROM storage contains data for the same instance");
+        } else { // Real instance is different from Undefined
+            Logger::Error("EEPROM does not contain instance enumeration");
+            Logger::Trace("Reseting instance enumeration in EEPROM");
+            std::vector<uint8_t> data = {static_cast<uint8_t>(module_instance)};
+            Write_record(Record_name::Instance_enumeration, data);
+            type_check = false;
+            rtos::Delay(5);
+        }
     }
 
     return type_check;

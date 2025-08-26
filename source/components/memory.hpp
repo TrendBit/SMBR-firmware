@@ -81,7 +81,7 @@ public:
      */
     explicit EEPROM_storage(M24Cxx * const eeprom);
 
-    bool Check_type(Codes::Module module, Codes::Instance instance);
+    bool Check_type(Codes::Module module_type, Codes::Instance module_instance);
 
     /**
      * @brief   Read record of module type from EEPROM
