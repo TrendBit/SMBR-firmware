@@ -128,6 +128,13 @@ public:
      */
     bool Temperature_limited();
 
+    /**
+     * @brief   Calculate temperature of module
+     *
+     * @return float    Temperature of module in Celsius
+     */
+    float Temperature() const;
+
 private:
 
     /**
@@ -137,10 +144,4 @@ private:
      */
     float Power_draw();
 
-    /**
-     * @brief   Calculate temperature of module
-     *
-     * @return float    Temperature of module in Celsius
-     */
-    float Temperature() const;
 };
