@@ -12,6 +12,7 @@ int main(){
     #ifdef CONFIG_LOGGER
         Logger(static_cast<Logger::Level>(CONFIG_LOGGER_LEVEL), Logger::Color_mode::Prefix);
         Logger::Init_UART(uart0, 0, 1, 961200);
+        Logger::Init_USB(1);
         Logger::Print_raw("\r\n");
         Logger::Critical("Device start");
         Logger::Notice("Logger UART Initialized");
