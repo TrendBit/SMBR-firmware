@@ -1,6 +1,7 @@
 #include "base_module.hpp"
 
 #include "threads/common_thread.hpp"
+#include "threads/system_check_thread.hpp" 
 
 Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl):
 Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
@@ -24,6 +25,7 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
     common_thread(new Common_thread(can_thread, memory)),
     common_core(new Common_core(adc_mutex)),
     heartbeat_thread(new Heartbeat_thread(green_led_pin,200)),
+    system_check_thread(nullptr),
     yellow_led(yellow_led),
     version_voltage_channel(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_0, 3.30f))
 {

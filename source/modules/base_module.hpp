@@ -23,6 +23,7 @@
 namespace fra = cpp_freertos;
 
 class Common_thread;
+class System_check_thread;
 
 /**
  * @brief   Base interface class for all modules in device
@@ -87,6 +88,11 @@ protected:
      * @brief   Pointer to heartbeat thread which is responsible for blinking of green LED
      */
     Heartbeat_thread * const heartbeat_thread;
+
+    /**
+     * @brief   Pointer to system chechl thread which is responsible for regular system check
+     */
+    System_check_thread * system_check_thread;
 
     /**
      * @brief  Pointer to yellow LED GPIO pin, this LED is optional

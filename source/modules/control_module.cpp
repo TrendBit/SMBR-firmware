@@ -1,4 +1,5 @@
 #include "control_module.hpp"
+#include "threads/system_check_thread.hpp"
 
 Control_module::Control_module():
     Base_module(
@@ -46,6 +47,7 @@ void Control_module::Setup_LEDs(){
     std::vector<LED_intensity *> led_channels = {led_r, led_g, led_b, led_w};
 
     led_panel = new LED_panel(led_channels, temp_0, 10.0);
+    system_check_thread = new System_check_thread(led_panel);
 }
 
 void Control_module::Setup_heater(){
