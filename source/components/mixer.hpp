@@ -118,7 +118,7 @@ public:
     /**
      * @brief   Get current speed of mixer in RPM, derived from RPM counter
      */
-    virtual float RPM() override;
+    virtual float RPM();
 
     /**
      * @brief   Stop mixer
