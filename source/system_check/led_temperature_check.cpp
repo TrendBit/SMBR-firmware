@@ -21,13 +21,11 @@ void Led_temperature_check::Run_check() {
     if (temp > 70.0f) {
         Logger::Warning("Led_temperature_check: High temperature detected ({:.2f} deg C)", temp);
         App_messages::Module_issues::Module_issue issue(
-            1, //error_type; e.g. 1 = LED_OVERHEAT
-            2, // severity; e.g. 2 = warning, 10 = critical
-            temp // value
+            App_messages::Module_issues::IssueType::HighLedPanelTemperature, 
+            App_messages::Module_issues::Severity::Error, 
+            temp 
         );
 
         Base_module::Instance()->Send_CAN_message(issue); 
-    } else {
-        // Logger::Debug("Led_temperature_check: Temperature OK ({:.2f} deg C)", temp);
-    }
+    } 
 }
