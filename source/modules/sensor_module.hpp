@@ -109,4 +109,9 @@ private:
      * @brief   Setup spectrophotometer for measuring optical density of suspension
      */
     void Setup_spectrophotometer();
+
+    /**
+     * @brief   Initializes system check procedures
+     */
+    void Setup_system_check();
 };

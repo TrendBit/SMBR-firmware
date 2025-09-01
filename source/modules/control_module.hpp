@@ -105,6 +105,11 @@ private:
     void Setup_mixer();
 
     /**
+     * @brief   Initializes system check procedures
+     */
+    void Setup_system_check();
+
+    /**
      * @brief   Retrieves current temperature of board from onboard thermistor
      *
      * @return float    Temperature of board in Celsius
