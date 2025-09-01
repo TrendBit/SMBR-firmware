@@ -38,6 +38,7 @@ Base_module::Base_module(Codes::Module module_type, Codes::Instance instance_typ
     if (yellow_led.has_value()) {
         yellow_led.value()->Set(true);
     }
+    system_check_thread = new System_check_thread(this, nullptr);
 }
 
 Codes::Module Base_module::Module_type() {
