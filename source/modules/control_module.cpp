@@ -1,5 +1,7 @@
 #include "control_module.hpp"
 #include "threads/system_check_thread.hpp"
+#include "system_check/led_temperature_check.hpp"
+#include "system_check/board_temperature_check.hpp"
 
 Control_module::Control_module():
     Base_module(Codes::Module::Control_module, Codes::Instance::Exclusive, 24, 18, 19),
@@ -76,7 +78,10 @@ void Control_module::Setup_mixer(){
 }
 
 void Control_module::Setup_system_check(){
-    system_check_thread->AttachLedPanel(led_panel);
+    if (led_panel) {
+        system_check_thread->AttachCheck(new Led_temperature_check(led_panel));
+    }
+    system_check_thread->AttachCheck(new Board_temperature_check(this));
 }
 
 std::optional<float> Control_module::Board_temperature(){
