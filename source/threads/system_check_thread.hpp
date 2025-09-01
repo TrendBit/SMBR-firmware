@@ -1,5 +1,6 @@
 #pragma once
 
+#include "system_check/ISystemCheck.hpp"
 #include "thread.hpp"
 #include "logger.hpp"
 
@@ -17,23 +18,17 @@ class System_check_thread : public fra::Thread {
 public:
     /**
      * @brief Constructs the system check thread
-     * @param panel Pointer to the LED panel to be monitored
      */
-    System_check_thread(Base_module* module, LED_panel* panel);
+    explicit System_check_thread();
 
-    void AttachLedPanel(LED_panel* panel);
+    void AttachCheck(ISystemCheck* check);
 
 protected:
     /**
      * @brief Main thread execution function
      */
-    virtual void Run() override;
+    void Run() override;
 
 private:
-    /**
-     * @brief Pointer to the temperature check component
-     */
-    Led_temperature_check* led_check;
-
-    Board_temperature_check* board_check;
+    std::vector<ISystemCheck*> checks;
 };

@@ -1,5 +1,6 @@
 #include "sensor_module.hpp"
 #include "threads/system_check_thread.hpp"
+#include "system_check/board_temperature_check.hpp"
 
 Sensor_module::Sensor_module():
     Base_module(
@@ -19,7 +20,7 @@ void Sensor_module::Setup_components(){
     Setup_Mini_OLED();
     Setup_fluorometer();
     Setup_spectrophotometer();
-    //Setup_system_check();
+    Setup_system_check();
 }
 
 std::optional<float> Sensor_module::Board_temperature(){
@@ -68,5 +69,5 @@ void Sensor_module::Setup_spectrophotometer(){
 }
 
 void Sensor_module::Setup_system_check(){
-    system_check_thread = new System_check_thread(this, nullptr);
+    system_check_thread->AttachCheck(new Board_temperature_check(this));
 }
