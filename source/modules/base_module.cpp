@@ -25,7 +25,6 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
     common_thread(new Common_thread(can_thread, memory)),
     common_core(new Common_core(adc_mutex)),
     heartbeat_thread(new Heartbeat_thread(green_led_pin,200)),
-    system_check_thread(nullptr),
     yellow_led(yellow_led),
     version_voltage_channel(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_0, 3.30f))
 {
@@ -38,7 +37,7 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
     if (yellow_led.has_value()) {
         yellow_led.value()->Set(true);
     }
-    system_check_thread = new System_check_thread(this, nullptr);
+    system_check_thread = new System_check_thread();
 }
 
 Codes::Module Base_module::Module_type() {
