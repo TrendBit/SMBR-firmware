@@ -17,6 +17,8 @@ Scripts are using `flashtool.py` adapted from [katapult](https://github.com/Arks
 
 `application_codes.py` - Contains only definitions of constants and classes that are used in other scripts, These constants must be updated to match can_codes, otherwise flash errors may occur.  
 
+`auto_single_flash.sh` - Automatically flashes the firmware via USB. The script sends the device to BOOT mode using the serial interface, waits for the USB drive to appear, copies the specified UF2 file to it, and waits for the device to finish rebooting. It performs a single flash per run. Usage: ./auto_single_flash.sh <binary.uf2>
+
 ### Firmware
 It is an application firmware and bootloader that allows uploading the application firmware via CAN.
 
