@@ -25,9 +25,9 @@ void Board_temperature_check::Run_check() {
     if (value > 60.0f) {  
         Logger::Warning("Board_temperature_check: High temperature detected ({:.2f} deg C)", value);
 
-        App_messages::Module_issues::Module_issue issue(
-            App_messages::Module_issues::IssueType::HighBoardTemperature,
-            App_messages::Module_issues::Severity::Error,
+        App_messages::Module_issue::Module_issue issue(
+            App_messages::Module_issue::IssueType::BoardOverTemp,
+            App_messages::Module_issue::Severity::Error,
             value
         );
 
