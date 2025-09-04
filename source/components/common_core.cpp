@@ -293,3 +293,10 @@ Common_core::hw_version Common_core::Read_hw_info(){
     Logger::Warning("Hardware version not found for voltage: {:05.2f}V", version_voltage);
     return {0, 0}; // Default reserved version if not found
 }
+
+std::optional<float> Common_core::Get_core_load() const {
+    if (mcu_load < 0.0f) { 
+        return std::nullopt; 
+    }
+    return mcu_load; 
+}
