@@ -111,7 +111,7 @@ private:
     void Setup_spectrophotometer();
 
     /**
-     * @brief   Initializes system check procedures
+     * @brief   Initializes module check procedures
      */
-    void Setup_system_check();
+    void Setup_module_check();
 };
