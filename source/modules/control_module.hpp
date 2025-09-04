@@ -105,9 +105,9 @@ private:
     void Setup_mixer();
 
     /**
-     * @brief   Initializes system check procedures
+     * @brief   Initializes module check procedures
      */
-    void Setup_system_check();
+    void Setup_module_check();
 
     /**
      * @brief   Retrieves current temperature of board from onboard thermistor

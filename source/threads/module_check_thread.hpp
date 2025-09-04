@@ -1,6 +1,6 @@
 #pragma once
 
-#include "system_check/ISystemCheck.hpp"
+#include "module_check/IModuleCheck.hpp"
 #include "thread.hpp"
 #include "logger.hpp"
 
@@ -12,16 +12,16 @@ class Base_module;
 namespace fra = cpp_freertos;
 
 /**
- * @brief System check thread for monitoring system
+ * @brief Module check thread for monitoring system
  */
-class System_check_thread : public fra::Thread {
+class Module_check_thread : public fra::Thread {
 public:
     /**
-     * @brief Constructs the system check thread
+     * @brief Constructs the module check thread
      */
-    explicit System_check_thread();
+    explicit Module_check_thread();
 
-    void AttachCheck(ISystemCheck* check);
+    void AttachCheck(IModuleCheck* check);
 
 protected:
     /**
@@ -30,5 +30,5 @@ protected:
     void Run() override;
 
 private:
-    std::vector<ISystemCheck*> checks;
+    std::vector<IModuleCheck*> checks;
 };

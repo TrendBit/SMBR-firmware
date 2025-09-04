@@ -1,6 +1,6 @@
 #pragma once
 
-#include "system_check/ISystemCheck.hpp"
+#include "module_check/IModuleCheck.hpp"
 #include "modules/base_module.hpp"
 
 
@@ -8,7 +8,7 @@
  * @brief Periodically checks the board temperature
  *
  */ 
-class Board_temperature_check : public ISystemCheck {
+class Board_temperature_check : public IModuleCheck {
 public:
 
     /**

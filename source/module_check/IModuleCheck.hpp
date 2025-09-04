@@ -1,16 +1,16 @@
 #pragma once
 
 /**
- * @brief Interface for all system checks
+ * @brief Interface for all module checks
  *
  */
-class ISystemCheck {
+class IModuleCheck {
 
 public:
     /**
      * @brief Virtual destructor for interface
      */
-    virtual ~ISystemCheck() = default;
+    virtual ~IModuleCheck() = default;
 
     /**
      * @brief Run the check logic
