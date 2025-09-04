@@ -306,6 +306,13 @@ public:
      */
     bool HW_version();
 
+    /**
+     * @brief   Get current MCU core temperature
+     *
+     * @return float    Current MCU core temperature in Celsius
+     */
+    std::optional<float> MCU_core_temperature();
+
 private:
 
     /**
@@ -317,12 +324,6 @@ private:
      */
     UID_t UID();
 
-    /**
-     * @brief   Get current MCU core temperature
-     *
-     * @return float    Current MCU core temperature in Celsius
-     */
-    std::optional<float> MCU_core_temperature();
 
     /**
      * @brief   Get current MCU core load
