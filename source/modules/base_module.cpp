@@ -1,7 +1,7 @@
 #include "base_module.hpp"
 
 #include "threads/common_thread.hpp"
-#include "threads/system_check_thread.hpp" 
+#include "threads/module_check_thread.hpp" 
 
 Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl):
 Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
@@ -37,7 +37,7 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
     if (yellow_led.has_value()) {
         yellow_led.value()->Set(true);
     }
-    system_check_thread = new System_check_thread();
+    module_check_thread = new Module_check_thread();
 }
 
 Codes::Module Base_module::Module_type() {

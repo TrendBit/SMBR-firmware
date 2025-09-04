@@ -1,7 +1,7 @@
 #pragma once
 
 #include "logger.hpp"
-#include "system_check/ISystemCheck.hpp"
+#include "module_check/IModuleCheck.hpp"
 #include "components/led_panel.hpp"
 #include "components/component.hpp"
 #include "modules/base_module.hpp"
@@ -10,7 +10,7 @@
  * @brief LED panel temperature check
  *
  */
-class Led_temperature_check : public ISystemCheck{
+class Led_temperature_check : public IModuleCheck{
 public:
     /**
      * @brief Construct a new Led_temperature_check

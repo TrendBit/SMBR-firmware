@@ -1,7 +1,7 @@
 #include "control_module.hpp"
-#include "threads/system_check_thread.hpp"
-#include "system_check/led_temperature_check.hpp"
-#include "system_check/board_temperature_check.hpp"
+#include "threads/module_check_thread.hpp"
+#include "module_check/led_temperature_check.hpp"
+#include "module_check/board_temperature_check.hpp"
 
 Control_module::Control_module():
     Base_module(
@@ -22,7 +22,7 @@ void Control_module::Setup_components(){
     Setup_cuvette_pump();
     Setup_aerator();
     Setup_mixer();
-    Setup_system_check();
+    Setup_module_check();
 }
 
 void Control_module::Setup_LEDs(){
@@ -80,11 +80,11 @@ void Control_module::Setup_mixer(){
     mixer = new Mixer(13, mixer_tacho, 8, 300.0, 6000.0);
 }
 
-void Control_module::Setup_system_check(){
+void Control_module::Setup_module_check(){
     if (led_panel) {
-        system_check_thread->AttachCheck(new Led_temperature_check(led_panel));
+        module_check_thread->AttachCheck(new Led_temperature_check(led_panel));
     }
-    system_check_thread->AttachCheck(new Board_temperature_check(this));
+    module_check_thread->AttachCheck(new Board_temperature_check(this));
 }
 
 std::optional<float> Control_module::Board_temperature(){

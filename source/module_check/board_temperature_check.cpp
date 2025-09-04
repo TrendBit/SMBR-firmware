@@ -1,4 +1,4 @@
-#include "system_check/board_temperature_check.hpp"
+#include "module_check/board_temperature_check.hpp"
 #include "codes/messages/module_issues/module_issue.hpp"
 #include "logger.hpp"
 #include <cmath>

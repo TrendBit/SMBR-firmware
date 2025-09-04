@@ -1,4 +1,4 @@
-#include "system_check/led_temperature_check.hpp"
+#include "module_check/led_temperature_check.hpp"
 #include "codes/messages/module_issues/module_issue.hpp"
 
 Led_temperature_check::Led_temperature_check(LED_panel* panel)
