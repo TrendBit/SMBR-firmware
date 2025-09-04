@@ -313,6 +313,13 @@ public:
      */
     std::optional<float> MCU_core_temperature();
 
+    /**
+     * @brief Returns current core load.
+     *
+     * @return Optional core load (0.0–1.0, or std::nullopt if unavailable.
+     */
+    std::optional<float> Get_core_load() const;
+
 private:
 
     /**
