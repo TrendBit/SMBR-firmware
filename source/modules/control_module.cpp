@@ -3,6 +3,7 @@
 #include "module_check/led_temperature_check.hpp"
 #include "module_check/board_temperature_check.hpp"
 #include "module_check/core_temperature_check.hpp"
+#include "module_check/core_load_check.hpp"
 
 Control_module::Control_module():
     Base_module(
@@ -87,6 +88,7 @@ void Control_module::Setup_module_check(){
     }
     module_check_thread->AttachCheck(new Board_temperature_check(this));
     module_check_thread->AttachCheck(new Core_temperature_check(common_core));
+    module_check_thread->AttachCheck(new Core_load_check(common_core));
 }
 
 std::optional<float> Control_module::Board_temperature(){
