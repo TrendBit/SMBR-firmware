@@ -1,6 +1,7 @@
 #include "sensor_module.hpp"
 #include "threads/module_check_thread.hpp"
 #include "module_check/board_temperature_check.hpp"
+#include "module_check/core_temperature_check.hpp"
 
 Sensor_module::Sensor_module():
     Base_module(Codes::Module::Sensor_module, Codes::Instance::Exclusive, 24, 10, 11, 13),
@@ -67,4 +68,5 @@ void Sensor_module::Setup_spectrophotometer(){
 
 void Sensor_module::Setup_module_check(){
     module_check_thread->AttachCheck(new Board_temperature_check(this));
+    module_check_thread->AttachCheck(new Core_temperature_check(common_core));
 }
