@@ -10,6 +10,7 @@
 #include "module_check/bottle_bottom_sensor_temp_check.hpp"
 #include "module_check/fluorometer_emitor_temp_check.hpp"
 #include "module_check/fluorometer_detector_temp_check.hpp"
+#include "module_check/spectrophotometer_emitor_temp_check.hpp"
 
 Sensor_module::Sensor_module():
     Base_module(
@@ -91,5 +92,8 @@ void Sensor_module::Setup_module_check(){
     if (fluorometer) {
         module_check_thread->AttachCheck(new Fluorometer_emitor_temp_check(fluorometer));
         module_check_thread->AttachCheck(new Fluorometer_detector_temp_check(fluorometer));
+    }
+    if (spectrophotometer) {
+        module_check_thread->AttachCheck(new Spectrophotometer_emitor_temp_check(spectrophotometer));
     }
 }
