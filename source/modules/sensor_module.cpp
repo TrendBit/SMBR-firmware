@@ -7,6 +7,7 @@
 #include "module_check/bottle_top_measured_temp_check.hpp"
 #include "module_check/bottle_bottom_measured_temp_check.hpp"
 #include "module_check/bottle_top_sensor_temp_check.hpp"
+#include "module_check/bottle_bottom_sensor_temp_check.hpp"
 
 Sensor_module::Sensor_module():
     Base_module(Codes::Module::Sensor_module, Codes::Instance::Exclusive, 24, 10, 11, 13),
@@ -80,5 +81,6 @@ void Sensor_module::Setup_module_check(){
         module_check_thread->AttachCheck(new Bottle_top_measured_temp_check(bottle_temperature));
         module_check_thread->AttachCheck(new Bottle_bottom_measured_temp_check(bottle_temperature));
         module_check_thread->AttachCheck(new Bottle_top_sensor_temp_check(bottle_temperature));
+        module_check_thread->AttachCheck(new Bottle_bottom_sensor_temp_check(bottle_temperature));
     }
 }
