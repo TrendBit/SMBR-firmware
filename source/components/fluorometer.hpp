@@ -254,6 +254,20 @@ public:
      */
     virtual bool Receive(Application_message message) override final;
 
+    /**
+     * @brief   Get temperature of emitor LED
+     *
+     * @return float    Temperature of emitor LED in °C
+     */
+    std::optional<float> Emitor_temperature();
+
+    /**
+     * @brief   Get temperature of detector (IR PIN photodiode)
+     *
+     * @return float    Temperature of detector in °C
+     */
+    float Detector_temperature();
+
 private:
 
     /**
@@ -301,20 +315,6 @@ private:
      * @return float    Intensity of LED in range 0-1.0f
      */
     float Emitor_intensity();
-
-    /**
-     * @brief   Get temperature of emitor LED
-     *
-     * @return float    Temperature of emitor LED in °C
-     */
-    std::optional<float> Emitor_temperature();
-
-    /**
-     * @brief   Get temperature of detector (IR PIN photodiode)
-     *
-     * @return float    Temperature of detector in °C
-     */
-    float Detector_temperature();
 
     /**
      * @brief Measure noise on detector output
