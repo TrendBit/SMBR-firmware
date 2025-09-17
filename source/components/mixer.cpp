@@ -29,8 +29,6 @@ Mixer::Mixer(uint8_t pwm_pin, RPM_counter* tacho, float frequency, float min_rpm
 }
 
 void Mixer::Regulation_loop(){
-    Logger::Trace("Mixer regulation loop");
-
     float real_rpm = Fan_RPM::RPM();
 
     current_rpm = rpm_filter->Smooth(real_rpm);
