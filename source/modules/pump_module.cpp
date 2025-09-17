@@ -1,7 +1,7 @@
 #include "pump_module.hpp"
 
 Pump_module::Pump_module():
-    Base_module(Codes::Module::Pump_module, new Enumerator(Codes::Instance::Undefined, 22, 23), 24, 18, 19),
+    Base_module(Codes::Module::Pump_module, new Enumerator(Codes::Module::Pump_module,Codes::Instance::Undefined, 22, 23), 24, 18, 19),
     board_thermistor(new Thermistor(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_1, 3.30f), 3950, 10000, 25, 5100))
 {
     Setup_components();

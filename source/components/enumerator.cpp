@@ -1,8 +1,10 @@
 #include "enumerator.hpp"
 
-Enumerator::Enumerator(Codes::Instance instance_type) :
+Enumerator::Enumerator(Codes::Module module_type, Codes::Instance instance_type) :
     Component(Codes::Component::Enumerator),
-    current_instance(instance_type)
+    Message_receiver(Codes::Component::Enumerator),
+    current_instance(instance_type),
+    module_type(module_type)
 {
     if (instance_type == Codes::Instance::Exclusive) {
         Logger::Notice("Enumerator initialized as Exclusive instance");
@@ -14,8 +16,8 @@ Enumerator::Enumerator(Codes::Instance instance_type) :
     // @todo Load instance from memory if available, need support in memory component first
 }
 
-Enumerator::Enumerator(Codes::Instance instance_type, uint button_pin, uint rgb_led_pin) :
-    Enumerator(instance_type)
+Enumerator::Enumerator(Codes::Module module_type, Codes::Instance instance_type, uint button_pin, uint rgb_led_pin) :
+    Enumerator(module_type,instance_type)
 {
     // @todo Implement button and RGB LED support
     enumeration_led = new Addressable_LED(rgb_led_pin, PIO_machine(pio0, 0), 1);
@@ -64,4 +66,11 @@ void Enumerator::Set_RGB_LED_color(uint8_t red, uint8_t green, uint8_t blue) con
 void Enumerator::Enumeration_button_pressed(){
     Logger::Trace("Enumeration button pressed");
     Set_RGB_LED_color(0xff, 0x00, 0x00);
+}
+bool Enumerator::Receive(CAN::Message message){
+    UNUSED(message);
+    return true;
+}
+bool Enumerator::Receive(Application_message message){
+    return true;
 }
