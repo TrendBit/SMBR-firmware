@@ -39,9 +39,7 @@ protected:
     /**
      * @brief Pointer to this class used for singleton pattern accessing of module type and instance enumeration
      */
-    static inline Base_module * instance;
-
-    Enumerator * const enumerator;
+    static inline Base_module * singleton_instance;
 
     /**
      * @brief Type of module, initialized by derived class calling constructor of this class with its type
@@ -49,9 +47,9 @@ protected:
     const Codes::Module module_type = Codes::Module::Any;
 
     /**
-     * @brief Instance enumeration of module, initialized by derived class calling constructor of this class with its type
+     * @brief Components responsible for Instance identification and enumeration
      */
-    Codes::Instance instance_enumeration = Codes::Instance::Undefined;
+    Enumerator * const enumerator;
 
     /**
      * @brief  Main I2C bus of system connected to sensors and detectors
@@ -181,6 +179,6 @@ public:
     /**
      * @brief Get pointer to this class instance using "singleton" pattern
      */
-    static Base_module * Instance();
+    static Base_module * Singleton_instance();
 
 };

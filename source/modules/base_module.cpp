@@ -27,8 +27,7 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
     yellow_led(yellow_led),
     version_voltage_channel(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_0, 3.30f))
 {
-    this->instance = this;
-    this->instance_enumeration = Codes::Instance::Undefined;
+    this->singleton_instance = this;
 
     #ifdef CONFIG_TEST_THREAD
         new Test_thread();
@@ -40,36 +39,36 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
 }
 
 Codes::Module Base_module::Module_type() {
-    if (Instance()) {
-        return Instance()->module_type;
+    if (Singleton_instance()) {
+        return Singleton_instance()->module_type;
     } else {
         return Codes::Module::Undefined;
     }
 }
 
 Codes::Instance Base_module::Instance_enumeration() {
-    if (Instance()) {
-        return Instance()->instance_enumeration;
+    if (Singleton_instance()) {
+        return Singleton_instance()->enumerator->Instance();
     } else {
         return Codes::Instance::Undefined;
     }
 }
 
-Base_module * Base_module::Instance(){
-    return instance;
+Base_module * Base_module::Singleton_instance(){
+    return singleton_instance;
 }
 
 uint Base_module::Send_CAN_message(App_messages::Base_message &message) {
-    if (Instance()) {
-        return Instance()->can_thread->Send((message));
+    if (Singleton_instance()) {
+        return Singleton_instance()->can_thread->Send((message));
     } else {
         return 0;
     }
 }
 
 uint Base_module::Send_CAN_message(CAN::Message const &message) {
-    if (Instance()) {
-        return Instance()->can_thread->Send((message));
+    if (Singleton_instance()) {
+        return Singleton_instance()->can_thread->Send((message));
     } else {
         return 0;
     }
