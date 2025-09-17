@@ -203,8 +203,8 @@ bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_inten
 
     pwm_config pwm_cfg = pwm_get_default_config();
     pwm_set_counter(sampler_trigger_slice, 0);
-    // Increment timer every 1ms
-    pwm_config_set_clkdiv(&pwm_cfg, 125.0);
+    // Increment timer every 1us
+    pwm_config_set_clkdiv(&pwm_cfg, clock_get_hz(clk_sys) / 10000000.0f);
     pwm_init(sampler_trigger_slice, &pwm_cfg, false);
     pwm_set_wrap(sampler_trigger_slice, capture_timing[0]);
 
