@@ -6,5 +6,6 @@ source/config.hpp
 .vscode/
 binaries/
 out/
-smpbr_firmware_v*.zip
+smpbr_firmware_*.zip
 .clangd
+config/.config.backup

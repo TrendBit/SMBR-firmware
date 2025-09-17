@@ -1,6 +1,21 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# (0.9) WIP (system_check)
+- Update mixer fan handling at low speeds
+  - Precision of RPM tracking is lower
+  - Noise created by mixing fan is now removed
+- Add version readout messages
+  - Firmware and hardware version can be determined by CAN message
+  - Also firmware commit hash, dirty flag and hardware revision is available
+- Add message to read info about mixer, aerator and cuvette pump
+  - Info contaning minimal and maximal supported speeds of specific motor/pump
+- Update pico-sdk to version 2.2.0
+  - MCU frequency is increased to 200 Mhz
+- Verify correctness of UID before executing reboot or bootloader entry (can or USB)
+  - There is secret key which can be used for any module
+- Add Qlibs-cpp library for filter and regulators
+
 # 0.8 (measurement_regulation)
 - Add parallel processing for non-dependant messages
   - Higher bandwidth for of quick messages
