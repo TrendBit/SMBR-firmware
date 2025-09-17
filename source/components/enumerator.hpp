@@ -9,11 +9,18 @@
 
 #define UNUSED(x) (void)(x)
 
-#include "codes/codes.hpp"
+#include "can_bus/message_router.hpp"
+#include "can_bus/message_receiver.hpp"
 #include "components/component.hpp"
 #include "components/led/addressable_LED.hpp"
 #include "hal/gpio/gpio_irq.hpp"
 #include "logger.hpp"
+#include "rtos/repeated_execution.hpp"
+#include "rtos/delayed_execution.hpp"
+
+#include "codes/codes.hpp"
+#include "codes/messages/common/enumerator_collision.hpp"
+#include "codes/messages/common/enumerator_reserve.hpp"
 
 /**
  * @brief Component used for enumeration of modules and their instances in system
@@ -25,13 +32,18 @@
  *                  White - Undefined instance
  *                  Red   - Enumeration issue
  */
-class Enumerator: public Component {
+class Enumerator: public Component, public Message_receiver {
 private:
     /**
      * @brief   Instance enumeration of module, initialized by derived class calling constructor
      *          Can be changed by enumeration process if initalized as undefined
      */
     Codes::Instance current_instance;
+
+    /**
+     * @brief   Type of the module.
+     */
+    Codes::Module module_type;
 
     /**
      * @brief   Delay (ms) after enumeration process determines there are no conflicts and instance can be confirmed
@@ -134,4 +146,28 @@ private:
      *          Should lead to increment of instance and new enumeration validation
      */
     void Enumeration_button_pressed();
+protected:
+
+    /**
+     * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)
+     *          This method is invoked by Message_router when message is determined for this component
+     *
+     * @todo    Implement all admin messages (enumeration, reset, bootloader)
+     *
+     * @param message   Received message
+     * @return true     Message was processed by this component
+     * @return false    Message cannot be processed by this component
+     */
+    virtual bool Receive(CAN::Message message) override final;
+
+    /**
+     * @brief   Receive message implementation from Message_receiver interface for Application messages (extended frame)
+     *          This method is invoked by Message_router when message is determined for this component
+     *
+     * @param message   Received message
+     * @return true     Message was processed by this component
+     * @return false    Message cannot be processed by this component
+     */
+    virtual bool Receive(Application_message message) override final;
+
 };

@@ -23,6 +23,7 @@
 namespace fra = cpp_freertos;
 
 class Common_thread;
+class Enumerator;
 
 /**
  * @brief   Base interface class for all modules in device
