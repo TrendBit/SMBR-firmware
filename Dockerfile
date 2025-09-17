@@ -54,14 +54,14 @@ EXPOSE 3333
 ARG SDK_PATH=/usr/share/pico_sdk
 ENV PICO_SDK_PATH=$SDK_PATH
 
-RUN git clone --recursive --branch 2.1.1 https://github.com/raspberrypi/pico-sdk $SDK_PATH && \
+RUN git clone --recursive --branch 2.2.0 https://github.com/raspberrypi/pico-sdk $SDK_PATH && \
     cd $SDK_PATH && \
     git submodule update --init
 
 ENV UDEV=1
 
 # Picotool installation
-RUN git clone --depth 1 --branch 2.1.0 https://github.com/raspberrypi/picotool.git /home/user && \
+RUN git clone --depth 1 --branch 2.2.0 https://github.com/raspberrypi/picotool.git /home/user && \
     cd /home/user && \
     mkdir build && \
     cd build && \
