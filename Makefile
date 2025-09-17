@@ -42,13 +42,13 @@ docker-clean: docker-stop
 	docker rm $(IMAGE_NAME) 2> /dev/null > /dev/null || true
 
 docker-openocd:
-	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"bindto 0.0.0.0\" -c \"reset_config srst_only\""
+	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 25000\" -c \"bindto 0.0.0.0\" -c \"reset_config srst_only\""
 
 docker-gdb:
 	$(ROOT_RUN) "gdb-multiarch -ex \"target extended-remote :3333\""
 
 docker-debug:
-	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"bindto 0.0.0.0\" -c \"reset_config srst_only\" & gdb-multiarch -ex \"target extended-remote :3333\""
+	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 25000\" -c \"bindto 0.0.0.0\" -c \"reset_config srst_only\" & gdb-multiarch -ex \"target extended-remote :3333\""
 
 firmware: $(BUILD_DIR)
 	$(USER_RUN) "cd $(BUILD_DIR) && cmake .. -DCMAKE_BUILD_TYPE=Debug -DCMAKE_EXPORT_COMPILE_COMMANDS=1 && make -j$(nproc)"
