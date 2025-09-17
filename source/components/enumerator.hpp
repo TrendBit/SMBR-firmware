@@ -60,6 +60,74 @@ private:
      */
     GPIO_IRQ * enumeration_button = nullptr;
 
+    /**
+     * @brief   Enum representing all of the possible enumeration states
+     */
+    enum class State{
+        selecting,
+        reserving,
+        in_collision,
+        registered,
+        exclusive
+    };
+
+    /**
+     * @brief   Sets color for the different Enumerations of instance.
+     */
+    uint8_t colors[17][4]  = {
+        { 0xff ,0x00, 0x00 }, // Undefined  
+        { 0xff ,0xff, 0xff }, // Exclusive  
+        { 0x00 ,0x00, 0x00 }, // All        
+        { 0xff ,0x00, 0xff }, // Reserved   
+        { 0xff, 0x75, 0x00 }, // Instance_1 
+        { 0xff, 0xeb, 0x00 }, // Instance_2 
+        { 0x9c, 0xff, 0x00 }, // Instance_3 
+        { 0x27, 0xff, 0x00 }, // Instance_4 
+        { 0x00, 0xff, 0x4e }, // Instance_5 
+        { 0x00, 0xff, 0xc4 }, // Instance_6 
+        { 0x00, 0xc4, 0xff }, // Instance_7 
+        { 0x00, 0x4e, 0xff }, // Instance_8 
+        { 0x27, 0x00, 0xff }, // Instance_9 
+        { 0x9c, 0x00, 0xff }, // Instance_10
+        { 0xff, 0x00, 0xeb }, // Instance_11
+        { 0xff, 0x00, 0x75 }, // Instance_12
+    };
+    
+    /**
+     * @brief   Enum containing the current enumeration state
+     */
+    State current_state = State::exclusive;
+
+    /**
+     * @brief   Current blinking state, true is LED on.
+     */
+    bool current_blinking_state = true;
+
+    /**
+     * @brief   On every other update of blinking_loop, turn the LED off.
+     */
+    bool do_blinking = true;
+
+    /**
+     * @brief   Holds the currently wanted_instance to be used in Change_to_instance process.
+     */
+    Codes::Instance wanted_instance = Codes::Instance::Undefined;
+
+    /**
+     * @brief   Repeatedly updates then LED color.
+     */
+    rtos::Repeated_execution *blinking_loop;
+
+    /**
+     * @brief   Starts the enumeration process for wanted_instance after a given delay.
+     */
+    rtos::Delayed_execution *instance_select_delay;
+
+    /**
+     * @brief   Registers the wanted_instance after a given delay.
+     */
+    rtos::Delayed_execution *finish_enumeration_delay;
+
 public:
     /**
      * @brief   Construct a new Enumerator component with defined enumeration
@@ -67,7 +135,7 @@ public:
      *
      * @param instance_type Instance enumeration of module
      */
-    Enumerator(Codes::Instance instance_type = Codes::Instance::Undefined);
+    Enumerator(Codes::Module module_type ,Codes::Instance instance_type = Codes::Instance::Undefined);
 
     /**
      * @brief   Construct a new Enumerator component with button and RGB LED indication
@@ -78,7 +146,7 @@ public:
      * @param button_pin        GPIO pin number of button used to trigger enumeration process
      * @param rgb_led_pin       GPIO pin number of RGB LED used to indicate current instance by color
      */
-    Enumerator(Codes::Instance instance_type, uint button_pin, uint rgb_led_pin);
+    Enumerator(Codes::Module module_type ,Codes::Instance instance_type, uint button_pin, uint rgb_led_pin);
 
     /**
      * @brief  Get current instance enumeration of module
@@ -136,16 +204,39 @@ private:
     void Set_RGB_LED_color(uint8_t red, uint8_t green, uint8_t blue) const;
 
     /**
-     * @brief   Process which will check usage of initial address and confirm it / select new / set error state
-     * @todo    Enumeration process needs to be specified, this is only a placeholder
+     * @brief   Start the reservation process for the wanted_instance instance.
+     * 
+     * @return true     Instance is being reserved
+     * @return false    The reservation process is allready started and cannot be interupted. 
      */
-    void Enumerate();
+    bool Enumerate(Codes::Instance requested_instance);
+
+    /**
+     * @brief   Register the wanted_instance as current and save it to the EEPROM memory.
+     */
+    void Finish_enumerate();
+
+    /**
+     * @brief   Abort the finish_enumeration_delay and set the current_instance to Undefined.
+     */
+    void Resolve_collision();
+
+    /**
+     * @brief   Send a collision message with the given instance.
+     */
+    void Send_collision_message(Codes::Instance collided_instance);
 
     /**
      * @brief   Method called when enumeration button is pressed by user
-     *          Should lead to increment of instance and new enumeration validation
+     *          Increments the current wanted_instance and start the Change_to_instance process.
+     * @note    Won't do anything is the enumeration process is currently working.
      */
     void Enumeration_button_pressed();
+
+    /**
+     * @brief   Start the Change_to_instance process whitcj
+     */
+    void Change_to_instance(Codes::Instance new_instance);
 protected:
 
     /**
