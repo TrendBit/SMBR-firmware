@@ -33,14 +33,16 @@ bool EEPROM_storage::Check_type(Codes::Module module_type, Codes::Instance modul
     bool type_check = true;
 
     // Check if module is in program is same as in EEPROM
-    Codes::Module current_module = Module();
-    if(current_module != Codes::Module::Undefined) {
+    Codes::Module memory_module = Module();
+    if(memory_module != Codes::Module::Undefined) {
         Logger::Trace("EEPROM storage already contains module");
-        if(current_module != module_type) {
-            Logger::Error("EEPROM storage contains data for another module");
+        if(memory_module != module_type) {
+            Logger::Error("EEPROM storage contains signature of another module type: memory {}, module {}",
+                          Codes::to_string(memory_module), Codes::to_string(module_type));
+
             type_check = false;
         } else {
-            Logger::Trace("EEPROM storage contains data for the same module");
+            Logger::Trace("EEPROM storage contains signature of the same module");
         }
     } else {
         Logger::Error("EEPROM does not contain module type");
@@ -52,14 +54,15 @@ bool EEPROM_storage::Check_type(Codes::Module module_type, Codes::Instance modul
     }
 
     // Check if instance is in program is same as in EEPROM
-    Codes::Instance current_instance = Instance();
-    if(current_instance != Codes::Instance::Undefined) {
+    Codes::Instance memory_instance = Instance();
+    if(memory_instance != Codes::Instance::Undefined) {
         Logger::Trace("EEPROM storage already contains instance");
-        if(current_instance != module_instance) {
-            Logger::Error("EEPROM storage contains data for another instance");
+        if(memory_instance != module_instance) {
+            Logger::Error("EEPROM storage contains signature of another instance type: memory {}, module {}",
+                          Codes::to_string(memory_instance), Codes::to_string(module_instance));
             type_check = false;
         } else {
-            Logger::Trace("EEPROM storage contains data for the same instance");
+            Logger::Trace("EEPROM storage contains signature of the same instance");
         }
     } else {
         // Real module instance can be undefined at start for non-initialized enumeration modules
