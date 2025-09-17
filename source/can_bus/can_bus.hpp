@@ -56,11 +56,6 @@ private:
     uint pio_number;
 
     /**
-     * @brief Frequency of system clock in Hz
-     */
-    uint32_t sys_clock;
-
-    /**
      * @brief Internal can2040 handler structure, passed into library functions
      */
     struct can2040 handler;
@@ -169,13 +164,10 @@ public:
 private:
     /**
      * @brief   Enable IRQ for PIO unit used by this CAN bus peripheral
-     *
-     * @tparam T_id Pico-lib internal IRQ channel number, must be unique for each IRQ
      */
-    template <size_t T_id>
     void Enable_IRQ(){
         // Register IRQ handler via IRQ_handler generated function
-        auto handler = Register_IRQ<T_id>(this, &Bus::Handle_PIO_IRQ);
+        auto handler = Register_IRQ(this, &Bus::Handle_PIO_IRQ);
 
         uint pio_irq = pio_number ? PIO1_IRQ_0 : PIO0_IRQ_0;
 

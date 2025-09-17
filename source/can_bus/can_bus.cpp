@@ -4,8 +4,7 @@
 #include <algorithm>
 
 CAN::Bus::Bus(unsigned int gpio_rx, unsigned int gpio_tx, unsigned int bitrate, uint pio_num) :
-    pio_number(pio_num),
-    sys_clock(125000000){
+    pio_number(pio_num){
     uint32_t sys_clock = clock_get_hz(clk_sys);
 
     can2040_setup(&handler, pio_number);
@@ -16,7 +15,7 @@ CAN::Bus::Bus(unsigned int gpio_rx, unsigned int gpio_tx, unsigned int bitrate, 
 
     can2040_callback_config(&handler, &Bus::Callback_handler);
 
-    Enable_IRQ<5>();
+    Enable_IRQ();
     can2040_start(&handler, sys_clock, bitrate, gpio_rx, gpio_tx);
 }
 
