@@ -100,16 +100,16 @@ bool Common_core::Core_temperature(){
 }
 
 bool Common_core::Board_temperature(){
-    auto module_instance = Base_module::Instance();
-    if(not module_instance){
+    auto base_module = Base_module::Singleton_instance();
+    if(not base_module){
         return false;
     }
 
-    auto temp = module_instance->Board_temperature();
+    auto temp = base_module->Board_temperature();
     if (not temp.has_value()) {
         Logger::Warning("Board temperature not available");
-        auto lambda = [this, module_instance]()-> bool {
-            auto temp = module_instance->Board_temperature();
+        auto lambda = [this, base_module]()-> bool {
+            auto temp = base_module->Board_temperature();
             if (temp.has_value()){
                 Logger::Notice("Board until temperature available");
                 Logger::Debug("Board temperature: {:05.2f}˚C", temp.value());
@@ -280,7 +280,7 @@ void Common_core::Sample_core_load(){
 }
 
 Common_core::hw_version Common_core::Read_hw_info(){
-    auto version_voltage = Base_module::Instance()->Version_voltage().value_or(0.0f);
+    auto version_voltage = Base_module::Singleton_instance()->Version_voltage().value_or(0.0f);
 
     float voltage_margin = 0.05f; // Margin for voltage reading
 
