@@ -107,7 +107,7 @@ void Enumerator::Show_instance_color() const{
 void Enumerator::Set_RGB_LED_color(uint8_t red, uint8_t green, uint8_t blue) const
 {
     if (enumeration_led != nullptr) {
-        enumeration_led->Set_all(red/10, green/10, blue/10);
+        enumeration_led->Set_all(red/5, green/5, blue/5);
     }
 }
 
