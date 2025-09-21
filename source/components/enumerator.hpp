@@ -51,6 +51,12 @@ private:
     uint32_t enumeration_delay_ms = 2000;
 
     /**
+     * @brief   Delay (ms) after select mode ends and tries to reserve the selected instance
+     */
+    uint32_t instance_selection_delay_ms = 2000;
+
+
+    /**
      * @brief   Pointer to RGB LED used for instance indication and enumeration process
      */
     Addressable_LED * enumeration_led = nullptr;

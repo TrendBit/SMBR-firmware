@@ -21,16 +21,17 @@ Enumerator::Enumerator(Codes::Module module_type, Codes::Instance instance_type)
         auto instance_select_lambda = [this](){
             this->Enumerate(this->wanted_instance);
         };
-        instance_select_delay = new rtos::Delayed_execution(instance_select_lambda, 2000, false);
+        instance_select_delay = new rtos::Delayed_execution(instance_select_lambda, 1, false);
 
         auto finish_enumeration_lambda = [this](){
             this->Finish_enumerate();
         };
         finish_enumeration_delay = new rtos::Delayed_execution(finish_enumeration_lambda, enumeration_delay_ms, false);
 
-        // @todo fix race condition, Change_to_instance has a delay, Enumerate tries to enumerate instantly but CAN thread is not ready in that stage
-        Change_to_instance(Load_instance_from_memory());
-          
+        // starts the instance_select_lambda after scheduler starts (CAN_thread is ready to send messages)
+        wanted_instance =  Load_instance_from_memory();
+        instance_select_delay->Execute(1);
+        
     } else {
         Logger::Notice("Enumerator initialized as Instance {}", magic_enum::enum_name(instance_type));
 
@@ -125,7 +126,7 @@ void Enumerator::Change_to_instance(Codes::Instance new_instance){
     Show_instance_color();
 
     blinking_loop->Enable();
-    instance_select_delay->Execute();
+    instance_select_delay->Execute(instance_selection_delay_ms);
 }
 
 
