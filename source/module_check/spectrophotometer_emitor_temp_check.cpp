@@ -26,6 +26,6 @@ void Spectrophotometer_emitor_temp_check::Run_check() {
             temp
         );
 
-        Base_module::Instance()->Send_CAN_message(issue);
+        Base_module::Singleton_instance()->Send_CAN_message(issue);
     }
 }
