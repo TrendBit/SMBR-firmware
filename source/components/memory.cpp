@@ -54,12 +54,12 @@ bool EEPROM_storage::Check_type(Codes::Module module_type, Codes::Instance modul
     }
 
     // Check if instance is in program is same as in EEPROM
-    Codes::Instance memory_instance = Instance();
-    if(memory_instance != Codes::Instance::Undefined) {
+    std::optional<Codes::Instance> memory_instance = Instance();
+    if(memory_instance != Codes::Instance::Undefined && memory_instance.has_value()) {
         Logger::Trace("EEPROM storage already contains instance");
         if(memory_instance != module_instance) {
             Logger::Error("EEPROM storage contains signature of another instance type: memory {}, module {}",
-                          Codes::to_string(memory_instance), Codes::to_string(module_instance));
+                          Codes::to_string(memory_instance.value()), Codes::to_string(module_instance));
             type_check = false;
         } else {
             Logger::Trace("EEPROM storage contains signature of the same instance");
@@ -258,6 +258,8 @@ bool EEPROM_storage::Write_spectrophotometer_calibration(std::array<float, 6> &c
     return Write_record(Record_name::SPM_nominal_calibration, data);
 }
 
+
+
 Codes::Module EEPROM_storage::Module(){
     auto record = Read_record(Record_name::Module_type);
     if (record.has_value()) {
@@ -271,16 +273,16 @@ Codes::Module EEPROM_storage::Module(){
     }
 }
 
-Codes::Instance EEPROM_storage::Instance(){
+std::optional<Codes::Instance>  EEPROM_storage::Instance(){
     auto record = Read_record(Record_name::Instance_enumeration);
     if (record.has_value()) {
         if (record->data()[0] == 0xFF) {
-            return Codes::Instance::Undefined;
+            return std::nullopt;
         } else {
             return static_cast<Codes::Instance>(record->data()[0] & 0x0f);
         }
     } else {
-        return Codes::Instance::Undefined;
+        return std::nullopt;
     }
 }
 

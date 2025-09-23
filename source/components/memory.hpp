@@ -93,7 +93,7 @@ public:
     /**
      * @brief   Read record of instance enumeration from EEPROM
      *
-     * @return Codes::Instance      Instance enumeration of module which is saved in EEPROM
+     * @return std::optional<Codes::Instance>  Instance enumeration of module which is saved in EEPROM
      */
     std::optional<Codes::Instance> Instance();
 
