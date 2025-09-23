@@ -1,31 +1,20 @@
 #pragma once
-
-#include "logger.hpp"
-#include "module_check/IModuleCheck.hpp"
+#include "module_check/limit_check.hpp"
 #include "components/led_panel.hpp"
-#include "components/component.hpp"
 #include "modules/base_module.hpp"
 
-/**
- * @brief LED panel temperature check
- *
- */
-class Led_temperature_check : public IModuleCheck{
+class Led_temperature_check : public Limit_check<LED_panel> {
 public:
-    /**
-     * @brief Construct a new Led_temperature_check
-     *
-     */ 
-    explicit Led_temperature_check(LED_panel* panel);
-
-    /**
-     * @brief Performs the check
-     */
-    void Run_check() override;
-
-private:
-    LED_panel * panel;
+    explicit Led_temperature_check(LED_panel* panel)
+        : Limit_check<LED_panel>(
+            panel,
+            [](LED_panel* p){ return std::optional<float>(p->Temperature()); },
+            70.0f,
+            App_messages::Module_issue::IssueType::LEDPanelOverTemp,
+            "Led_temperature_check",
+            [panel](const App_messages::Module_issue::Module_issue& issue) {
+                auto copy = issue;
+                panel->Send_CAN_message(copy);
+            })
+    {}
 };
-
-
-
