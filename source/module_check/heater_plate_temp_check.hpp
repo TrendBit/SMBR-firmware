@@ -1,27 +1,19 @@
 #pragma once
-
-#include "logger.hpp"
-#include "module_check/IModuleCheck.hpp"
+#include "module_check/limit_check.hpp"
 #include "components/heater.hpp"
-#include "components/component.hpp"
-#include "modules/base_module.hpp"
 
-/**
- * @brief Heater plate temperature check
- */
-class Heater_plate_temp_check : public IModuleCheck {
+class Heater_plate_temp_check : public Limit_check<Heater> {
 public:
-    /**
-     * @brief Construct a new Heater_plate_temp_check
-     *
-     */
-    explicit Heater_plate_temp_check(Heater* heater);
-
-    /**
-     * @brief Performs the check
-     */
-    void Run_check() override;
-
-private:
-    Heater* heater;
+    explicit Heater_plate_temp_check(Heater* heater)
+        : Limit_check<Heater>(
+            heater,
+            [](Heater* h){ return std::optional<float>(h->Temperature()); },
+            80.0f,
+            App_messages::Module_issue::IssueType::HeaterOverTemp,
+            "Heater_plate_temp_check",
+            [heater](const App_messages::Module_issue::Module_issue& issue) {
+                auto copy = issue;
+                heater->Send_CAN_message(copy);
+            })
+    {}
 };
