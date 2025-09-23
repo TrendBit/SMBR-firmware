@@ -58,9 +58,15 @@ bool EEPROM_storage::Check_type(Codes::Module module_type, Codes::Instance modul
     if(memory_instance != Codes::Instance::Undefined && memory_instance.has_value()) {
         Logger::Trace("EEPROM storage already contains instance");
         if(memory_instance != module_instance) {
-            Logger::Error("EEPROM storage contains signature of another instance type: memory {}, module {}",
-                          Codes::to_string(memory_instance.value()), Codes::to_string(module_instance));
-            type_check = false;
+            // Check if this isn't a module with multiple instances
+            if(module_instance == Codes::Instance::Undefined && memory_instance >= Codes::Instance::Instance_1){
+                Logger::Notice("EEPROM storage contains signature of a non-exclusive instance: memory {}, module {}",
+                               Codes::to_string(memory_instance.value()), Codes::to_string(module_instance));
+            }else{
+                Logger::Error("EEPROM storage contains signature of another instance type: memory {}, module {}",
+                              Codes::to_string(memory_instance.value()), Codes::to_string(module_instance));
+                type_check = false;
+            }
         } else {
             Logger::Trace("EEPROM storage contains signature of the same instance");
         }
