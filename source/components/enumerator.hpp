@@ -41,6 +41,11 @@ private:
     Codes::Instance current_instance;
 
     /**
+     * @brief   Persistent memory for instance enumeration data
+     */
+    EEPROM_storage * const memory;
+
+    /**
      * @brief   Type of the module.
      */
     Codes::Module module_type;
@@ -141,7 +146,7 @@ public:
      *
      * @param instance_type Instance enumeration of module
      */
-    Enumerator(Codes::Module module_type ,Codes::Instance instance_type = Codes::Instance::Undefined);
+    Enumerator(Codes::Module module_type ,EEPROM_storage * memory ,Codes::Instance instance_type = Codes::Instance::Undefined);
 
     /**
      * @brief   Construct a new Enumerator component with button and RGB LED indication
@@ -152,7 +157,7 @@ public:
      * @param button_pin        GPIO pin number of button used to trigger enumeration process
      * @param rgb_led_pin       GPIO pin number of RGB LED used to indicate current instance by color
      */
-    Enumerator(Codes::Module module_type ,Codes::Instance instance_type, uint button_pin, uint rgb_led_pin);
+    Enumerator(Codes::Module module_type ,EEPROM_storage * memory ,Codes::Instance instance_type, uint button_pin, uint rgb_led_pin);
 
     /**
      * @brief  Get current instance enumeration of module
@@ -211,7 +216,9 @@ private:
 
     /**
      * @brief   Start the reservation process for the wanted_instance instance.
+     *          Loads instance from memory if requested_instance = Undefined
      * 
+     * @param requested_instance Which instance will try to be reserved by the module.
      * @return true     Instance is being reserved
      * @return false    The reservation process is allready started and cannot be interupted. 
      */
