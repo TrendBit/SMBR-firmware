@@ -3,7 +3,7 @@
 Sensor_module::Sensor_module():
     Base_module(
         Codes::Module::Sensor_module,
-        new Enumerator(Codes::Module::Sensor_module,Codes::Instance::Exclusive),
+        new Enumerator(Codes::Module::Sensor_module,memory,Codes::Instance::Exclusive),
         24, 10, 11, 13),
     ntc_channel_selector(new GPIO(18, GPIO::Direction::Out)),
     ntc_thermistors(new Thermistor(new ADC_channel(ADC_channel::RP2040_ADC_channel::CH_3, 3.30f), 3950, 10000, 25, 5100)),

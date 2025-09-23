@@ -1,10 +1,11 @@
 #include "enumerator.hpp"
 
-Enumerator::Enumerator(Codes::Module module_type, Codes::Instance instance_type) :
+Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes::Instance instance_type) :
     Component(Codes::Component::Enumerator),
     Message_receiver(Codes::Component::Enumerator),
     current_instance(instance_type),
-    module_type(module_type)
+    module_type(module_type),
+    memory(memory)
 {
     if (instance_type == Codes::Instance::Exclusive) {
         Logger::Notice("Enumerator initialized as Exclusive instance");
@@ -29,7 +30,6 @@ Enumerator::Enumerator(Codes::Module module_type, Codes::Instance instance_type)
         finish_enumeration_delay = new rtos::Delayed_execution(finish_enumeration_lambda, enumeration_delay_ms, false);
 
         // starts the instance_select_lambda after scheduler starts (CAN_thread is ready to send messages)
-        wanted_instance =  Load_instance_from_memory();
         instance_select_delay->Execute(1);
         
     } else {
@@ -42,8 +42,8 @@ Enumerator::Enumerator(Codes::Module module_type, Codes::Instance instance_type)
     Message_router::Register_bypass(Codes::Message_type::Enumerator_reserve,  Codes::Component::Enumerator);
 }
 
-Enumerator::Enumerator(Codes::Module module_type, Codes::Instance instance_type, uint button_pin, uint rgb_led_pin) :
-    Enumerator(module_type,instance_type)
+Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes::Instance instance_type, uint button_pin, uint rgb_led_pin) :
+    Enumerator(module_type,memory,instance_type)
 {
     enumeration_led = new Addressable_LED(rgb_led_pin, PIO_machine(pio0, 0), 1);
     enumeration_button = new GPIO_IRQ(button_pin, GPIO::Direction::In);
@@ -79,14 +79,16 @@ bool Enumerator::Valid() const{
 }
 
 Codes::Instance Enumerator::Load_instance_from_memory(){
-    // @todo implement loading from memory
-    Logger::Warning("Enumerator EEPROM memory loading not implemented yet");
-    return Codes::Instance::Instance_1;
+    if(memory){
+        return memory->Instance().value_or(Codes::Instance::Undefined);
+    }
+    return Codes::Instance::Undefined;
 }
 
 bool Enumerator::Save_instance_to_memory() const{
-    // @todo implement saving to memory
-    Logger::Warning("Enumerator EEPROM memory saving not implemented yet");
+    if(memory){
+        return memory->Instance(current_instance);
+    }
     return false;
 }
 
@@ -135,6 +137,15 @@ bool Enumerator::Enumerate(Codes::Instance requested_instance){
     if (current_state == State::reserving){
         return false;
     }
+    if(requested_instance == Codes::Instance::Undefined){
+        requested_instance = Load_instance_from_memory();
+        Logger::Trace("Enumerator loading wanted instance from EEPROM memory");
+
+        if(requested_instance == Codes::Instance::Undefined){
+            Logger::Warning("Enumerator could not read the last instance from memory, using instance_1");
+            requested_instance = Codes::Instance::Instance_1;
+        }
+    }
 
     current_state = State::reserving;
     blinking_loop->Enable();
@@ -165,7 +176,9 @@ void Enumerator::Finish_enumerate(){
     Show_instance_color();
 
     if(!Save_instance_to_memory()){
-        Logger::Error("Enumerator could not save the selected Instance into EEPROM memory");
+        Logger::Error("Enumerator could not save the selected Instance to EEPROM memory");
+    }else{
+        Logger::Trace("Enumerator saved current instance to EEPROM memory");
     }
 }
 
