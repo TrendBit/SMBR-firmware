@@ -284,6 +284,11 @@ Codes::Instance EEPROM_storage::Instance(){
     }
 }
 
+bool EEPROM_storage::Instance(const Codes::Instance &instance){
+    std::vector<uint8_t> data = {static_cast<uint8_t>(instance)};
+    return Write_record(Record_name::Instance_enumeration, data);
+}
+
 std::optional<std::vector<uint8_t>> EEPROM_storage::Read_record(EEPROM_storage::Record_name name){
     auto it = std::find_if(records.begin(), records.end(),
         [name](const auto& pair) { return pair.first == name; });

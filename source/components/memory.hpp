@@ -95,7 +95,16 @@ public:
      *
      * @return Codes::Instance      Instance enumeration of module which is saved in EEPROM
      */
-    Codes::Instance Instance();
+    std::optional<Codes::Instance> Instance();
+
+    /**
+     * @brief   Write record of instance enumeration to EEPROM
+     *
+     * @param instance      Instance to be written to EEPROM
+     * @return true         Data was written successfully
+     * @return false        Data was not written, memory not accessible
+     */
+    bool Instance(const Codes::Instance &instance);
 
     /**
      * @brief   Read OJIP calibration ADC data from EEPROM
