@@ -31,12 +31,14 @@ public:
                         float limit,
                         App_messages::Module_issue::IssueType issue_type,
                         const std::string& description,
-                        std::function<void(const App_messages::Module_issue::Module_issue&)> sendFn)
+                        std::function<void(const App_messages::Module_issue::Module_issue&)> sendFn,
+                        int16_t index = 0)
         : source(source),
           getter(std::move(getter)),
           limit(limit),
           issue_type(issue_type),
           description(description),
+          index(index),
           sendFn(std::move(sendFn))
     {}
 
@@ -62,7 +64,7 @@ public:
             Logger::Warning("{}: High value detected ({:.2f})", description, value);
             App_messages::Module_issue::Module_issue issue(
                 issue_type,
-                App_messages::Module_issue::Severity::Error,
+                index,
                 value
             );
             sendFn(issue);
@@ -75,5 +77,6 @@ protected:
     float limit;
     App_messages::Module_issue::IssueType issue_type;
     std::string description;
+    int16_t index; 
     std::function<void(const App_messages::Module_issue::Module_issue&)> sendFn;
 };
