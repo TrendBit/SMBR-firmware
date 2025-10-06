@@ -5,6 +5,7 @@
 #include "module_check/core_temperature_check.hpp"
 #include "module_check/core_load_check.hpp"
 #include "module_check/heater_plate_temp_check.hpp"
+#include "module_check/mixer_rpm_check.hpp"
 
 Control_module::Control_module():
     Base_module(
@@ -89,6 +90,9 @@ void Control_module::Setup_module_check(){
     }
     if (heater) {
         module_check_thread->AttachCheck(new Heater_plate_temp_check(heater));
+    }
+    if (mixer) {
+        module_check_thread->AttachCheck(new Mixer_rpm_check(mixer));
     }
     module_check_thread->AttachCheck(new Board_temperature_check(this));
     module_check_thread->AttachCheck(new Core_temperature_check(common_core));
