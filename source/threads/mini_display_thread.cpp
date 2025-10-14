@@ -1,6 +1,11 @@
 #include "mini_display_thread.hpp"
 
-#include "ticks.hpp"
+
+#include "resources/trendbit_logo.hpp"
+/**
+ * @brief   TrendBit logo image declaration
+ */
+LV_IMG_DECLARE(TrendBit)
 
 void Mini_display_thread::Display_flush(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p){
     auto display = Mini_display_thread::Get_instance()->Get_display();
@@ -60,6 +65,7 @@ Mini_display_thread::Mini_display_thread(uint32_t cycle_time, std::string name)
 void Mini_display_thread::Run(){
     Initialize_hardware();
     Initialize_lvgl();
+    Initialize_screen_saver();
     Initialize_ui();
     Display_loop();
 }
@@ -97,12 +103,73 @@ bool Mini_display_thread::Initialize_lvgl(){
     return lv_disp_drv_register(&display_driver) != nullptr;
 }
 
+void Mini_display_thread::Initialize_screen_saver(){
+    // Create delayed execution to return to main screen after screen saver
+    auto return_data = new rtos::Delayed_execution(std::function<void()>([this](){
+        lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_MOVE_TOP, 2000, 0, false);
+    }), 2000, false);
+
+    // Create repeated execution to shift pixels and roll screen saver periodically
+    new rtos::Repeated_execution(std::function<void()>([this,return_data](){
+        static short phase = 0;
+
+        switch (phase) {
+            case 0:
+                lv_obj_set_pos(main_screen, 1, 0);
+                break;
+            case 1:
+                lv_obj_set_pos(main_screen, 1, 1);
+                break;
+            case 2:
+                lv_obj_set_pos(main_screen, 0, 1);
+                break;
+            case 3:
+                lv_obj_set_pos(main_screen, 0, 0);
+                break;
+            case 4:
+                // Roll screen saver and execute return to main screen
+                lv_scr_load_anim(screen_saver, LV_SCR_LOAD_ANIM_MOVE_TOP, 2000, 0, false);
+                return_data->Execute();
+                break;
+        }
+
+        phase = (phase + 1) % 5;
+
+    }),6 * 60 * 1000, true);
+
+    screen_saver = lv_obj_create(NULL);
+
+    static lv_style_t style_line;
+    lv_style_init(&style_line);
+    lv_style_set_line_width(&style_line, 3);
+    lv_style_set_line_color(&style_line, lv_color_black());
+    lv_style_set_line_rounded(&style_line, false);
+
+    static lv_point_t points_top[] = {{0, 3}, {127, 3}};
+    lv_obj_t *line_top = lv_line_create(screen_saver);
+    lv_line_set_points(line_top, points_top, 2);
+    lv_obj_add_style(line_top, &style_line, 0);
+
+    static lv_point_t points_bottom[] = {{0, 61}, {127, 61}};
+    lv_obj_t *line_bottom = lv_line_create(screen_saver);
+    lv_line_set_points(line_bottom, points_bottom, 2);
+    lv_obj_add_style(line_bottom, &style_line, 0);
+
+    LV_IMG_DECLARE(TrendBit)
+    lv_obj_t *img = lv_img_create(screen_saver);
+    lv_img_set_src(img, &TrendBit);
+    lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
+}
+
 void Mini_display_thread::Initialize_ui(){
+
+    main_screen = lv_obj_create(NULL);
+
     // Create labels
-    labels.line_1      = lv_label_create(lv_scr_act());
-    labels.line_2   = lv_label_create(lv_scr_act());
-    labels.line_3 = lv_label_create(lv_scr_act());
-    labels.line_4       = lv_label_create(lv_scr_act());
+    labels.line_1 = lv_label_create(main_screen);
+    labels.line_2 = lv_label_create(main_screen);
+    labels.line_3 = lv_label_create(main_screen);
+    labels.line_4 = lv_label_create(main_screen);
 
     // Position labels
     lv_obj_set_pos(labels.line_1, 8, 0);
@@ -119,6 +186,10 @@ void Mini_display_thread::Initialize_ui(){
     Clear_custom_text();
     Update_serial(0);
     Update_temps();
+
+    // Preview logo and then switch to main screen
+    lv_scr_load(screen_saver);
+    lv_scr_load_anim(main_screen, LV_SCR_LOAD_ANIM_MOVE_TOP, 2000, 2000, false);
 }
 
 void Mini_display_thread::Display_loop(){

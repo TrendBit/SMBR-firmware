@@ -9,7 +9,8 @@
 
 #include "thread.hpp"
 #include "rtos/wrappers.hpp"
-
+#include "rtos/repeated_execution.hpp"
+#include "rtos/delayed_execution.hpp"
 #include <src/widgets/lv_bar.h>
 
 #include <stdint.h>
@@ -45,10 +46,30 @@ private:
      */
     SSD1306 *display = nullptr;
 
-    // Display buffer
+    /**
+     * @brief   LVGL display buffer configuration
+     */
     lv_disp_draw_buf_t display_buffer;
+
+    /**
+     * @brief   LVGL display driver configuration
+     */
     lv_disp_drv_t display_driver;
+
+    /**
+     * @brief   Memory for the display buffer
+     */
     lv_color_t buffer_memory[BUFF_SIZE];
+
+    /**
+     * @brief   Main screen with data widgets
+     */
+    lv_obj_t * main_screen;
+
+    /**
+     * @brief   Screen saver screen with logo and lines to refresh pixels
+     */
+    lv_obj_t * screen_saver;
 
     /**
      * @brief   User interface labels
@@ -214,9 +235,18 @@ private:
     bool Initialize_lvgl();
 
     /**
-     * @brief Initialize user interface elements
+     * @brief Initialize user interface elements for data screen
      */
     void Initialize_ui();
+
+    /**
+     * @brief Initialize screen saver screen
+     *        Display is OLED so pixels needs to be turned on and off periodically to prevent burn-in
+     *            Burn-in can be observed as lower intensity of pixels which are not changed for long time
+     *        Screen saver will move data screen by one pixel in all direction and sometimes roll logo
+     *             over screen to refresh all pixels over time
+     */
+    void Initialize_screen_saver();
 
     /**
      * @brief Main display update loop function
