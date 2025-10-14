@@ -1,4 +1,4 @@
-// FreeRTOS V202111.00
+// FreeRTOS V11.1.0
 
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
