@@ -27,6 +27,7 @@
 #include "codes/messages/cuvette_pump/prime.hpp"
 #include "codes/messages/cuvette_pump/purge.hpp"
 #include "codes/messages/cuvette_pump/stop.hpp"
+#include "codes/messages/cuvette_pump/info_response.hpp"
 
 /**
  * @brief   Wrapper for peristaltic pump which controls suspense in cuvette

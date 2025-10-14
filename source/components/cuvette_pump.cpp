@@ -90,6 +90,13 @@ bool Cuvette_pump::Receive(Application_message message){
             return true;
         }
 
+        case Codes::Message_type::Cuvette_pump_info_request: {
+            Logger::Debug("Cuvette pump info request");
+            App_messages::Cuvette_pump::Info_response response(Minimal_flowrate(), Maximal_flowrate());
+            Send_CAN_message(response);
+            return true;
+        }
+
         default:
             return false;
     }
