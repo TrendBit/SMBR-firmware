@@ -11,11 +11,16 @@
 #include "threads/can_thread.hpp"
 #include "threads/usb_thread.hpp"
 
-#include "modules/control_module.hpp"
-#include "modules/sensor_module.hpp"
-#include "modules/pump_module.hpp"
 
 #include "cli.hpp"
 #include "logger.hpp"
 
 #include "config.hpp"
+
+#ifdef CONFIG_CONTROL_MODULE
+    #include "modules/control_module.hpp"
+#elifdef CONFIG_SENSOR_MODULE
+    #include "modules/sensor_module.hpp"
+#elifdef CONFIG_PUMP_MODULE
+    #include "modules/pump_module.hpp"
+#endif
