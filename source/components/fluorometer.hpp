@@ -50,8 +50,18 @@
 class EEPROM_storage;
 class Fluorometer_thread;
 
-typedef std::function<bool(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES>&,uint,float)> Timing_generator_interface;
+typedef std::function<bool(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES>&,uint,float)> Timing_generator_interface;
 
+/**
+ * @brief   Class representing fluorometer component
+ *          Capable of measuring OJIP fluorescence curve
+ *          Measurement is composed of five phases:
+ *              Phase 0: Preparation        - Initialize memory and compute timing
+ *              Phase 1: Configuration      - Setup ADC, timer, DMA
+ *              Phase 2: Fast phase         - Perform fast sampling of signal and clock timestamps using DMA
+ *              Phase 3: Slow phase         - Perform slow sampling of signal using timer alarm
+ *              Phase 4: Post-processing    - Process data (filter, calibrate, align) and clean up
+ */
 class Fluorometer: public Component, public Message_receiver {
     friend class Fluorometer_thread;
 public:
@@ -61,11 +71,13 @@ public:
         float emitor_intensity;
         Fluorometer_config::Gain detector_gain;
         float sample_range;
+        uint32_t sample_count;
         etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> sample_time_us;
         etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> intensity;
     };
 
     struct Calibration_data{
+        bool calibrated;
         std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> adc_value;
         std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> timing_us;
         Fluorometer_config::Gain gain;
@@ -106,6 +118,11 @@ private:
     const uint adc_input_channel = 1;
 
     /**
+     * @brief   Timer slice clock divider for PWM triggering sampling ion fast phase
+     */
+    static inline const uint32_t timer_clock_divider = 10;
+
+    /**
      * @brief   Slice of timer PWM which triggers sampling (whole slice isused)
      */
     const uint sampler_trigger_slice = 4;
@@ -120,7 +137,7 @@ private:
      * @brief   Vector holding capture times of OJIP curve samples as micro seconds delays between captures
      *          Capture at 1ms, 5ms 15ms -> 1, 4, 10
      */
-    inline static etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> capture_timing;
+    inline static etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> capture_timing;
 
     /**
      * @brief   ADC channel for measuring detector output, used only for single samples
@@ -136,6 +153,7 @@ private:
      * @brief Calibration data for OJIP curve
      */
     inline static Calibration_data calibration_data = {
+        .calibrated = false,
         .adc_value = {0},
         .timing_us = {0},
         .gain = Fluorometer_config::Gain::x10,
@@ -188,13 +206,13 @@ public:
     /**
      * @brief
      *
-     * @param gain
-     * @param emitor_intensity
-     * @param capture_length
-     * @param samples
-     * @param timing
-     * @return true
-     * @return false
+     * @param gain              Gain of detector
+     * @param emitor_intensity  Intensity of emitor LED in range 0.1-1.0f
+     * @param capture_length    Length of capture in seconds
+     * @param samples       Number of samples to capture
+     * @param timing        Timing configuration
+     * @return true         Capture OJIP was successful
+     * @return false        Capture OJIP failed
      */
     bool Capture_OJIP(Fluorometer_config::Gain gain, float emitor_intensity = 1.0, float capture_length = 2.0, uint samples = 1000, Fluorometer_config::Timing timing = Fluorometer_config::Timing::Linear);
 
@@ -351,7 +369,7 @@ private:
      * @return true                 Timings were generated successfully
      * @return false                Timings cannot be generated for this configuration
      */
-    static bool Generate_timing(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length, Fluorometer_config::Timing timing_type);
+    static bool Generate_timing(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length, Fluorometer_config::Timing timing_type);
 
     /**
      * @brief   Generate timing for linear sampling, equally spaced samples
@@ -363,7 +381,7 @@ private:
      * @return true                 Timings were generated successfully
      * @return false                Timings cannot be generated for this configuration
      */
-    static bool Timing_generator_linear(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
+    static bool Timing_generator_linear(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
 
     /**
      * @brief   Generate timing for logarithmic sampling, ideal for OJIP curve
@@ -375,7 +393,7 @@ private:
      * @return true                 Timings were generated successfully
      * @return false                Timings cannot be generated for this configuration
      */
-    static bool Timing_generator_logarithmic(etl::vector<uint16_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
+    static bool Timing_generator_logarithmic(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length);
 
     /**
      * @brief   Detect of timer for captured sample overflowed during capture
@@ -404,4 +422,50 @@ private:
         {Fluorometer_config::Timing::Linear, Timing_generator_linear},
         {Fluorometer_config::Timing::Logarithmic, Timing_generator_logarithmic}
     };
+
+private:
+    /**
+     * @brief OJIP Phase 0: Preparation - Initialize memory and compute timing
+     * @param gain Detector gain
+     * @param emitor_intensity Emitor intensity
+     * @param capture_length Capture length in seconds
+     * @param timing Timing type
+     * @return true if preparation succeeds, false otherwise
+     */
+    bool OJIP_phase_0_Preparation(Fluorometer_config::Gain gain, float emitor_intensity, float capture_length, Fluorometer_config::Timing timing);
+
+    /**
+     * @brief OJIP Phase 1: Configuration - Set up hardware (ADC, PWM, DMA)
+     * @param timestamp_dma_channel Reference to timestamp DMA channel
+     * @param wrap_dma_channel Reference to wrap DMA channel
+     * @param adc_dma_channel Reference to ADC DMA channel
+     * @param fast_phase_samples Number of samples in fast phase
+     * @return true if configuration succeeds, false otherwise
+     */
+    bool OJIP_phase_1_Configuration(int& timestamp_dma_channel, int& wrap_dma_channel, int& adc_dma_channel, int fast_phase_samples);
+
+    /**
+     * @brief OJIP Phase 2: Fast phase - Perform DMA-based fast sampling
+     * @param timestamp_dma_channel Timestamp DMA channel
+     * @param wrap_dma_channel Wrap DMA channel
+     * @param adc_dma_channel ADC DMA channel
+     * @return Start time in microseconds
+     */
+    uint64_t OJIP_phase_2_Fast_phase(int timestamp_dma_channel, int wrap_dma_channel, int adc_dma_channel);
+
+    /**
+     * @brief OJIP Phase 3: Slow phase - Perform alarm-based slow sampling
+     * @param ticks_per_us Ticks per microsecond
+     * @param fast_phase_samples Number of samples in fast phase
+     * @return Stop time in microseconds
+     */
+    uint64_t OJIP_phase_3_Slow_phase(uint32_t ticks_per_us, int fast_phase_samples);
+
+    /**
+     * @brief OJIP Phase 4: Post-processing - Process data and clean up
+     * @param start_time Start time in microseconds
+     * @param stop_time Stop time in microseconds
+     * @return true if post-processing succeeds, false otherwise
+     */
+    bool OJIP_phase_4_Post_processing(uint64_t start_time, uint64_t stop_time);
 };
