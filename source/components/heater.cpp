@@ -158,6 +158,8 @@ bool Heater::Receive(Application_message message){
                 Logger::Error("Heater_set_intensity interpretation failed");
                 return false;
             }
+            // Disable regulation when intensity is manually overridden
+            target_temperature.reset();
             Logger::Debug("Heater intensity set to: {:03.1f}", set_intensity.intensity);
             Intensity(set_intensity.intensity);
             return true;
