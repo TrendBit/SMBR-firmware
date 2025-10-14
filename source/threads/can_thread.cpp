@@ -4,24 +4,30 @@
 #include "config.hpp"
 
 CAN_thread::CAN_thread()
-    : Thread("can_thread", 1000, 10),
-    can_bus(CAN::Bus(5, 4, CONFIG_CANBUS_SPEED, 1))
+    : Thread("can_thread", 2048, 10)
 {
+    Logger::Debug("CAN thread created");
     Start();
 };
 
 void CAN_thread::Run(){
+    Logger::Debug("CAN thread start");
+
+    can_bus = new CAN::Bus(5, 4, CONFIG_CANBUS_SPEED, 1);
+
+    Logger::Debug("CAN thread running");
+
     while (true) {
         // Wait for any IRQ from CAN bus peripheral
-        CAN::Bus::IRQ_type irq_type = can_bus.Wait_for_any<CAN::Bus::IRQ_type>();
+        CAN::Bus::IRQ_type irq_type = can_bus->Wait_for_any<CAN::Bus::IRQ_type>();
 
         if(irq_type == CAN::Bus::IRQ_type::TX){ // Message was transmitted
             if (not tx_queue.empty()) {
                 Retransmit();
             }
         } else if(irq_type == CAN::Bus::IRQ_type::RX){  // Message was received
-            while(can_bus.Received_queue_size() > 0){
-                auto message_data = can_bus.Receive();
+            while(can_bus->Received_queue_size() > 0){
+                auto message_data = can_bus->Receive();
                 if (not message_data.has_value()) {
                     Logger::Error("CAN message not found after RX IRQ");
                 } else {
@@ -40,9 +46,9 @@ void CAN_thread::Run(){
 
 uint CAN_thread::Send(CAN::Message const &message){
     if(tx_queue.empty()){
-        if(can_bus.Transmit_available()){
+        if(can_bus->Transmit_available()){
             Logger::Trace("CAN bus available");
-            if (can_bus.Transmit(message)){
+            if (can_bus->Transmit(message)){
                 Logger::Trace("CAN message transmitted");
             } else {
                 Logger::Warning("CAN message not transmitted");
@@ -86,9 +92,9 @@ void CAN_thread::Receive(CAN::Message const &message){
 
 uint8_t CAN_thread::Retransmit(){
     uint8_t retransmitted = 0;
-    while((can_bus.Transmit_available()) and (not tx_queue.empty())){
+    while((can_bus->Transmit_available()) and (not tx_queue.empty())){
         CAN::Message message = tx_queue.front();
-        uint ret = can_bus.Transmit(message);
+        uint ret = can_bus->Transmit(message);
         if (not ret) {
             Logger::Error("Transmission failed");
             break;

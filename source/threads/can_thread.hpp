@@ -43,7 +43,7 @@ private:
     /**
      * @brief CAN bus peripheral based on can2040 library
      */
-    CAN::Bus can_bus;
+    CAN::Bus * can_bus;
 
     /**
      * @brief   Size of queue for incoming and outgoing messages
