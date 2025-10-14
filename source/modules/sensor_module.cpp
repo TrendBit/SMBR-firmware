@@ -34,7 +34,7 @@ std::optional<float> Sensor_module::Board_temperature(){
 
 void Sensor_module::Setup_Mini_OLED(){
     Logger::Debug("Setting up Mini OLED");
-    mini_oled = new Mini_OLED(bottle_temperature, 5);
+    mini_oled = new Mini_OLED(bottle_temperature, 10);
 }
 
 void Sensor_module::Setup_bottle_thermometers(){
