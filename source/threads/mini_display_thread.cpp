@@ -172,12 +172,12 @@ void Mini_display_thread::Initialize_ui(){
     labels.line_4 = lv_label_create(main_screen);
 
     // Position labels
-    lv_obj_set_pos(labels.line_1, 8, 0);
-    lv_obj_set_pos(labels.line_2, 8, 16);
-    lv_obj_set_pos(labels.line_3, 8, 32);
-    lv_obj_set_pos(labels.line_4, 8, 48);
+    lv_obj_set_pos(labels.line_1, 4, 1);
+    lv_obj_set_pos(labels.line_2, 4, 17);
+    lv_obj_set_pos(labels.line_3, 4, 33);
+    lv_obj_set_pos(labels.line_4, 4, 49);
     lv_label_set_long_mode(labels.line_4, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_width(labels.line_4, 116);
+    lv_obj_set_width(labels.line_4, 120);
 
     // Set initial values
     Update_SID(0);
