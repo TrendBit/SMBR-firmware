@@ -149,6 +149,7 @@ bool Enumerator::Enumerate(Codes::Instance requested_instance){
     if (current_state == State::reserving){
         return false;
     }
+
     if(requested_instance == Codes::Instance::Undefined){
         requested_instance = Load_instance_from_memory();
         Logger::Trace("Enumerator loading wanted instance from EEPROM memory");
@@ -157,6 +158,10 @@ bool Enumerator::Enumerate(Codes::Instance requested_instance){
             Logger::Warning("Enumerator could not read the last instance from memory, using instance_1");
             requested_instance = Codes::Instance::Instance_1;
         }
+    }
+
+    if (requested_instance < Codes::Instance::Instance_1 || requested_instance > Codes::Instance::Instance_12){
+        return false;
     }
 
     current_state = State::reserving;
