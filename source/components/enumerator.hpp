@@ -21,6 +21,7 @@
 #include "codes/codes.hpp"
 #include "codes/messages/enumerator/enumerator_collision.hpp"
 #include "codes/messages/enumerator/enumerator_reserve.hpp"
+#include "codes/messages/enumerator/enumerator_set.hpp"
 
 /**
  * @brief Component used for enumeration of modules and their instances in system

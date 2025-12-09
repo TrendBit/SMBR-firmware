@@ -1,5 +1,16 @@
 #include "enumerator.hpp"
 
+UID_t UID(){
+    std::array<uint8_t, PICO_UUID_LEN> pico_uid;
+    UID_t fast_hash_uid;
+
+    pico_get_unique_board_id((pico_unique_board_id_t*)pico_uid.data());
+    uint64_t hash = fasthash64(pico_uid.data(), PICO_UUID_LEN, KATAPULT_HASH_SEED);
+    std::copy(reinterpret_cast<uint8_t*>(&hash), reinterpret_cast<uint8_t*>(&hash) + CANBUS_UUID_LEN, fast_hash_uid.begin());
+
+    return fast_hash_uid;
+}
+
 Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes::Instance instance_type) :
     Component(Codes::Component::Enumerator),
     Message_receiver(Codes::Component::Enumerator),
@@ -40,6 +51,7 @@ Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes
 
     Message_router::Register_bypass(Codes::Message_type::Enumerator_collision, Codes::Component::Enumerator);
     Message_router::Register_bypass(Codes::Message_type::Enumerator_reserve,  Codes::Component::Enumerator);
+    Message_router::Register_bypass(Codes::Message_type::Enumerator_set,  Codes::Component::Enumerator);
 }
 
 Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes::Instance instance_type, uint button_pin, uint rgb_led_pin) :
@@ -277,6 +289,51 @@ bool Enumerator::Receive(Application_message message){
                     Resolve_collision();
                 }
                 
+            }
+
+            return true;
+        }
+        
+        case Codes::Message_type::Enumerator_set: {
+            if (message.Module_type() != module_type){
+                Logger::Trace("Enumerator_set interpretation skipped, it was for a different module");
+                return true;
+            }
+
+            // ignore if not having a registered instance (exclusive instance is also skipped)
+            if (current_state != State::registered){
+                Logger::Trace("Enumerator_set interpretation skipped, not able to interpret in current state");
+                return true;
+            }
+
+            App_messages::Common::Enumerator_set enumerator_set;
+
+            if (!enumerator_set.Interpret_data(message.data)){
+                Logger::Error("Enumerator_set interpretation failed");
+                return false;
+            }
+
+            if (enumerator_set.uid != UID()){
+                UID_t uid = UID();
+                std::stringstream sstream;
+                for(auto part : uid){
+                    sstream << static_cast<int>(part) << ",";
+                }
+                Logger::Trace("Enumerator_set interpretation skipped, it was for a different module UID, this modules id: {}",sstream.str());
+                return true;
+            }
+
+            Logger::Debug("Enumerator_set message detected for instance: {}", magic_enum::enum_name(enumerator_set.target_instance));
+            
+            if (enumerator_set.target_instance < Codes::Instance::Instance_1 || enumerator_set.target_instance > Codes::Instance::Instance_12){
+                Logger::Error("Enumerator_set containing invalid target instance: {}", magic_enum::enum_name(enumerator_set.target_instance));
+                return false;
+            }
+
+            
+            if (!Enumerate(enumerator_set.target_instance)){
+                Logger::Error("Enumerator_set could not be executed");
+                return false;
             }
 
             return true;
