@@ -19,8 +19,8 @@
 #include "rtos/delayed_execution.hpp"
 
 #include "codes/codes.hpp"
-#include "codes/messages/common/enumerator_collision.hpp"
-#include "codes/messages/common/enumerator_reserve.hpp"
+#include "codes/messages/enumerator/enumerator_collision.hpp"
+#include "codes/messages/enumerator/enumerator_reserve.hpp"
 
 /**
  * @brief Component used for enumeration of modules and their instances in system
