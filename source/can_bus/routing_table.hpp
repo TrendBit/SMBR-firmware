@@ -102,4 +102,7 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Spectrophotometer_measurement_request,       Codes::Component::Spectrophotometer  },
     { Codes::Message_type::Spectrophotometer_temperature_request,       Codes::Component::Spectrophotometer  },
     { Codes::Message_type::Spectrophotometer_calibrate,                 Codes::Component::Spectrophotometer  },
+    // Pumps
+    { Codes::Message_type::Pumps_pump_count_request,                   Codes::Component::Pumps              },
+    { Codes::Message_type::Pumps_set_speed,                            Codes::Component::Pumps              },
 };
