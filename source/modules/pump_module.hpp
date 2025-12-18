@@ -7,11 +7,16 @@
 
 #pragma once
 
+#include <memory>
+
 #include "base_module.hpp"
 #include "codes/codes.hpp"
 #include "logger.hpp"
 
 #include "components/pumps.hpp"
+#include "components/adc/TLA2024.hpp"
+#include "components/adc/TLA2024_channel.hpp"
+#include "components/common_sensors/current_sensor.hpp"
 
 /**
  * @brief   Module responsible for control of additional pumps
