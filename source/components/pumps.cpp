@@ -1,9 +1,11 @@
 #include "pumps.hpp"
 
-Pump::Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, float max_flowrate, float min_speed, float pwm_frequency) :
-    DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake)
+Pump::Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::unique_ptr<Current_sensor> current_sensor, float max_flowrate, float min_speed, float pwm_frequency) :
+    DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
+    indication(std::make_unique<PWM_channel>(indication_pin, 100.0f, 1.0f, true)),
+    current_sensor(std::move(current_sensor))
 {
-    indication = new PWM_channel(indication_pin, 100.0f, 1.0f, true);
+
 }
 
 void Pump::Speed(float speed){
@@ -18,6 +20,10 @@ void Pump::Indicate(float intensity){
     float perceived_intensity = std::pow(intensity, 2.2f);
 
     indication->Duty_cycle(1.0f-perceived_intensity);
+}
+
+float Pump::Current(){
+    return current_sensor->Current();
 }
 
 Pump_controller::Pump_controller(etl::vector<Pump *,8> pumps):
@@ -48,6 +54,15 @@ Pump_controller::Pump_controller(etl::vector<Pump *,8> pumps):
             return false;
         }
     }, 50, true, true);
+
+    new rtos::Repeated_execution([pumps]() {
+        Logger::Notice("----------------------");
+        for(uint i = 0; i < 1; i++){
+            float current = pumps[i]->Current();
+            Logger::Notice("Pump {} current: {:0.2f} A", i+1, current);
+        }
+        Logger::Notice("----------------------");
+    }, 1000, true);
 }
 
 bool Pump_controller::Receive(CAN::Message message){
