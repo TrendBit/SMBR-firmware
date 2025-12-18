@@ -13,7 +13,9 @@
 #include "hal/gpio/gpio.hpp"
 #include "hal/pwm/pwm.hpp"
 #include "components/motors/dc_hbridge.hpp"
+#include "components/common_sensors/current_sensor.hpp"
 #include "rtos/execute_until.hpp"
+#include "rtos/repeated_execution.hpp"
 
 #include "codes/messages/pumps/pump_count_response.hpp"
 #include "codes/messages/pumps/set_speed.hpp"
@@ -23,7 +25,9 @@ private:
     /**
      * @brief   PWM channel used to indicate pump activity
      */
-    PWM_channel * indication;
+    std::unique_ptr<PWM_channel> indication;
+
+    std::unique_ptr<Current_sensor> current_sensor;
 
 public:
     /**
@@ -31,12 +35,13 @@ public:
      *
      * @param gpio_in1          GPIO pin for control of first input of H-bridge, Forward
      * @param gpio_in2          GPIO pin for control of second input of H-bridge, Reverse
-     * @param indication_pin        GPIO pin visualization of pump activity
+     * @param indication_pin     GPIO pin visualization of pump activity
+     * @param current_sensor    Current sensor measuring pump current
      * @param max_flowrate      Maximum flowrate of pump in ml/min
      * @param min_speed         Minimum speed at which is pump moving of pump in range 0-1
      * @param pwm_frequency     Frequency of PWM signal for control of motor
      */
-    Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, float max_flowrate, float min_speed = 0, float pwm_frequency = 50.0f);
+    Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::unique_ptr<Current_sensor> current_sensor, float max_flowrate, float min_speed = 0, float pwm_frequency = 50.0f);
 
     /**
      * @brief   Indicate pump activity by setting intensity of indication LED
@@ -51,6 +56,13 @@ public:
      * @param speed     Speed of pump from -1.0 to 1.0
      */
     virtual void Speed(float speed) override final;
+
+    /**
+     * @brief   Read current drawn by pump
+     *
+     * @return float    Current in Amperes
+     */
+    float Current();
 };
 
 class Pump_controller: public Component, public Message_receiver {
