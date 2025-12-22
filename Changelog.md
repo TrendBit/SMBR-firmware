@@ -1,7 +1,7 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
-# (0.9) WIP (system_check)
+# 0.9 (system_check)
 - Update mixer fan handling at low speeds
   - Precision of RPM tracking is lower
   - Noise created by mixing fan is now removed
@@ -15,6 +15,10 @@ The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Ver
 - Verify correctness of UID before executing reboot or bootloader entry (can or USB)
   - There is secret key which can be used for any module
 - Add Qlibs-cpp library for filter and regulators
+- Add secondary phase to fluorometer OJIP capture which enables higher resolution
+- Add screen saver for OLED mini display to reduce OLED burn-in
+- Add company logo to OLED mini display during boot phase
+- Disable heater regulation when intensity is manually set
 
 # 0.8 (measurement_regulation)
 - Add parallel processing for non-dependant messages
