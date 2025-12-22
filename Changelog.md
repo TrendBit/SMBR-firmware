@@ -1,6 +1,29 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.10 (module_issues)
+- Add module issue monitoring
+  - Core temperature monitoring for control and sensor modules
+  - Core load monitoring for control and sensor modules
+  - Board overheat detection
+  - LED panel overheat detection
+  - Heater plate temperature monitoring
+  - Bottle temperature monitoring
+    - Top sensor temperature
+    - Bottom sensor temperature
+    - Top measured temperature
+    - Bottom measured temperature
+    - Aggregated bottle temperature
+  - Fluorometer monitoring
+    - Emitter temperature
+    - Detector temperature
+  - Spectrophotometer monitoring
+    - Emitter temperature
+  - Mixer RPM monitoring for detecting speed deviations
+- Add USB‑C logging support
+- Add automatic USB flashing script (`auto_single_flash.sh`)
+- Fix incorrect override specifier in `Mixer::RPM()`
+
 # 0.9 (system_check)
 - Update mixer fan handling at low speeds
   - Precision of RPM tracking is lower
