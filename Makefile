@@ -1,5 +1,4 @@
 .PHONY: firmware tests run_test
-.SILENT:
 
 IMAGE_NAME := pico-dev
 TOOLCHAIN_SCRIPT=pico-toolchain
@@ -14,6 +13,11 @@ ROOT_RUN := $(CONTAINER_RUN) $(IMAGE_NAME) /bin/sh -c
 USER_RUN := $(CONTAINER_RUN) --user "$(USER_ID):$(GROUP_ID)" $(IMAGE_NAME) /bin/sh -c
 USER_RUN_IT := $(CONTAINER_RUN) -it --user "$(USER_ID):$(GROUP_ID)" $(IMAGE_NAME) /bin/sh -c
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Linux)
+.SILENT:
+endif
+
 all: firmware #test run_test
 
 init: docker-build
@@ -27,7 +31,7 @@ install:
 	sudo mv ${TOOLCHAIN_SCRIPT} /usr/bin/${TOOLCHAIN_SCRIPT}
 
 docker-build: docker-clean
-	docker build . --tag $(IMAGE_NAME) --build-arg USER_ID=$(USER_ID) --build-arg GROUP_ID=$(GROUP_ID)
+    docker build . --tag $(IMAGE_NAME) --build-arg USER_ID=$(USER_ID) --build-arg GROUP_ID=$(GROUP_ID) --build-arg UNAME_S=$(UNAME_S)
 
 docker-shell:
 	docker exec -it -t --privileged $(IMAGE_NAME) /bin/sh -l
@@ -55,7 +59,11 @@ firmware: $(BUILD_DIR)
 	@$(MAKE) -s modify_clangd
 
 modify_clangd:
+ifeq ($(UNAME_S),Linux)
 	@sed -i 's#/project#$(shell pwd)#g' ./build/compile_commands.json
+else ifeq ($(UNAME_S),Darwin)
+	@sed -i '' 's#/project#'"$(PWD)"'#g' ./build/compile_commands.json
+endif
 
 $(BUILD_DIR):
 	mkdir build/
@@ -78,7 +86,11 @@ test: $(BUILD_DIR)
 	@$(MAKE) -s modify_clangd
 
 flash: firmware
+ifeq ($(UNAME_S),Linux)
 	$(ROOT_RUN) "openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c \"adapter speed 5000\" -c \"program out/application.elf verify reset exit\""
+else ifeq ($(UNAME_S),Darwin)
+	openocd -f interface/cmsis-dap.cfg -f target/rp2040.cfg -c "adapter speed 5000" -c "program out/application.elf verify reset exit"
+endif
 
 katapult:
 	$(USER_RUN) "cp bootloader/katapult.config bootloader/katapult/.config && cd bootloader/katapult/ && make"
