@@ -71,8 +71,11 @@ RUN git clone --depth 1 --branch 2.2.0 https://github.com/raspberrypi/picotool.g
 
 ARG USER_ID
 ARG GROUP_ID
+ARG UNAME_S
 
-RUN addgroup --gid $GROUP_ID user
-RUN adduser --disabled-password --gecos '' -S user --uid $USER_ID -G user
+RUN if [ "$UNAME_S" = "Linux" ]; then \
+    addgroup --gid "${GROUP_ID:-1000}" user && \
+    adduser --disabled-password --gecos '' -S user --uid "${USER_ID:-1000}" -G user; \
+fi
 
 WORKDIR /project
