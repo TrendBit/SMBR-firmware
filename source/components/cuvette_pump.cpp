@@ -107,18 +107,36 @@ void Cuvette_pump::Stop(){
     DC_HBridge::Stop();
 }
 
+void Cuvette_pump::Speed(float pump_speed) {
+    float in = std::clamp(pump_speed, -1.0f, 1.0f);
+    if (abs(in) < 1e-4f) {
+        Stop();
+        return;
+    }
+
+    float magnitude = motor_pump_speed_curve.To_speed(abs(in));
+    float signed_speed = (in >= 0.0f) ? magnitude : -magnitude;
+    float clamped = std::clamp(signed_speed, -1.0f, 1.0f);
+    Logger::Debug("Pump_speed in={:0.3f} mapped={:0.3f}", in, magnitude);
+    DC_HBridge::Speed(clamped);
+}
+
+float Cuvette_pump::Speed() {
+    float motor_speed = DC_HBridge::Speed();
+    float pump_speed = motor_pump_speed_curve.To_rate(abs(motor_speed));
+    return (motor_speed >= 0.0f) ? pump_speed : -pump_speed;
+}
+
 float Cuvette_pump::Flowrate(float flowrate){
-    float motor_speed = speed_flowrate_curve.To_speed(abs(flowrate));
-    float direction = flowrate >= 0.0f ? 1.0f : -1.0f;
-    float speed = motor_speed*= direction;
-    Speed(speed);
-    return speed;
+    float pump_speed = flowrate / Maximal_flowrate();
+    Speed(pump_speed);
+    return pump_speed;
 }
 
 float Cuvette_pump::Flowrate(){
     float speed = Speed();
     float direction = speed >= 0.0f ? 1.0f : -1.0f;
-    float flowrate = speed_flowrate_curve.To_rate(abs(speed));
+    float flowrate = (motor_pump_speed_curve.To_rate(abs(speed))) * Maximal_flowrate();
     flowrate *= direction;
     return flowrate;
 }

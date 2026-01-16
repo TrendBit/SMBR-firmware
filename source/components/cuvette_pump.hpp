@@ -40,9 +40,12 @@ private:
      */
     const float cuvette_system_volume;
 
-    Motor_transfer_function speed_flowrate_curve = Motor_transfer_function(
-        {0, 0.5, 0.6, 0.7, 0.8, 1.0},
-        {0, 0, 10, 50, 80, 100}
+    /**
+     * @brief Transfer function determining speed/flowrate curve
+     */
+    Motor_transfer_function motor_pump_speed_curve = Motor_transfer_function(
+        {0,  0.2, 0.3, 0.4,  0.5,  0.6,  0.7,  0.8,  0.9, 1.0},
+        {0, 0.05, 0.3, 0.6, 0.73, 0.81, 0.84, 0.92, 0.96, 1.0}
     );
 
     /**
@@ -64,9 +67,14 @@ public:
     Cuvette_pump(uint gpio_in1, uint gpio_in2, float max_flowrate, float cuvette_system_volume, float min_speed = 0, float pwm_frequency = 50.0f);
 
     /**
-     * @brief Set speed of pump, derived from DC_HBridge::Speed
+    * @brief Set speed of pump
+    */
+    virtual void Speed(float speed) override final;
+
+    /**
+    * @brief Set speed of pump
      */
-    using DC_HBridge::Speed;
+    virtual float Speed();
 
     /*
      * @brief   Set flowrate of pump
@@ -152,7 +160,7 @@ private:
      * @return float    Minimal reliable flowrate of pump in ml/min
      */
     float Minimal_flowrate() const {
-        return speed_flowrate_curve.Min_rate();
+        return 3.0f;
     };
 
     /**
@@ -161,7 +169,7 @@ private:
      * @return float    Maximal reliable flowrate of pump in ml/min
      */
     float Maximal_flowrate() const {
-        return speed_flowrate_curve.Max_rate();
+        return 28.0f;
     };
 
 };
