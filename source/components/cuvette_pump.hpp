@@ -53,6 +53,16 @@ private:
      */
     rtos::Delayed_execution * pump_stopper;
 
+    /**
+     * @brief Maximal flowrate of the pump
+     */
+    float max_flowrate;
+
+    /**
+     * @brief Minimal flowrate of the pump
+     */
+    float min_flowrate;
+
 public:
     /**
      * @brief Construct a new Cuvette_pump object
@@ -64,7 +74,7 @@ public:
      * @param min_speed     Minimum speed at which is pump moving of pump in range 0-1
      * @param pwm_frequency             Frequency of PWM signal for control of motor
      */
-    Cuvette_pump(uint gpio_in1, uint gpio_in2, float max_flowrate, float cuvette_system_volume, float min_speed = 0, float pwm_frequency = 50.0f);
+    Cuvette_pump(uint gpio_in1, uint gpio_in2, float cuvette_system_volume, float max_flowrate = 28.5f, float min_flowrate = 3.0f, float min_speed = 0, float pwm_frequency = 50.0f);
 
     /**
     * @brief Set speed of pump
@@ -160,7 +170,7 @@ private:
      * @return float    Minimal reliable flowrate of pump in ml/min
      */
     float Minimal_flowrate() const {
-        return 3.0f;
+        return min_flowrate;
     };
 
     /**
@@ -169,7 +179,7 @@ private:
      * @return float    Maximal reliable flowrate of pump in ml/min
      */
     float Maximal_flowrate() const {
-        return 28.5f;
+        return max_flowrate;
     };
 
 };

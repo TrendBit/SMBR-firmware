@@ -1,10 +1,12 @@
 #include "cuvette_pump.hpp"
 
-Cuvette_pump::Cuvette_pump(uint gpio_in1, uint gpio_in2, float max_flowrate, float cuvette_system_volume, float min_speed, float pwm_frequency) :
+Cuvette_pump::Cuvette_pump(uint gpio_in1, uint gpio_in2, float max_flowrate, float min_flowrate, float cuvette_system_volume, float min_speed, float pwm_frequency) :
     Component(Codes::Component::Cuvette_pump),
     Message_receiver(Codes::Component::Cuvette_pump),
     DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
-    cuvette_system_volume(cuvette_system_volume)
+    cuvette_system_volume(cuvette_system_volume),
+    max_flowrate(max_flowrate),
+    min_flowrate(min_flowrate)
 {
     auto stopper_lamda = [this](){
           Stop();
