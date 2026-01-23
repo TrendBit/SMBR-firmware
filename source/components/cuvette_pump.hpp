@@ -44,8 +44,8 @@ private:
      * @brief Transfer function determining speed/flowrate curve
      */
     Motor_transfer_function motor_pump_speed_curve = Motor_transfer_function(
-        {0,  0.2, 0.3, 0.4,  0.5,  0.6,  0.7,  0.8,  0.9, 1.0},
-        {0, 0.05, 0.3, 0.6, 0.73, 0.81, 0.84, 0.92, 0.96, 1.0}
+        {0, 0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9,  1.0},
+        {0, 0.05, 0.10, 0.29, 0.63, 0.75, 0.82, 0.89, 0.92, 0.96, 1.0}
     );
 
     /**
@@ -169,7 +169,7 @@ private:
      * @return float    Maximal reliable flowrate of pump in ml/min
      */
     float Maximal_flowrate() const {
-        return 28.0f;
+        return 28.5f;
     };
 
 };
