@@ -25,10 +25,10 @@ Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes
         Logger::Notice("Enumerator initialized as Undefined instance, will attempt to enumerate");
 
         auto blinking_lambda = [this](){ 
-            this->current_blinking_state = !this->current_blinking_state;
+            this->current_blinking_state = (this->current_blinking_state + 1)%4;
             this->Show_instance_color(); 
         };
-        blinking_loop = new rtos::Repeated_execution(blinking_lambda, 100, false);
+        blinking_loop = new rtos::Repeated_execution(blinking_lambda, 50, false);
         
         auto instance_select_lambda = [this](){
             this->Enumerate(this->wanted_instance);
@@ -106,15 +106,15 @@ bool Enumerator::Save_instance_to_memory() const{
 
 void Enumerator::Show_instance_color() const{
     uint8_t instance_index = static_cast<uint8_t>(current_instance);
-    if (current_state == State::selecting)
+    if (current_state == State::selecting || current_state == State::reserving)
     {
         instance_index = static_cast<uint8_t>(wanted_instance);
     }
     
-    if((!current_blinking_state && do_blinking) || current_state == State::reserving){
-        Set_RGB_LED_color(0x00,0x00,0x00);
-    }else{
+    if(current_blinking_state < led_duty_cycle){
         Set_RGB_LED_color(colors[instance_index][0],colors[instance_index][1],colors[instance_index][2]);
+    }else{
+        Set_RGB_LED_color(0x00,0x00,0x00);
     }
 }
 
@@ -133,10 +133,10 @@ void Enumerator::Change_to_instance(Codes::Instance new_instance){
     blinking_loop->Disable();
 
     wanted_instance = new_instance;
-    do_blinking = true;
+    led_duty_cycle = 2;
 
     //set the led color instantly before blinking_loop executes.
-    current_blinking_state = true;
+    current_blinking_state = 0;
     Show_instance_color();
 
     blinking_loop->Enable();
@@ -171,7 +171,7 @@ bool Enumerator::Enumerate(Codes::Instance requested_instance){
 
     Logger::Notice("Enumerator is trying to reserve the Instance {}", magic_enum::enum_name(requested_instance));
 
-    do_blinking = false;
+    led_duty_cycle = 1;
     
     App_messages::Common::Enumerator_reserve reserve_message(requested_instance);
     Send_CAN_message(reserve_message);
@@ -187,7 +187,7 @@ void Enumerator::Finish_enumerate(){
 
     Logger::Notice("Enumerator has successfully registered as Instance {}", magic_enum::enum_name(wanted_instance));
     
-    do_blinking = false;
+    led_duty_cycle = 4;
     current_instance = wanted_instance;
 
     Show_instance_color();
@@ -207,8 +207,8 @@ void Enumerator::Resolve_collision(){
     
     Logger::Warning("Enumerator has collided with another module while trying to register as Instance {}", magic_enum::enum_name(wanted_instance));
     
+    led_duty_cycle = 1;
     current_instance = Codes::Instance::Undefined;
-    current_blinking_state = true;
 
 }
 

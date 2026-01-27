@@ -111,14 +111,14 @@ private:
     State current_state = State::exclusive;
 
     /**
-     * @brief   Current blinking state, true is LED on.
+     * @brief   Current led duty cycle state.
      */
-    bool current_blinking_state = true;
+    uint16_t current_blinking_state = 0;
 
     /**
-     * @brief   On every other update of blinking_loop, turn the LED off.
+     * @brief   Dictates the duty cycle of the LED. Values can range between 0-4 for 0%-100% duty cycle.
      */
-    bool do_blinking = true;
+    uint16_t led_duty_cycle = 4;
 
     /**
      * @brief   Holds the currently wanted_instance to be used in Change_to_instance process.
