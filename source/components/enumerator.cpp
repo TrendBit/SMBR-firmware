@@ -69,7 +69,9 @@ Codes::Instance Enumerator::Instance() const{
 }
 
 bool Enumerator::Stable() const{
-    if (current_instance == Codes::Instance::Exclusive){
+    if (current_state == State::exclusive 
+    ||  current_state == State::in_collision
+    ||  current_state == State::registered){
         return true;
     }
 
@@ -81,9 +83,7 @@ bool Enumerator::Valid() const{
         return true;
     }
 
-    if (current_instance == Codes::Instance::Undefined ||
-        current_instance == Codes::Instance::All ||
-        current_instance == Codes::Instance::Reserved) {
+    if (current_instance == Codes::Instance::Undefined) {
         return false;
     }
 
