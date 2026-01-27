@@ -259,6 +259,19 @@ private:
      * @brief   Start the Change_to_instance process whitcj
      */
     void Change_to_instance(Codes::Instance new_instance);
+
+
+    /**
+     * @brief   Creates the lambda functions and their respective delayed executions and loops.
+     */
+    void Setup_control_lambdas();
+
+    /**
+     * @brief   Registers message bypasses used by the enumerator.
+     */
+    void Setup_can_router();
+
+
 protected:
 
     /**

@@ -20,38 +20,23 @@ Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes
 {
     if (instance_type == Codes::Instance::Exclusive) {
         Logger::Notice("Enumerator initialized as Exclusive instance");
+        current_state = State::exclusive;
 
     } else if (instance_type == Codes::Instance::Undefined) {
         Logger::Notice("Enumerator initialized as Undefined instance, will attempt to enumerate");
+        current_state = State::selecting;
 
-        auto blinking_lambda = [this](){ 
-            this->current_blinking_state = (this->current_blinking_state + 1)%4;
-            this->Show_instance_color(); 
-        };
-        blinking_loop = new rtos::Repeated_execution(blinking_lambda, 50, false);
-        
-        auto instance_select_lambda = [this](){
-            this->Enumerate(this->wanted_instance);
-        };
-        instance_select_delay = new rtos::Delayed_execution(instance_select_lambda, 1, false);
-
-        auto finish_enumeration_lambda = [this](){
-            this->Finish_enumerate();
-        };
-        finish_enumeration_delay = new rtos::Delayed_execution(finish_enumeration_lambda, enumeration_delay_ms, false);
+        Setup_control_lambdas();
 
         // starts the instance_select_lambda after scheduler starts (CAN_thread is ready to send messages)
         instance_select_delay->Execute(1);
-        
+
+        Setup_can_router();       
     } else {
         Logger::Notice("Enumerator initialized as Instance {}", magic_enum::enum_name(instance_type));
-
+        current_state = State::exclusive; // disables automatic enumeration
+        // prepared for different handeling of explictily stated instances
     }
-
-
-    Message_router::Register_bypass(Codes::Message_type::Enumerator_collision, Codes::Component::Enumerator);
-    Message_router::Register_bypass(Codes::Message_type::Enumerator_reserve,  Codes::Component::Enumerator);
-    Message_router::Register_bypass(Codes::Message_type::Enumerator_set,  Codes::Component::Enumerator);
 }
 
 Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes::Instance instance_type, uint button_pin, uint rgb_led_pin) :
@@ -71,6 +56,31 @@ Codes::Instance Enumerator::Instance() const{
 Codes::Instance Enumerator::Wanted_instance() const{
     return wanted_instance;
 }
+
+void Enumerator::Setup_control_lambdas(){
+    auto blinking_lambda = [this](){ 
+        this->current_blinking_state = (this->current_blinking_state + 1)%4;
+        this->Show_instance_color(); 
+    };
+    blinking_loop = new rtos::Repeated_execution(blinking_lambda, 50, false);
+    
+    auto instance_select_lambda = [this](){
+        this->Enumerate(this->wanted_instance);
+    };
+    instance_select_delay = new rtos::Delayed_execution(instance_select_lambda, 1, false);
+
+    auto finish_enumeration_lambda = [this](){
+        this->Finish_enumerate();
+    };
+    finish_enumeration_delay = new rtos::Delayed_execution(finish_enumeration_lambda, enumeration_delay_ms, false);
+}
+
+void Enumerator::Setup_can_router(){
+    Message_router::Register_bypass(Codes::Message_type::Enumerator_collision, Codes::Component::Enumerator);
+    Message_router::Register_bypass(Codes::Message_type::Enumerator_reserve,  Codes::Component::Enumerator);
+    Message_router::Register_bypass(Codes::Message_type::Enumerator_set,  Codes::Component::Enumerator);
+}
+
 
 bool Enumerator::Stable() const{
     if (current_state == State::exclusive 
