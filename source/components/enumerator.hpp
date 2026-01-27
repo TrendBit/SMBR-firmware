@@ -167,6 +167,14 @@ public:
      */
     Codes::Instance Instance() const;
 
+
+    /**
+     * @brief  Get currently wanted instance enumeration of module
+     *
+     * @return Codes::Instance  Currently wanted instance enumeration
+     */
+    Codes::Instance Wanted_instance() const;
+
     /**
      * @brief   Check if current instance is stable,not in process of enumeration or undefined/error state
      *          Exclusive instance is considered always stable

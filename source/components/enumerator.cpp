@@ -68,6 +68,10 @@ Codes::Instance Enumerator::Instance() const{
     return current_instance;
 }
 
+Codes::Instance Enumerator::Wanted_instance() const{
+    return wanted_instance;
+}
+
 bool Enumerator::Stable() const{
     if (current_state == State::exclusive 
     ||  current_state == State::in_collision
