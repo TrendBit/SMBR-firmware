@@ -264,7 +264,28 @@ bool EEPROM_storage::Write_spectrophotometer_calibration(std::array<float, 6> &c
     return Write_record(Record_name::SPM_nominal_calibration, data);
 }
 
+std::optional<float> EEPROM_storage::Read_Cuvette_pump_max_flowrate() {
+    float flowrate{};
+    auto opt = Read_record(Record_name::Cuvette_pump_max_flowrate);
+    if (!opt) {
+        return std::nullopt;
+    }
+    const auto& data = *opt;
+    if (data.size() != sizeof(float)) {
+        return std::nullopt;
+    }
+    std::copy(data.begin(), data.end(), reinterpret_cast<uint8_t*>(&flowrate));
+    return flowrate;
+}
 
+float EEPROM_storage::Write_Cuvette_pump_max_flowrate(float flowrate) {
+    std::vector<uint8_t> data(sizeof(float));
+    std::copy(reinterpret_cast<uint8_t *>(&flowrate),
+          reinterpret_cast<uint8_t *>(&flowrate) + sizeof(float),
+          data.begin());
+    Write_record(Record_name::Cuvette_pump_max_flowrate, data);
+    return flowrate;
+}
 
 Codes::Module EEPROM_storage::Module(){
     auto record = Read_record(Record_name::Module_type);
