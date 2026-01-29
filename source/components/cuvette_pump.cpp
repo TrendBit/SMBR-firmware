@@ -1,17 +1,33 @@
 #include "cuvette_pump.hpp"
 
-Cuvette_pump::Cuvette_pump(uint gpio_in1, uint gpio_in2, float max_flowrate, float min_flowrate, float cuvette_system_volume, float min_speed, float pwm_frequency) :
+Cuvette_pump::Cuvette_pump(uint gpio_in1, uint gpio_in2, float cuvette_system_volume, EEPROM_storage * const memory, float min_speed, float pwm_frequency) :
     Component(Codes::Component::Cuvette_pump),
     Message_receiver(Codes::Component::Cuvette_pump),
     DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
     cuvette_system_volume(cuvette_system_volume),
-    max_flowrate(max_flowrate),
-    min_flowrate(min_flowrate)
+    memory(memory)
 {
     auto stopper_lamda = [this](){
           Stop();
     };
     pump_stopper = new rtos::Delayed_execution(stopper_lamda);
+    Load_max_flowrate();
+}
+
+void Cuvette_pump::Load_max_flowrate(){
+    std::optional<float> max_flowrate_mem_o = memory->Read_Cuvette_pump_max_flowrate();
+    if (!max_flowrate_mem_o.has_value()) {
+        max_flowrate = fallback_max_flowrate;
+        return;
+    }
+    float max_flowrate_mem = max_flowrate_mem_o.value();
+    if ((max_flowrate_mem >= Minimal_flowrate()) && (max_flowrate_mem <= 1000.0f)) {
+        // Loaded float is in valid range
+        max_flowrate = max_flowrate_mem;
+    } else {
+        max_flowrate = fallback_max_flowrate;
+    }
+    Logger::Notice("Cuvette_pump max flowrate: {:f}", max_flowrate);
 }
 
 bool Cuvette_pump::Receive(CAN::Message message){
@@ -58,6 +74,19 @@ bool Cuvette_pump::Receive(Application_message message){
             App_messages::Cuvette_pump::Get_flowrate_response flowrate_response(Flowrate());
             Logger::Debug("Cuvette pump flowrate requested, response: {:03.1f}", flowrate_response.flowrate);
             Send_CAN_message(flowrate_response);
+            return true;
+        }
+
+        case Codes::Message_type::Cuvette_pump_set_max_flowrate: {
+            App_messages::Cuvette_pump::Set_max_flowrate set_max_flowrate;
+
+            if (!set_max_flowrate.Interpret_data(message.data)) {
+                Logger::Error("Cuvette_pump_set_max_flowrate interpretation failed");
+                return false;
+            }
+
+            Logger::Debug("Cuvette pump maximal flowrate set to: {:03.1f}", set_max_flowrate.flowrate);
+            Set_Maximal_flowrate(set_max_flowrate.flowrate);
             return true;
         }
 
@@ -140,6 +169,13 @@ float Cuvette_pump::Flowrate(){
     float direction = speed >= 0.0f ? 1.0f : -1.0f;
     float flowrate = (motor_pump_speed_curve.To_rate(abs(speed))) * Maximal_flowrate();
     flowrate *= direction;
+    return flowrate;
+}
+
+float Cuvette_pump::Set_Maximal_flowrate(float flowrate){
+    memory->Write_Cuvette_pump_max_flowrate(flowrate);
+    Logger::Debug("Actual max flowrate: {:f}, New max flowrate: {:f}", max_flowrate, flowrate);
+    max_flowrate = flowrate;
     return flowrate;
 }
 

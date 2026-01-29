@@ -16,11 +16,13 @@
 #include "logger.hpp"
 #include "can_bus/app_message.hpp"
 #include "tools/motor_transfer_function.hpp"
+#include "components/memory.hpp"
 
 #include "codes/messages/cuvette_pump/set_speed.hpp"
 #include "codes/messages/cuvette_pump/get_speed_request.hpp"
 #include "codes/messages/cuvette_pump/get_speed_response.hpp"
 #include "codes/messages/cuvette_pump/set_flowrate.hpp"
+#include "codes/messages/cuvette_pump/set_max_flowrate.hpp"
 #include "codes/messages/cuvette_pump/get_flowrate_request.hpp"
 #include "codes/messages/cuvette_pump/get_flowrate_response.hpp"
 #include "codes/messages/cuvette_pump/move.hpp"
@@ -34,6 +36,12 @@
  *          In addition to the normal peristaltic pump allows to prime and purge cuvette system
  */
 class Cuvette_pump: public Component, public Message_receiver, private DC_HBridge{
+public:
+    /**
+     * @brief Maximal flowrate fallback
+     */
+    static float const constexpr fallback_max_flowrate = 28.5f;
+
 private:
     /**
      * @brief  Volume of cuvette system in ml, this amount will be primed or purged
@@ -54,14 +62,14 @@ private:
     rtos::Delayed_execution * pump_stopper;
 
     /**
+     * @brief   Persistent memory for calibration data
+     */
+    EEPROM_storage * const memory;
+
+    /**
      * @brief Maximal flowrate of the pump
      */
     float max_flowrate;
-
-    /**
-     * @brief Minimal flowrate of the pump
-     */
-    float min_flowrate;
 
 public:
     /**
@@ -74,7 +82,7 @@ public:
      * @param min_speed     Minimum speed at which is pump moving of pump in range 0-1
      * @param pwm_frequency             Frequency of PWM signal for control of motor
      */
-    Cuvette_pump(uint gpio_in1, uint gpio_in2, float cuvette_system_volume, float max_flowrate = 28.5f, float min_flowrate = 3.0f, float min_speed = 0, float pwm_frequency = 50.0f);
+    Cuvette_pump(uint gpio_in1, uint gpio_in2, float cuvette_system_volume, EEPROM_storage * const memory, float min_speed = 0, float pwm_frequency = 50.0f);
 
     /**
     * @brief Set speed of pump
@@ -100,6 +108,14 @@ public:
      * @return float    Current flowrate of pump in ml/min
      */
     float Flowrate();
+
+    /**
+     * @brief Sets maximal flowrate ml/min
+     *
+     * @param flowrate Maximal flowrate of pump in ml/min
+     * @return flowrate in ml/min
+     */
+    float Set_Maximal_flowrate(float flowrate);
 
     /**
      * @brief   Stop pump immediately by coasting
@@ -170,7 +186,7 @@ private:
      * @return float    Minimal reliable flowrate of pump in ml/min
      */
     float Minimal_flowrate() const {
-        return min_flowrate;
+        return 3.0f;
     };
 
     /**
@@ -181,5 +197,10 @@ private:
     float Maximal_flowrate() const {
         return max_flowrate;
     };
+
+    /**
+     * @brief Loads maximal flowrate from memory to max_flowrate or uses max_flowrate_fallback value
+     */
+    void Load_max_flowrate();
 
 };
