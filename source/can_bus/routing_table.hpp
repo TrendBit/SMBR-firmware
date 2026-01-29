@@ -5,6 +5,7 @@
  * @date 14.08.2024
  */
 
+#include "codes/codes.hpp"
 #include <unordered_map>
 
 /**
@@ -59,6 +60,7 @@ inline static const std::unordered_map<Codes::Message_type, Codes::Component> Ro
     { Codes::Message_type::Cuvette_pump_purge,                         Codes::Component::Cuvette_pump       },
     { Codes::Message_type::Cuvette_pump_stop,                          Codes::Component::Cuvette_pump       },
     { Codes::Message_type::Cuvette_pump_info_request,                  Codes::Component::Cuvette_pump       },
+    { Codes::Message_type::Cuvette_pump_set_max_flowrate,              Codes::Component::Cuvette_pump       },
     // Aerator
     { Codes::Message_type::Aerator_set_speed,                          Codes::Component::Bottle_aerator     },
     { Codes::Message_type::Aerator_get_speed_request,                  Codes::Component::Bottle_aerator     },
