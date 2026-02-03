@@ -1,6 +1,11 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.12 WIP (pump_module)
+- Add support for new external pump module
+  - Can connect 2 or 4 peristaltic pumps and control them
+  - Module support enumeration, up to 12 modules can be connected to single reactor
+
 # 0.11 (enumeration)
 - Add instance enumeration for non-exclusive modules
   - Detailed documentation is in `/docs/enumeration/` directory of this repository
