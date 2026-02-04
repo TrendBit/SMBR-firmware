@@ -1,6 +1,13 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.11 (enumeration)
+- Add instance enumeration for non-exclusive modules
+  - Detailed documentation is in `/docs/enumeration/` directory of this repository
+  - Last instance is saved in EEPROM memory and loaded after startup
+  - Automatic collision detection
+  - Physical interface, LED shows current instance with color and a button is used for changing the instance
+
 # 0.10 (module_issues)
 - Add module issue monitoring
   - Core temperature monitoring for control and sensor modules
