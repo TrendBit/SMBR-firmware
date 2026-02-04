@@ -1,0 +1,44 @@
+@startuml
+actor User
+participant Module1
+participant CanBus
+participant Module2
+
+activate Module1
+
+Module1 -> CanBus : reserve(1)
+
+activate Module1 #LightBlue
+note right of Module1 : waiting for collision
+
+
+Module1 -> Module1 : register(1)
+deactivate Module1
+
+
+
+activate Module2
+Module2 -> CanBus : reserve(1)
+activate Module2 #LightBlue
+note right of Module2 : waiting for collision
+
+CanBus -> Module1 : reserve(1)
+Module1 -> CanBus : collision(1)
+CanBus -> Module2 : collision(1)
+deactivate Module2
+Module2 -->> Module2
+activate Module2 #Red
+note right of Module2 : waiting for collision resolve
+
+User -> Module2 : set(2)
+deactivate Module2
+Module2 -> CanBus : reserve(2)
+activate Module2 #LightBlue
+note right of Module2 : waiting for collision
+CanBus -> Module1 : reserve(2)
+Module2 -> Module2 : register(2)
+deactivate Module2
+
+
+... continue working as the selected instance ...
+@enduml
