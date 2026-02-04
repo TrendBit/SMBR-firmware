@@ -29,6 +29,8 @@ private:
 
     std::unique_ptr<Current_sensor> current_sensor;
 
+    float max_flowrate;
+
 public:
     /**
      * @brief Construct a new Pump object
@@ -56,6 +58,32 @@ public:
      * @param speed     Speed of pump from -1.0 to 1.0
      */
     virtual void Speed(float speed) override final;
+
+    /**
+     * @brief   Get current speed of pump
+     *
+     * @return float    Speed in range -1.0 to 1.0
+     */
+    virtual float Speed() const override final;
+
+    /**
+     * @brief   Set flowrate of pump
+     *
+     * @param flowrate    Flowrate of pump in ml/min
+     */
+    void Flowrate(float flowrate);
+
+    /**
+     * @brief   Get current flowrate of pump
+     *
+     * @return float    Flowrate in ml/min
+     */
+    float Flowrate() const;
+
+    /**
+     * @brief   Stop the pump
+     */
+    void Stop();
 
     /**
      * @brief   Read current drawn by pump

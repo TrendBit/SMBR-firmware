@@ -3,7 +3,8 @@
 Pump::Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::unique_ptr<Current_sensor> current_sensor, float max_flowrate, float min_speed, float pwm_frequency) :
     DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
     indication(std::make_unique<PWM_channel>(indication_pin, 100.0f, 1.0f, true)),
-    current_sensor(std::move(current_sensor))
+    current_sensor(std::move(current_sensor)),
+    max_flowrate(max_flowrate)
 {
 
 }
@@ -11,6 +12,22 @@ Pump::Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::uniq
 void Pump::Speed(float speed){
     DC_HBridge::Speed(speed);
     Indicate(speed);
+}
+
+float Pump::Speed() const {
+    return DC_HBridge::Speed();
+}
+
+void Pump::Flowrate(float flowrate){
+    DC_HBridge::Speed((flowrate / max_flowrate));
+}
+
+float Pump::Flowrate() const {
+    return DC_HBridge::Speed() * max_flowrate;
+}
+
+void Pump::Stop(){
+    DC_HBridge::Stop();
 }
 
 void Pump::Indicate(float intensity){
