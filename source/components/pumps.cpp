@@ -115,6 +115,89 @@ bool Pump_controller::Receive(Application_message message){
             return true;
         }
 
+        case Codes::Message_type::Pumps_get_speed_request: {
+            App_messages::Pumps::Get_speed_request get_speed_request;
+            if (!get_speed_request.Interpret_data(message.data)) {
+                Logger::Error("Pumps_get_speed_request interpretation failed");
+                return false;
+            }
+
+            if (not Valid_pump_index(get_speed_request.pump_index)) {
+                Logger::Error("Pumps_get_speed_request invalid pump index: {}", get_speed_request.pump_index);
+                return false;
+            }
+
+            Logger::Debug("Pump {} speed requested", get_speed_request.pump_index);
+            float speed = pumps[get_speed_request.pump_index - 1]->Speed();
+            App_messages::Pumps::Get_speed_response get_speed_response(get_speed_request.pump_index, speed);
+            Send_CAN_message(get_speed_response);
+            return true;
+        }
+
+        case Codes::Message_type::Pumps_set_flowrate: {
+            App_messages::Pumps::Set_flowrate set_flowrate;
+            if (!set_flowrate.Interpret_data(message.data)) {
+                Logger::Error("Pumps_set_flowrate interpretation failed");
+                return false;
+            }
+
+            if (not Valid_pump_index(set_flowrate.pump_index)) {
+                Logger::Error("Pumps_set_flowrate invalid pump index: {}", set_flowrate.pump_index);
+                return false;
+            }
+
+            Logger::Debug("Pump {} flowrate set to: {:03.2f}", set_flowrate.pump_index, set_flowrate.flowrate);
+            pumps[set_flowrate.pump_index - 1]->Flowrate(set_flowrate.flowrate);
+            return true;
+        }
+
+        case Codes::Message_type::Pumps_get_flowrate_request: {
+            App_messages::Pumps::Get_flowrate_request get_flowrate_request;
+            if (!get_flowrate_request.Interpret_data(message.data)) {
+                Logger::Error("Pumps_get_flowrate_request interpretation failed");
+                return false;
+            }
+
+            if (not Valid_pump_index(get_flowrate_request.pump_index)) {
+                Logger::Error("Pumps_get_flowrate_request invalid pump index: {}", get_flowrate_request.pump_index);
+                return false;
+            }
+
+            Logger::Debug("Pump {} flowrate requested", get_flowrate_request.pump_index);
+            float flowrate = pumps[get_flowrate_request.pump_index - 1]->Flowrate();
+            App_messages::Pumps::Get_flowrate_response get_flowrate_response(get_flowrate_request.pump_index, flowrate);
+            Send_CAN_message(get_flowrate_response);
+            return true;
+        }
+
+        case Codes::Message_type::Pumps_stop: {
+            App_messages::Pumps::Stop stop;
+            if (!stop.Interpret_data(message.data)) {
+                Logger::Error("Pumps_stop interpretation failed");
+                return false;
+            }
+
+            if (not Valid_pump_index(stop.pump_index)) {
+                Logger::Error("Pumps_stop invalid pump index: {}", stop.pump_index);
+                return false;
+            }
+
+            Logger::Debug("Pump {} stopped", stop.pump_index);
+            pumps[stop.pump_index - 1]->Stop();
+            return true;
+        }
+
+        case Codes::Message_type::Pumps_stop_all: {
+            Logger::Debug("Pumps stop all");
+            for (auto pump : pumps) {
+                pump->Stop();
+            }
+            return true;
+        }
+
+        // TODO Info, Move, Max_flow(Calibrate)
+
+
         default:
             Logger::Warning("Pumps component received unknown message type: {}", static_cast<uint16_t>(message.Message_type()));
             return false;

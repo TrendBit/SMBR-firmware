@@ -19,6 +19,16 @@
 
 #include "codes/messages/pumps/pump_count_response.hpp"
 #include "codes/messages/pumps/set_speed.hpp"
+#include "codes/messages/pumps/get_speed_request.hpp"
+#include "codes/messages/pumps/get_speed_response.hpp"
+#include "codes/messages/pumps/set_flowrate.hpp"
+#include "codes/messages/pumps/get_flowrate_request.hpp"
+#include "codes/messages/pumps/get_flowrate_response.hpp"
+#include "codes/messages/pumps/info_request.hpp"
+#include "codes/messages/pumps/info_response.hpp"
+#include "codes/messages/pumps/move.hpp"
+#include "codes/messages/pumps/stop.hpp"
+#include "codes/messages/pumps/stop_all.hpp"
 
 class Pump: private DC_HBridge{
 private:
@@ -132,4 +142,9 @@ public:
      * @return false    Message cannot be processed by this component
      */
     virtual bool Receive(Application_message message) override final;
+
+private:
+    bool Valid_pump_index(uint8_t index) {
+        return (index > 0) and (index <= Pump_count());
+    }
 };
