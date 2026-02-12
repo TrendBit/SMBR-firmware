@@ -10,20 +10,49 @@ Pump::Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::uniq
 }
 
 void Pump::Speed(float speed){
-    DC_HBridge::Speed(speed);
-    Indicate(speed);
+    float in = std::clamp(speed, -1.0f, 1.0f);
+    if (std::abs(in) < 1e-4f) {
+        Stop();
+        return;
+    }
+
+    float magnitude = motor_pump_speed_curve.To_speed(std::abs(in));
+    float signed_speed = (in >= 0.0f) ? magnitude : -magnitude;
+    float clamped = std::clamp(signed_speed, -1.0f, 1.0f);
+    DC_HBridge::Speed(clamped);
+    Indicate(std::abs(in));
 }
 
-float Pump::Speed() const {
-    return DC_HBridge::Speed();
+float Pump::Speed() {
+    float motor_speed = DC_HBridge::Speed();
+    float pump_speed = motor_pump_speed_curve.To_rate(std::abs(motor_speed));
+    return (motor_speed >= 0.0f) ? pump_speed : -pump_speed;
 }
 
 void Pump::Flowrate(float flowrate){
-    DC_HBridge::Speed((flowrate / max_flowrate));
+    float pump_speed = flowrate / Maximal_flowrate();
+    Speed(pump_speed);
 }
 
-float Pump::Flowrate() const {
-    return DC_HBridge::Speed() * max_flowrate;
+float Pump::Flowrate() {
+    float speed = Speed();
+    float direction = speed >= 0.0f ? 1.0f : -1.0f;
+    float flowrate = (motor_pump_speed_curve.To_rate(std::abs(speed))) * Maximal_flowrate();
+    flowrate *= direction;
+    return flowrate;
+}
+
+float Pump::Set_Maximal_flowrate(float flowrate){
+    max_flowrate = flowrate;
+    return flowrate;
+}
+
+float Pump::Maximal_flowrate() const {
+    return max_flowrate;
+}
+
+float Pump::Minimal_flowrate() const {
+    return motor_pump_speed_curve.Min_rate() * max_flowrate;
 }
 
 void Pump::Stop(){
@@ -43,12 +72,14 @@ float Pump::Current(){
     return current_sensor->Current();
 }
 
-Pump_controller::Pump_controller(etl::vector<Pump *,8> pumps):
+Pump_controller::Pump_controller(etl::vector<Pump *,8> pumps, EEPROM_storage * const memory):
     Component(Codes::Component::Pumps),
     Message_receiver(Codes::Component::Pumps),
-    pumps(pumps)
+    pumps(pumps),
+    memory(memory)
     {
     Logger::Debug("Pumps component initialized");
+    Load_max_flowrates();
 
     // Blink with pump status LEDs after startup
     new rtos::Execute_until([pumps]() -> bool {
@@ -80,6 +111,26 @@ Pump_controller::Pump_controller(etl::vector<Pump *,8> pumps):
         }
         Logger::Notice("----------------------");
     }, 1000, true);
+}
+
+void Pump_controller::Load_max_flowrates(){
+    for (uint8_t index = 0; index < Pump_count(); index++) {
+        std::optional<float> max_flowrate_mem_o = memory->Read_Pump_max_flowrate(index);
+        if (!max_flowrate_mem_o.has_value()) {
+            pumps[index]->Set_Maximal_flowrate(Pump::fallback_max_flowrate);
+            Logger::Notice("Pump {} max flowrate fallback: {:f}", index + 1, Pump::fallback_max_flowrate);
+            continue;
+        }
+        float max_flowrate_mem = max_flowrate_mem_o.value();
+        if ((max_flowrate_mem >= pumps[index]->Minimal_flowrate()) && (max_flowrate_mem <= 1000.0f)) {
+            // Loaded float is in valid range
+            pumps[index]->Set_Maximal_flowrate(max_flowrate_mem);
+            Logger::Notice("Pump {} max flowrate: {:f}", index + 1, max_flowrate_mem);
+        } else {
+            pumps[index]->Set_Maximal_flowrate(Pump::fallback_max_flowrate);
+            Logger::Notice("Pump {} max flowrate fallback: {:f}", index + 1, Pump::fallback_max_flowrate);
+        }
+    }
 }
 
 bool Pump_controller::Receive(CAN::Message message){
@@ -195,7 +246,50 @@ bool Pump_controller::Receive(Application_message message){
             return true;
         }
 
-        // TODO Info, Move, Max_flow(Calibrate)
+        case Codes::Message_type::Pumps_set_max_flowrate: {
+            App_messages::Pumps::Set_max_flowrate set_max_flowrate;
+            if (!set_max_flowrate.Interpret_data(message.data)) {
+                Logger::Error("Pumps_set_max_flowrate interpretation failed");
+                return false;
+            }
+
+            if (not Valid_pump_index(set_max_flowrate.pump_index)) {
+                Logger::Error("Pumps_set_max_flowrate invalid pump index: {}", set_max_flowrate.pump_index);
+                return false;
+            }
+
+            Logger::Debug("Pump {} maximal flowrate set to: {:03.2f}", set_max_flowrate.pump_index, set_max_flowrate.max_flow_rate);
+            pumps[set_max_flowrate.pump_index - 1]->Set_Maximal_flowrate(set_max_flowrate.max_flow_rate);
+
+            std::optional<float> written = memory->Write_Pump_max_flowrate(set_max_flowrate.pump_index - 1, set_max_flowrate.max_flow_rate);
+            if (!written.has_value()) {
+                Logger::Error("Failed to write pump {} max flowrate to memory", set_max_flowrate.pump_index);
+                return false;
+            }
+            return true;
+        }
+
+        case Codes::Message_type::Pumps_info_request: {
+            App_messages::Pumps::Info_request info_request;
+            if (!info_request.Interpret_data(message.data)) {
+                Logger::Error("Pumps_info_request interpretation failed");
+                return false;
+            }
+
+            if (not Valid_pump_index(info_request.pump_index)) {
+                Logger::Error("Pumps_info_request invalid pump index: {}", info_request.pump_index);
+                return false;
+            }
+
+            Logger::Debug("Pump {} info requested", info_request.pump_index);
+            float min_flowrate = pumps[info_request.pump_index - 1]->Minimal_flowrate();
+            float max_flowrate = pumps[info_request.pump_index - 1]->Maximal_flowrate();
+            App_messages::Pumps::Info_response info_response(info_request.pump_index, min_flowrate, max_flowrate);
+            Send_CAN_message(info_response);
+            return true;
+        }
+
+        // TODO Move
 
 
         default:

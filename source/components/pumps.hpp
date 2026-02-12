@@ -29,16 +29,39 @@
 #include "codes/messages/pumps/move.hpp"
 #include "codes/messages/pumps/stop.hpp"
 #include "codes/messages/pumps/stop_all.hpp"
+#include "codes/messages/pumps/set_max_flowrate.hpp"
+#include "tools/motor_transfer_function.hpp"
+#include "components/memory.hpp"
 
 class Pump: private DC_HBridge{
+public:
+    /**
+     * @brief Maximal flowrate fallback
+     */
+    static float const constexpr fallback_max_flowrate = 100.0f;
+
 private:
     /**
      * @brief   PWM channel used to indicate pump activity
      */
     std::unique_ptr<PWM_channel> indication;
 
+    /**
+     * @brief   Current sensor measuring pump current
+     */
     std::unique_ptr<Current_sensor> current_sensor;
 
+    /**
+     * @brief Transfer function determining speed/flowrate curve (relative to max flowrate)
+     */
+    Motor_transfer_function motor_pump_speed_curve = Motor_transfer_function(
+        {0, 0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9,  1.0},
+        {0, 0.05, 0.10, 0.29, 0.63, 0.75, 0.82, 0.89, 0.92, 0.96, 1.0}
+    );
+
+    /**
+     * @brief Maximal flowrate of the pump
+     */
     float max_flowrate;
 
 public:
@@ -67,14 +90,14 @@ public:
      *
      * @param speed     Speed of pump from -1.0 to 1.0
      */
-    virtual void Speed(float speed) override final;
+    virtual void Speed(float speed) final;
 
     /**
      * @brief   Get current speed of pump
      *
      * @return float    Speed in range -1.0 to 1.0
      */
-    virtual float Speed() const override final;
+    virtual float Speed() final;
 
     /**
      * @brief   Set flowrate of pump
@@ -88,7 +111,29 @@ public:
      *
      * @return float    Flowrate in ml/min
      */
-    float Flowrate() const;
+    float Flowrate();
+
+    /**
+     * @brief Sets maximal flowrate ml/min
+     *
+     * @param flowrate Maximal flowrate of pump in ml/min
+     * @return flowrate in ml/min
+     */
+    float Set_Maximal_flowrate(float flowrate);
+
+    /**
+     * @brief   Get maximal flowrate of pump
+     *
+     * @return float    Maximal flowrate in ml/min
+     */
+    float Maximal_flowrate() const;
+
+    /**
+     * @brief   Get minimal flowrate of pump
+     *
+     * @return float    Minimal flowrate in ml/min
+     */
+    float Minimal_flowrate() const;
 
     /**
      * @brief   Stop the pump
@@ -110,11 +155,19 @@ private:
      */
     etl::vector<Pump *,8> pumps;
 
+    /**
+     * @brief   Persistent memory for calibration data
+     */
+    EEPROM_storage * const memory;
+
 public:
     /**
      * @brief Construct a new Pump_controller component
+     *
+     * @param pumps     List of pumps connected to module
+     * @param memory    Persistent memory for calibration data
      */
-    Pump_controller(etl::vector<Pump *,8> pumps);
+    Pump_controller(etl::vector<Pump *,8> pumps, EEPROM_storage * const memory);
 
     /**
      * @brief   Number of pump connected to module, detection is based on configuration pin level
@@ -144,7 +197,19 @@ public:
     virtual bool Receive(Application_message message) override final;
 
 private:
+    /**
+     * @brief   Check if pump index is valid
+     *
+     * @param index     Pump index (1-based)
+     * @return true     Index is valid
+     * @return false    Index is out of range
+     */
     bool Valid_pump_index(uint8_t index) {
         return (index > 0) and (index <= Pump_count());
     }
+
+    /**
+     * @brief Loads maximal flowrate from memory for all pumps
+     */
+    void Load_max_flowrates();
 };
