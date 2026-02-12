@@ -1,16 +1,32 @@
 #include "aerator.hpp"
 
-Aerator::Aerator(uint gpio_in1, uint gpio_in2, float max_flowrate, float min_speed, float pwm_frequency) :
+Aerator::Aerator(uint gpio_in1, uint gpio_in2, EEPROM_storage * const memory, float min_speed, float pwm_frequency) :
     Component(Codes::Component::Bottle_aerator),
     Message_receiver(Codes::Component::Bottle_aerator),
     DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
-    max_flowrate(max_flowrate),
-    min_speed(min_speed)
+    memory(memory)
 {
     auto stopper_lamda = [this](){
           Stop();
     };
     pump_stopper = new rtos::Delayed_execution(stopper_lamda);
+    Load_max_flowrate();
+}
+
+void Aerator::Load_max_flowrate(){
+    std::optional<float> max_flowrate_mem_o = memory->Read_Aerator_max_flowrate();
+    if (!max_flowrate_mem_o.has_value()) {
+        max_flowrate = fallback_max_flowrate;
+        return;
+    }
+    float max_flowrate_mem = max_flowrate_mem_o.value();
+    if ((max_flowrate_mem >= Minimal_flowrate()) && (max_flowrate_mem <= 50000.0f)) {
+        // Loaded float is in valid range
+        max_flowrate = max_flowrate_mem;
+    } else {
+        max_flowrate = fallback_max_flowrate;
+    }
+    Logger::Notice("Aerator max flowrate: {:f}", max_flowrate);
 }
 
 bool Aerator::Receive(CAN::Message message){
@@ -60,6 +76,19 @@ bool Aerator::Receive(Application_message message){
             return true;
         }
 
+        case Codes::Message_type::Aerator_set_max_flowrate: {
+            App_messages::Aerator::Set_max_flowrate set_max_flowrate;
+
+            if (!set_max_flowrate.Interpret_data(message.data)) {
+                Logger::Error("Aerator_set_max_flowrate interpretation failed");
+                return false;
+            }
+
+            Logger::Debug("Aerator maximal flowrate set to: {:03.1f}", set_max_flowrate.flowrate);
+            Set_Maximal_flowrate(set_max_flowrate.flowrate);
+            return true;
+        }
+
         case Codes::Message_type::Aerator_move: {
             App_messages::Aerator::Move move_message;
 
@@ -92,14 +121,42 @@ bool Aerator::Receive(Application_message message){
     }
 }
 
+void Aerator::Speed(float pump_speed) {
+    float in = std::clamp(pump_speed, 0.0f, 1.0f);
+    if (in < 1e-4f) {
+        Stop();
+        return;
+    }
+
+    float magnitude = motor_pump_speed_curve.To_speed(in);
+    float clamped = std::clamp(magnitude, 0.0f, 1.0f);
+    Logger::Debug("Aerator_speed in={:0.3f} mapped={:0.3f}", in, magnitude);
+    DC_HBridge::Speed(clamped);
+}
+
+float Aerator::Speed() {
+    float motor_speed = DC_HBridge::Speed();
+    float pump_speed = motor_pump_speed_curve.To_rate(motor_speed);
+    return pump_speed;
+}
+
 float Aerator::Flowrate(float flowrate){
-    float motor_speed = speed_flowrate_curve.To_speed(flowrate);
-    Speed(motor_speed);
-    return motor_speed;
+    float pump_speed = flowrate / Maximal_flowrate();
+    Speed(pump_speed);
+    return pump_speed;
 }
 
 float Aerator::Flowrate(){
-    return speed_flowrate_curve.To_rate(Speed());
+    float speed = Speed();
+    float flowrate = (motor_pump_speed_curve.To_rate(speed)) * Maximal_flowrate();
+    return flowrate;
+}
+
+float Aerator::Set_Maximal_flowrate(float flowrate){
+    memory->Write_Aerator_max_flowrate(flowrate);
+    Logger::Debug("Actual max flowrate: {:f}, New max flowrate: {:f}", max_flowrate, flowrate);
+    max_flowrate = flowrate;
+    return flowrate;
 }
 
 float Aerator::Move(float volume_ml){
@@ -115,7 +172,7 @@ float Aerator::Move(float volume_ml, float flowrate){
     // Limit effective flow rate to non-zero positive value lower them max flowrate of pump
     float effective_flowrate = std::clamp(flowrate, Minimal_flowrate(), Maximal_flowrate());
 
-    Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", max_flowrate, flowrate);
+    Logger::Debug("Max flowrate: {:03.1f}, selected_flowrate: {:03.1f}", Maximal_flowrate(), flowrate);
 
     // Calculate time of pumping and set stopper executioner
     float pump_time_sec = (std::abs(volume_ml) / effective_flowrate) * 60;
