@@ -70,7 +70,7 @@ private:
         std::make_pair(Record_name::Reserved,                       Record{0x0002, 2}),
         std::make_pair(Record_name::Cuvette_pump_max_flowrate,      Record{0x0200, 4}),
         std::make_pair(Record_name::Aerator_max_flowrate,           Record{0x0204, 4}),
-        std::make_pair(Record_name::Pumps_max_flowrate,             Record{0x0208, 16}),
+        std::make_pair(Record_name::Pumps_max_flowrate,             Record{0x0208, 32}),
         std::make_pair(Record_name::SPM_nominal_calibration,        Record{0x0300, 24}),
         std::make_pair(Record_name::OJIP_calibration_values,        Record{0x0400, OJIP_ADC_SIZE_BYTES }),
         std::make_pair(Record_name::OJIP_calibration_timing,        Record{0x0400 + OJIP_ADC_SIZE_BYTES, OJIP_TIMING_SIZE_BYTES }),
@@ -198,6 +198,27 @@ public:
      * @return float        Written maximal flowrate value
      */
     float Write_Aerator_max_flowrate(float flowrate);
+
+    /**
+     * @brief   Read pump maximal flowrate from EEPROM
+     *
+     * @param pump_index    Index of pump (0-3)
+     * @return std::optional<float>
+     *         Maximal flowrate value if read was successful
+     *         std::nullopt if memory is not accessible, data is not valid, or index is out of range
+     */
+    std::optional<float> Read_Pump_max_flowrate(uint8_t pump_index);
+
+    /**
+     * @brief   Write pump maximal flowrate to EEPROM
+     *
+     * @param pump_index    Index of pump (0-3)
+     * @param flowrate      Maximal flowrate value to be written to EEPROM
+     * @return std::optional<float>
+     *         Written maximal flowrate value if successful
+     *         std::nullopt if index is out of range or write failed
+     */
+    std::optional<float> Write_Pump_max_flowrate(uint8_t pump_index, float flowrate);
 
 private:
     /**
