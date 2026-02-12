@@ -43,6 +43,7 @@ void Pump_module::Setup_components(){
     auto current_sensor_3 = std::make_unique<Current_sensor>(adc_channel_3, 0.1f);
     auto current_sensor_4 = std::make_unique<Current_sensor>(adc_channel_4, 0.1f);
 
+    // TODO, some pumps must be inverted in order to have correct direction (based on device case)
     auto pump_1 = new Pump(15, 14, 16, std::move(current_sensor_1), 1000.0f, 0.1f);
     auto pump_2 = new Pump(11, 10, 17, std::move(current_sensor_2), 1000.0f, 0.1f);
     auto pump_3 = new Pump( 7,  6, 20, std::move(current_sensor_3), 1000.0f, 0.1f);
@@ -51,7 +52,8 @@ void Pump_module::Setup_components(){
     pump_controller = new Pump_controller(
         pump_count == 2 ?
             etl::vector<Pump *,8>{ pump_1, pump_2 } :
-            etl::vector<Pump *,8>{ pump_1, pump_2, pump_3, pump_4 }
+            etl::vector<Pump *,8>{ pump_1, pump_2, pump_3, pump_4 },
+        memory
     );
 
     Logger::Warning("No components to setup");
