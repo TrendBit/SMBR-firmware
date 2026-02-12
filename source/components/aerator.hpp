@@ -19,6 +19,7 @@
 
 #include "codes/messages/aerator/set_speed.hpp"
 #include "codes/messages/aerator/set_flowrate.hpp"
+#include "codes/messages/aerator/set_max_flowrate.hpp"
 #include "codes/messages/aerator/get_speed_request.hpp"
 #include "codes/messages/aerator/get_speed_response.hpp"
 #include "codes/messages/aerator/get_flowrate_request.hpp"
@@ -26,6 +27,7 @@
 #include "codes/messages/aerator/move.hpp"
 #include "codes/messages/aerator/stop.hpp"
 #include "codes/messages/aerator/info_response.hpp"
+#include "components/memory.hpp"
 
 /**
  * @brief   Aerator is component which is used to aerate liquid in bottle
@@ -34,29 +36,35 @@
  *              Otherwise liquid would be sucked into pump membrane
  */
 class Aerator: public Component, public Message_receiver, private DC_HBridge {
+public:
+    /**
+     * @brief Maximal flowrate fallback
+     */
+    static float const constexpr fallback_max_flowrate = 3000.0f;
+
 private:
     /**
-     * @brief   Maximum flowrate of air pump in ml/min
-     * @deprecated Can be obtained from speed_flowrate_curve
+     * @brief Transfer function determining speed/flowrate curve (relative to max flowrate)
      */
-    float max_flowrate;
-
-    Motor_transfer_function speed_flowrate_curve = Motor_transfer_function(
-        {0, 0.2, 0.4, 0.6, 0.8, 1.0},
-        {0, 200, 500, 1000, 1750, 2500}
+    Motor_transfer_function motor_pump_speed_curve = Motor_transfer_function(
+        {0, 0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9,  1.0},
+        {0, 0.02, 0.4,  0.62, 0.7,  0.8,  0.82, 0.86, 0.92, 0.96, 1.0}
     );
-
-    /**
-     * @brief   Minimum speed at which is pump moving of pump in range 0-1
-     *          Opposite direction is assumed to be the same just negative
-     * @deprecated Can be obtained from speed_flowrate_curve
-     */
-    float min_speed = 0.0f;
 
     /**
      * @brief Timer function which stops pump after defined time, used for moving volumes of liquid
      */
     rtos::Delayed_execution * pump_stopper;
+
+    /**
+     * @brief   Persistent memory for calibration data
+     */
+    EEPROM_storage * const memory;
+
+    /**
+     * @brief Maximal flowrate of the pump
+     */
+    float max_flowrate;
 
 public:
     /**
@@ -64,16 +72,21 @@ public:
      *
      * @param gpio_in1      GPIO pin for control of first input of H-bridge, Forward
      * @param gpio_in2      GPIO pin for control of second input of H-bridge, Reverse
-     * @param max_flowrate  Maximum flowrate of pump in ml/min @deprecated
-     * @param min_speed     Minimum speed at which is pump moving of pump in range 0-1 @deprecated
+     * @param memory        Persistent memory for calibration data
+     * @param min_speed     Minimum speed at which is pump moving of pump in range 0-1 (deprecated)
      * @param pwm_frequency Frequency of PWM signal for control of motor
      */
-    Aerator(uint gpio_in1, uint gpio_in2, float max_flowrate, float min_speed = 0.0f, float pwm_frequency = 50.0f);
+    Aerator(uint gpio_in1, uint gpio_in2, EEPROM_storage * const memory, float min_speed = 0.0f, float pwm_frequency = 50.0f);
 
     /**
-     * @brief Set and get speed of pump, derived from DC_HBridge::Speed
+     * @brief Set speed of pump
      */
-    using DC_HBridge::Speed;
+    virtual void Speed(float speed) override final;
+
+    /**
+     * @brief Get speed of pump
+     */
+    virtual float Speed();
 
     /**
      * @brief   Set flowrate of pump
@@ -89,6 +102,14 @@ public:
      * @return float    Current flowrate of pump in ml/min
      */
     float Flowrate();
+
+    /**
+     * @brief Sets maximal flowrate ml/min
+     *
+     * @param flowrate Maximal flowrate of pump in ml/min
+     * @return flowrate in ml/min
+     */
+    float Set_Maximal_flowrate(float flowrate);
 
     /**
      * @brief   Move given volume of air with maximal flowrate
@@ -143,7 +164,7 @@ private:
      * @return float    Minimal reliable flowrate of pump in ml/min
      */
     float Minimal_flowrate() const {
-        return speed_flowrate_curve.Min_rate();
+        return motor_pump_speed_curve.Min_rate() * max_flowrate;
     };
 
     /**
@@ -152,6 +173,11 @@ private:
      * @return float    Maximal reliable flowrate of pump in ml/min
      */
     float Maximal_flowrate() const {
-        return speed_flowrate_curve.Max_rate();
+        return max_flowrate;
     };
+
+    /**
+     * @brief Loads maximal flowrate from memory to max_flowrate or uses fallback_max_flowrate value
+     */
+    void Load_max_flowrate();
 };
