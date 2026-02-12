@@ -310,6 +310,61 @@ float EEPROM_storage::Write_Aerator_max_flowrate(float flowrate) {
     return flowrate;
 }
 
+std::optional<float> EEPROM_storage::Read_Pump_max_flowrate(uint8_t pump_index) {
+    if (pump_index >= 4) {
+        Logger::Error("Pump index {} out of range (0-3)", pump_index);
+        return std::nullopt;
+    }
+
+    auto it = std::find_if(records.begin(), records.end(),
+        [](const auto& pair) { return pair.first == Record_name::Pumps_max_flowrate; });
+    if (it == records.end()) {
+        Logger::Error("Pumps_max_flowrate record not found");
+        return std::nullopt;
+    }
+
+    const Record& record = it->second;
+    uint16_t pump_offset = record.offset + (pump_index * sizeof(float));
+
+    auto data = eeprom->Read(pump_offset, sizeof(float));
+    if (!data.has_value()) {
+        return std::nullopt;
+    }
+
+    float flowrate{};
+    std::copy(data->begin(), data->end(), reinterpret_cast<uint8_t*>(&flowrate));
+    return flowrate;
+}
+
+std::optional<float> EEPROM_storage::Write_Pump_max_flowrate(uint8_t pump_index, float flowrate) {
+    if (pump_index >= 4) {
+        Logger::Error("Pump index {} out of range (0-3)", pump_index);
+        return std::nullopt;
+    }
+
+    auto it = std::find_if(records.begin(), records.end(),
+        [](const auto& pair) { return pair.first == Record_name::Pumps_max_flowrate; });
+    if (it == records.end()) {
+        Logger::Error("Pumps_max_flowrate record not found");
+        return std::nullopt;
+    }
+
+    const Record& record = it->second;
+    uint16_t pump_offset = record.offset + (pump_index * sizeof(float));
+
+    std::vector<uint8_t> data(sizeof(float));
+    std::copy(reinterpret_cast<uint8_t *>(&flowrate),
+          reinterpret_cast<uint8_t *>(&flowrate) + sizeof(float),
+          data.begin());
+
+    if (!eeprom->Write(pump_offset, data)) {
+        Logger::Error("Failed to write pump {} max flowrate", pump_index);
+        return std::nullopt;
+    }
+
+    return flowrate;
+}
+
 Codes::Module EEPROM_storage::Module(){
     auto record = Read_record(Record_name::Module_type);
     if (record.has_value()) {
