@@ -74,7 +74,7 @@ void Control_module::Setup_cuvette_pump(){
 
 void Control_module::Setup_aerator(){
     Logger::Debug("Aerator initialization");
-    aerator = new Aerator(3, 2, 2500.0, 0.12, 50.0f);
+    aerator = new Aerator(3, 2, memory, 0.12, 50.0f);
 }
 
 void Control_module::Setup_mixer(){
