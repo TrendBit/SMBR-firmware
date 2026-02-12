@@ -31,7 +31,7 @@ install:
 	sudo mv ${TOOLCHAIN_SCRIPT} /usr/bin/${TOOLCHAIN_SCRIPT}
 
 docker-build: docker-clean
-    docker build . --tag $(IMAGE_NAME) --build-arg USER_ID=$(USER_ID) --build-arg GROUP_ID=$(GROUP_ID) --build-arg UNAME_S=$(UNAME_S)
+	docker build . --tag $(IMAGE_NAME) --build-arg USER_ID=$(USER_ID) --build-arg GROUP_ID=$(GROUP_ID) --build-arg UNAME_S=$(UNAME_S)
 
 docker-shell:
 	docker exec -it -t --privileged $(IMAGE_NAME) /bin/sh -l
