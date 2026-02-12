@@ -37,7 +37,8 @@ public:
         OJIP_calibration_timing,
         SPM_nominal_calibration, // Spectrophotometer
         Cuvette_pump_max_flowrate,
-
+        Aerator_max_flowrate,
+        Pumps_max_flowrate,
     };
 
 private:
@@ -63,11 +64,13 @@ private:
      *          In future should even contain in which EEPROM chip
      *          Array of pairs because constexpr std::map does not exist in c++20
      */
-    static constexpr std::array<std::pair<Record_name, Record>, 7> records = {
+    static constexpr std::array<std::pair<Record_name, Record>, 9> records = {
         std::make_pair(Record_name::Module_type,                    Record{0x0000, 1}),
         std::make_pair(Record_name::Instance_enumeration,           Record{0x0001, 1}),
         std::make_pair(Record_name::Reserved,                       Record{0x0002, 2}),
         std::make_pair(Record_name::Cuvette_pump_max_flowrate,      Record{0x0200, 4}),
+        std::make_pair(Record_name::Aerator_max_flowrate,           Record{0x0204, 4}),
+        std::make_pair(Record_name::Pumps_max_flowrate,             Record{0x0208, 16}),
         std::make_pair(Record_name::SPM_nominal_calibration,        Record{0x0300, 24}),
         std::make_pair(Record_name::OJIP_calibration_values,        Record{0x0400, OJIP_ADC_SIZE_BYTES }),
         std::make_pair(Record_name::OJIP_calibration_timing,        Record{0x0400 + OJIP_ADC_SIZE_BYTES, OJIP_TIMING_SIZE_BYTES }),
@@ -178,6 +181,23 @@ public:
      * @return float        Written maximal flowrate value
      */
     float Write_Cuvette_pump_max_flowrate(float flowrate);
+
+    /**
+     * @brief   Read aerator maximal flowrate from EEPROM
+     *
+     * @return std::optional<float>
+     *         Maximal flowrate value if read was successful
+     *         std::nullopt if memory is not accessible or data is not valid
+     */
+    std::optional<float> Read_Aerator_max_flowrate();
+
+    /**
+     * @brief   Write aerator maximal flowrate to EEPROM
+     *
+     * @param flowrate      Maximal flowrate value to be written to EEPROM
+     * @return float        Written maximal flowrate value
+     */
+    float Write_Aerator_max_flowrate(float flowrate);
 
 private:
     /**
