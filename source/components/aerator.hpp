@@ -40,16 +40,15 @@ public:
     /**
      * @brief Maximal flowrate fallback
      */
-    static float const constexpr fallback_max_flowrate = 3000.0f;
+    static float const constexpr fallback_max_flowrate = 3600.0f;
 
 private:
     /**
      * @brief Transfer function determining speed/flowrate curve (relative to max flowrate)
      */
     Motor_transfer_function motor_pump_speed_curve = Motor_transfer_function(
-        {0, 0.1,  0.2,  0.3,  0.4,  0.5,  0.6,  0.7,  0.8,  0.9,  1.0},
-        {0, 0.02, 0.4,  0.62, 0.7,  0.8,  0.82, 0.86, 0.92, 0.96, 1.0}
-    );
+    {0.0,  0.06,   0.1,  0.15,   0.2,  0.25,   0.5,  0.75, 1.0},
+    {0.0, 0.005, 0.166, 0.387, 0.506, 0.583, 0.828, 0.928, 1.0});
 
     /**
      * @brief Timer function which stops pump after defined time, used for moving volumes of liquid
