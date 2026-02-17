@@ -38,7 +38,7 @@ public:
     /**
      * @brief Maximal flowrate fallback
      */
-    static float const constexpr fallback_max_flowrate = 100.0f;
+    static float const constexpr fallback_max_flowrate = 28.0f;
 
 private:
     /**
@@ -76,7 +76,7 @@ public:
      * @param min_speed         Minimum speed at which is pump moving of pump in range 0-1
      * @param pwm_frequency     Frequency of PWM signal for control of motor
      */
-    Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::unique_ptr<Current_sensor> current_sensor, float max_flowrate, float min_speed = 0, float pwm_frequency = 50.0f);
+    Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::unique_ptr<Current_sensor> current_sensor, float max_flowrate, float min_speed = 0, float pwm_frequency = 20.0f);
 
     /**
      * @brief   Indicate pump activity by setting intensity of indication LED
