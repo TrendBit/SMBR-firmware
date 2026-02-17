@@ -44,10 +44,10 @@ void Pump_module::Setup_components(){
     auto current_sensor_4 = std::make_unique<Current_sensor>(adc_channel_4, 0.1f);
 
     // TODO, some pumps must be inverted in order to have correct direction (based on device case)
-    auto pump_1 = new Pump(15, 14, 16, std::move(current_sensor_1), 1000.0f, 0.1f);
-    auto pump_2 = new Pump(11, 10, 17, std::move(current_sensor_2), 1000.0f, 0.1f);
-    auto pump_3 = new Pump( 7,  6, 20, std::move(current_sensor_3), 1000.0f, 0.1f);
-    auto pump_4 = new Pump( 2,  3, 21, std::move(current_sensor_4), 1000.0f, 0.1f);
+    auto pump_1 = new Pump(15, 14, 16, std::move(current_sensor_1), 28.0f, 0.1f);
+    auto pump_2 = new Pump(11, 10, 17, std::move(current_sensor_2), 28.0f, 0.1f);
+    auto pump_3 = new Pump( 7,  6, 20, std::move(current_sensor_3), 28.0f, 0.1f);
+    auto pump_4 = new Pump( 2,  3, 21, std::move(current_sensor_4), 28.0f, 0.1f);
 
     pump_controller = new Pump_controller(
         pump_count == 2 ?
