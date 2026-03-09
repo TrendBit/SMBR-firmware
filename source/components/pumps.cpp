@@ -6,7 +6,10 @@ Pump::Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::uniq
     current_sensor(std::move(current_sensor)),
     max_flowrate(max_flowrate)
 {
-
+    auto stopper_lambda = [this]() {
+        Stop();
+    };
+    pump_stopper = new rtos::Delayed_execution(stopper_lambda);
 }
 
 void Pump::Speed(float speed){
@@ -56,7 +59,28 @@ float Pump::Minimal_flowrate() const {
 }
 
 void Pump::Stop(){
+    pump_stopper->Abort();
+    Indicate(0.0f);
     DC_HBridge::Stop();
+}
+
+float Pump::Move(float volume_ml, float flowrate){
+    float effective_flowrate = std::clamp(flowrate, Minimal_flowrate(), Maximal_flowrate());
+
+    float pump_time_sec = (std::abs(volume_ml) / effective_flowrate) * 60.0f;
+
+    Logger::Debug("Pump move volume: {:03.1f}, effective_flowrate: {:03.1f}, time: {:03.1f}s",
+        volume_ml, effective_flowrate, pump_time_sec);
+
+    if (volume_ml > 0) {
+        Flowrate(effective_flowrate);
+    } else {
+        Flowrate(-effective_flowrate);
+    }
+
+    pump_stopper->Execute(pump_time_sec * 1000.0f);
+
+    return pump_time_sec;
 }
 
 void Pump::Indicate(float intensity){
@@ -286,6 +310,23 @@ bool Pump_controller::Receive(Application_message message){
             float max_flowrate = pumps[info_request.pump_index - 1]->Maximal_flowrate();
             App_messages::Pumps::Info_response info_response(info_request.pump_index, min_flowrate, max_flowrate);
             Send_CAN_message(info_response);
+            return true;
+        }
+
+        case Codes::Message_type::Pumps_move: {
+            App_messages::Pumps::Move move_message;
+            if (!move_message.Interpret_data(message.data)) {
+                Logger::Error("Pumps_move interpretation failed");
+                return false;
+            }
+
+            if (not Valid_pump_index(move_message.pump_index)) {
+                Logger::Error("Pumps_move invalid pump index: {}", move_message.pump_index);
+                return false;
+            }
+
+            Logger::Debug("Pump {} move volume: {:03.1f}, flowrate: {:03.1f}", move_message.pump_index, move_message.volume, move_message.flowrate);
+            pumps[move_message.pump_index - 1]->Move(move_message.volume, move_message.flowrate);
             return true;
         }
 

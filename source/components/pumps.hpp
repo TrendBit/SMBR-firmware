@@ -16,6 +16,7 @@
 #include "components/common_sensors/current_sensor.hpp"
 #include "rtos/execute_until.hpp"
 #include "rtos/repeated_execution.hpp"
+#include "rtos/delayed_execution.hpp"
 
 #include "codes/messages/pumps/pump_count_response.hpp"
 #include "codes/messages/pumps/set_speed.hpp"
@@ -63,6 +64,11 @@ private:
      * @brief Maximal flowrate of the pump
      */
     float max_flowrate;
+
+    /**
+     * @brief Timer function which stops pump after defined time, used for moving volumes of liquid
+     */
+    rtos::Delayed_execution *pump_stopper;
 
 public:
     /**
@@ -139,6 +145,16 @@ public:
      * @brief   Stop the pump
      */
     void Stop();
+
+    /**
+     * @brief   Move given volume of liquid with given flowrate
+     *          Stops automatically after calculated pumping time
+     *
+     * @param volume_ml     Volume of liquid to move in ml (negative value reverses direction)
+     * @param flowrate      Flowrate of pump in ml/min
+     * @return float        Time of pumping in seconds
+     */
+    float Move(float volume_ml, float flowrate);
 
     /**
      * @brief   Read current drawn by pump
