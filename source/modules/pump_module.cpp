@@ -33,21 +33,21 @@ void Pump_module::Setup_components(){
 
     auto pump_adc = new TLA2024(*i2c, 0x48);
 
-    auto adc_channel_1 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN0_GND);
-    auto adc_channel_2 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN1_GND);
-    auto adc_channel_3 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN2_GND);
-    auto adc_channel_4 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN3_GND);
+    auto adc_channel_1 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN2_GND);
+    auto adc_channel_2 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN0_GND);
+    auto adc_channel_3 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN3_GND);
+    auto adc_channel_4 = new TLA2024_channel(pump_adc, TLA2024::Channels::AIN1_GND);
 
-    auto current_sensor_1 = std::make_unique<Current_sensor>(adc_channel_1, 0.1f);
-    auto current_sensor_2 = std::make_unique<Current_sensor>(adc_channel_2, 0.1f);
-    auto current_sensor_3 = std::make_unique<Current_sensor>(adc_channel_3, 0.1f);
-    auto current_sensor_4 = std::make_unique<Current_sensor>(adc_channel_4, 0.1f);
+    auto current_sensor_1 = std::make_unique<Current_sensor>(adc_channel_3, 0.1f);
+    auto current_sensor_2 = std::make_unique<Current_sensor>(adc_channel_1, 0.1f);
+    auto current_sensor_3 = std::make_unique<Current_sensor>(adc_channel_4, 0.1f);
+    auto current_sensor_4 = std::make_unique<Current_sensor>(adc_channel_2, 0.1f);
 
     // TODO, some pumps must be inverted in order to have correct direction (based on device case)
-    auto pump_1 = new Pump(15, 14, 16, std::move(current_sensor_1), 28.0f, 0.1f);
-    auto pump_2 = new Pump(11, 10, 17, std::move(current_sensor_2), 28.0f, 0.1f);
-    auto pump_3 = new Pump( 7,  6, 20, std::move(current_sensor_3), 28.0f, 0.1f);
-    auto pump_4 = new Pump( 2,  3, 21, std::move(current_sensor_4), 28.0f, 0.1f);
+    auto pump_1 = new Pump( 6,  7, 16, std::move(current_sensor_3), 28.0f, 0.1f);
+    auto pump_2 = new Pump(15, 14, 17, std::move(current_sensor_1), 28.0f, 0.1f);
+    auto pump_3 = new Pump( 3,  2, 20, std::move(current_sensor_4), 28.0f, 0.1f);
+    auto pump_4 = new Pump(11, 10, 21, std::move(current_sensor_2), 28.0f, 0.1f);
 
     pump_controller = new Pump_controller(
         pump_count == 2 ?
