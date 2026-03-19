@@ -127,14 +127,14 @@ Pump_controller::Pump_controller(etl::vector<Pump *,8> pumps, EEPROM_storage * c
         }
     }, 50, true, true);
 
-    new rtos::Repeated_execution([pumps]() {
-        Logger::Notice("----------------------");
-        for(uint i = 0; i < 1; i++){
-            float current = pumps[i]->Current();
-            Logger::Notice("Pump {} current: {:0.2f} A", i+1, current);
-        }
-        Logger::Notice("----------------------");
-    }, 1000, true);
+    // new rtos::Repeated_execution([pumps]() {
+    //     Logger::Notice("----------------------");
+    //     for(uint i = 0; i < 1; i++){
+    //         float current = pumps[i]->Current();
+    //         Logger::Notice("Pump {} current: {:0.2f} A", i+1, current);
+    //     }
+    //     Logger::Notice("----------------------");
+    // }, 1000, true);
 }
 
 void Pump_controller::Load_max_flowrates(){
