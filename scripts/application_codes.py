@@ -8,6 +8,7 @@ module_types = {
     "Core_module"    : 0x04,
     "Control_module" : 0x05,
     "Sensor_module"  : 0x06,
+    "Pump_module"    : 0x07
 }
 
 module_instances = {
