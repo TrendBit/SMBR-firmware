@@ -2,6 +2,7 @@
 
 #include "threads/common_thread.hpp"
 #include "threads/module_check_thread.hpp" 
+#include "module_check/invalid_instance_check.hpp"
 
 Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl):
 Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
@@ -38,6 +39,10 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
         yellow_led.value()->Set(true);
     }
     module_check_thread = new Module_check_thread();
+
+    if(enumerator){
+        module_check_thread->AttachCheck(new Invalid_instance_check(this,enumerator));
+    }
 }
 
 Codes::Module Base_module::Module_type() {
