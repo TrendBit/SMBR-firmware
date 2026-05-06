@@ -320,7 +320,7 @@ bool Enumerator::Receive(Application_message message){
             }
 
             // ignore if not having a registered instance (exclusive instance is also skipped)
-            if (current_state != State::registered){
+            if (current_state == State::exclusive){
                 Logger::Trace("Enumerator_set interpretation skipped, not able to interpret in current state");
                 return true;
             }
