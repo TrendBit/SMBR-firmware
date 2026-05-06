@@ -65,7 +65,10 @@ void Enumerator::Setup_control_lambdas(){
     blinking_loop = new rtos::Repeated_execution(blinking_lambda, 50, false);
     
     auto instance_select_lambda = [this](){
-        this->Enumerate(this->wanted_instance);
+        // check if the selection is still ongoing and was not interrupted
+        if(this->current_state == State::selecting){
+            this->Enumerate(this->wanted_instance);
+        }
     };
     instance_select_delay = new rtos::Delayed_execution(instance_select_lambda, 1, false);
 
