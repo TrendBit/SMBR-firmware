@@ -100,17 +100,10 @@ public:
     /**
      * @brief   Get intensity of LED channel
      *
-
-    /**
-     * @brief  Response to request for temperature of LED panel
-     *
-     * @return true     Temperature was sent
-     * @return false    Temperature was not sent, sensor not available
      * @param channel       Channel number of LED
      * @return float        Intensity of LED, value from 0 to 1.0
      * @return std::nullopt Intesity could not be retrieved
      */
-    bool Get_temperature();
     std::optional<float> Get_intensity(uint8_t channel);
 
     /**
@@ -137,6 +130,13 @@ public:
     float Temperature() const;
 
 private:
+    /**
+    * @brief  Response to request for temperature of LED panel
+    *
+    * @return true     Temperature was sent
+    * @return false    Temperature was not sent, sensor not available
+    */
+    bool Get_temperature();
 
     /**
      * @brief   Calculate power draw of all LED channels
