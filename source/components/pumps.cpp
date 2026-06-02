@@ -1,4 +1,6 @@
 #include "pumps.hpp"
+#include <cstdint>
+#include <optional>
 
 Pump::Pump(uint8_t gpio_in1, uint8_t gpio_in2, uint8_t indication_pin, std::unique_ptr<Current_sensor> current_sensor, float max_flowrate, float min_speed, float pwm_frequency) :
     DC_HBridge(gpio_in1, gpio_in2, pwm_frequency, DC_HBridge::Stop_mode::Brake),
@@ -162,6 +164,110 @@ bool Pump_controller::Receive(CAN::Message message){
     return true;
 }
 
+bool Pump_controller::Set_speed(uint8_t pump_index, float speed){
+    if (not Valid_pump_index(pump_index)) {
+        Logger::Error("Pumps_set_speed invalid pump index: {}", pump_index);
+        return false;
+    }
+
+    Logger::Debug("Pump {} speed set to: {:03.2f}", pump_index, speed);
+    pumps[pump_index - 1]->Speed(speed);
+    return true;
+}
+
+std::optional<float> Pump_controller::Get_speed(uint8_t pump_index){
+    if (not Valid_pump_index(pump_index)) {
+        Logger::Error("Pumps_get_speed_request invalid pump index: {}", pump_index);
+        return std::nullopt;
+    }
+
+    Logger::Debug("Pump {} speed requested", pump_index);
+     return std::optional<float>{pumps[pump_index - 1]->Speed()};
+}
+
+bool Pump_controller::Set_flowrate(uint8_t pump_index, float flowrate){
+    if (not Valid_pump_index(pump_index)) {
+        Logger::Error("Pumps_set_flowrate invalid pump index: {}", pump_index);
+        return false;
+    }
+
+    Logger::Debug("Pump {} flowrate set to: {:03.2f}", pump_index, flowrate);
+    pumps[pump_index - 1]->Flowrate(flowrate);
+    return true;
+}
+
+std::optional<float> Pump_controller::Get_flowrate(uint8_t pump_index){
+    if (not Valid_pump_index(pump_index)) {
+        Logger::Error("Pumps_get_flowrate_request invalid pump index: {}", pump_index);
+        return false;
+    }
+
+    Logger::Debug("Pump {} flowrate requested", pump_index);
+    return std::optional<float>{pumps[pump_index - 1]->Flowrate()};
+}
+
+bool Pump_controller::Stop(uint8_t pump_index) {
+    if (not Valid_pump_index(pump_index)) {
+        Logger::Error("Pumps_stop invalid pump index: {}", pump_index);
+        return false;
+    }
+    
+    Logger::Debug("Pump {} stopped", pump_index);
+    pumps[pump_index - 1]->Stop();
+    return true;
+}
+
+void Pump_controller::Stop_all() {
+    for (auto pump : pumps) {
+        pump->Stop();
+    }
+}
+
+bool Pump_controller::Set_max_flowrate(uint8_t pump_index, float flowrate){
+    if (not Valid_pump_index(pump_index)) {
+        Logger::Error("Pumps_set_max_flowrate invalid pump index: {}", pump_index);
+        return false;
+    }
+    
+    pumps[pump_index - 1]->Set_Maximal_flowrate(flowrate);
+
+    std::optional<float> written = memory->Write_Pump_max_flowrate(pump_index, flowrate);
+    if (!written.has_value()) {
+        Logger::Error("Failed to write pump {} max flowrate to memory", pump_index);
+        return false;
+    }
+    
+    return true;
+}
+
+std::optional<float> Pump_controller::Min_flowrate(uint8_t pump_index){
+    if (not Valid_pump_index(pump_index)){
+        return std::nullopt;
+    }
+    
+    return std::optional<float>{pumps[pump_index - 1]->Minimal_flowrate()};
+}
+
+std::optional<float> Pump_controller::Max_flowrate(uint8_t pump_index){
+    if (not Valid_pump_index(pump_index)){
+        return std::nullopt;
+    }
+    
+    return std::optional<float>{pumps[pump_index - 1]->Maximal_flowrate()};
+}
+
+bool Pump_controller::move(uint8_t pump_index, float volume_ml, float flowrate){
+    if (not Valid_pump_index(pump_index)) {
+        Logger::Error("Pumps_move invalid pump index: {}", pump_index);
+        return false;
+    }
+
+    Logger::Debug("Pump {} move volume: {:03.1f}, flowrate: {:03.1f}", pump_index, volume_ml, flowrate);
+    pumps[pump_index - 1]->Move(volume_ml, flowrate);
+    
+    return true;
+}
+
 bool Pump_controller::Receive(Application_message message){
     switch (message.Message_type()) {
         case Codes::Message_type::Pumps_pump_count_request: {
@@ -180,13 +286,11 @@ bool Pump_controller::Receive(Application_message message){
                 return false;
             }
 
-            if (set_speed.pump_index == 0 || set_speed.pump_index > Pump_count()) {
-                Logger::Error("Pumps_set_speed invalid pump index: {}", set_speed.pump_index);
+            if (not Set_speed(set_speed.pump_index, set_speed.speed)) {
+                Logger::Error("Pumps_set_speed failed");
                 return false;
             }
 
-            Logger::Debug("Pump {} speed set to: {:03.2f}", set_speed.pump_index, set_speed.speed);
-            pumps[set_speed.pump_index - 1]->Speed(set_speed.speed);
             return true;
         }
 
@@ -197,14 +301,14 @@ bool Pump_controller::Receive(Application_message message){
                 return false;
             }
 
-            if (not Valid_pump_index(get_speed_request.pump_index)) {
-                Logger::Error("Pumps_get_speed_request invalid pump index: {}", get_speed_request.pump_index);
+            std::optional<float> speed = Get_speed(get_speed_request.pump_index);
+            
+            if (not speed.has_value()) {
+                Logger::Error("Pumps_get_speed_request failed");
                 return false;
             }
 
-            Logger::Debug("Pump {} speed requested", get_speed_request.pump_index);
-            float speed = pumps[get_speed_request.pump_index - 1]->Speed();
-            App_messages::Pumps::Get_speed_response get_speed_response(get_speed_request.pump_index, speed);
+            App_messages::Pumps::Get_speed_response get_speed_response(get_speed_request.pump_index, speed.value());
             Send_CAN_message(get_speed_response);
             return true;
         }
@@ -215,14 +319,12 @@ bool Pump_controller::Receive(Application_message message){
                 Logger::Error("Pumps_set_flowrate interpretation failed");
                 return false;
             }
-
-            if (not Valid_pump_index(set_flowrate.pump_index)) {
-                Logger::Error("Pumps_set_flowrate invalid pump index: {}", set_flowrate.pump_index);
+            
+            if (Set_flowrate(set_flowrate.pump_index, set_flowrate.flowrate)) {
+                Logger::Error("Pumps_set_flowrate failed");
                 return false;
             }
 
-            Logger::Debug("Pump {} flowrate set to: {:03.2f}", set_flowrate.pump_index, set_flowrate.flowrate);
-            pumps[set_flowrate.pump_index - 1]->Flowrate(set_flowrate.flowrate);
             return true;
         }
 
@@ -233,14 +335,14 @@ bool Pump_controller::Receive(Application_message message){
                 return false;
             }
 
-            if (not Valid_pump_index(get_flowrate_request.pump_index)) {
-                Logger::Error("Pumps_get_flowrate_request invalid pump index: {}", get_flowrate_request.pump_index);
+            std::optional<float> flowrate = Get_flowrate(get_flowrate_request.pump_index);
+            
+            if (not flowrate.has_value()) {
+                Logger::Error("Pumps_get_flowrate_request failed");
                 return false;
             }
 
-            Logger::Debug("Pump {} flowrate requested", get_flowrate_request.pump_index);
-            float flowrate = pumps[get_flowrate_request.pump_index - 1]->Flowrate();
-            App_messages::Pumps::Get_flowrate_response get_flowrate_response(get_flowrate_request.pump_index, flowrate);
+            App_messages::Pumps::Get_flowrate_response get_flowrate_response(get_flowrate_request.pump_index, flowrate.value());
             Send_CAN_message(get_flowrate_response);
             return true;
         }
@@ -252,21 +354,21 @@ bool Pump_controller::Receive(Application_message message){
                 return false;
             }
 
-            if (not Valid_pump_index(stop.pump_index)) {
-                Logger::Error("Pumps_stop invalid pump index: {}", stop.pump_index);
+            if (not Stop(stop.pump_index - 1)) {
+                Logger::Error("Pumps_stop failed");
                 return false;
             }
 
-            Logger::Debug("Pump {} stopped", stop.pump_index);
-            pumps[stop.pump_index - 1]->Stop();
             return true;
         }
 
         case Codes::Message_type::Pumps_stop_all: {
             Logger::Debug("Pumps stop all");
+            
             for (auto pump : pumps) {
                 pump->Stop();
             }
+            
             return true;
         }
 
@@ -277,19 +379,11 @@ bool Pump_controller::Receive(Application_message message){
                 return false;
             }
 
-            if (not Valid_pump_index(set_max_flowrate.pump_index)) {
-                Logger::Error("Pumps_set_max_flowrate invalid pump index: {}", set_max_flowrate.pump_index);
+            if (not Set_max_flowrate(set_max_flowrate.pump_index, set_max_flowrate.max_flow_rate)) {
+                Logger::Error("Pumps_set_max_flowrate failed");
                 return false;
             }
-
-            Logger::Debug("Pump {} maximal flowrate set to: {:03.2f}", set_max_flowrate.pump_index, set_max_flowrate.max_flow_rate);
-            pumps[set_max_flowrate.pump_index - 1]->Set_Maximal_flowrate(set_max_flowrate.max_flow_rate);
-
-            std::optional<float> written = memory->Write_Pump_max_flowrate(set_max_flowrate.pump_index - 1, set_max_flowrate.max_flow_rate);
-            if (!written.has_value()) {
-                Logger::Error("Failed to write pump {} max flowrate to memory", set_max_flowrate.pump_index);
-                return false;
-            }
+            
             return true;
         }
 
@@ -320,13 +414,11 @@ bool Pump_controller::Receive(Application_message message){
                 return false;
             }
 
-            if (not Valid_pump_index(move_message.pump_index)) {
-                Logger::Error("Pumps_move invalid pump index: {}", move_message.pump_index);
+            if (not move(move_message.pump_index, move_message.volume, move_message.flowrate)) {
+                Logger::Error("Pumps_move failed");
                 return false;
             }
 
-            Logger::Debug("Pump {} move volume: {:03.1f}, flowrate: {:03.1f}", move_message.pump_index, move_message.volume, move_message.flowrate);
-            pumps[move_message.pump_index - 1]->Move(move_message.volume, move_message.flowrate);
             return true;
         }
 

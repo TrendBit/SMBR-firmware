@@ -211,6 +211,98 @@ public:
      * @return false    Message cannot be processed by this component
      */
     virtual bool Receive(Application_message message) override final;
+    
+    /**
+     * @brief   Set the speed of a pump to the given speed.
+     * 
+     * @param pump_index  Index of the target pump
+     * @param speed       The desired speed
+     * @return true       Pump was successfully set to the given speed
+     * @return false      Pump was could not be set to the given speed
+     */
+    bool Set_speed(uint8_t pump_index, float speed);
+    
+    /**
+     * @brief   Get the speed of a pump
+     * 
+     * @param pump_index        Index of the target pump
+     * @return std::nullopt     Pump speed could not be retrieved
+     * @return value            Retrieved speed of the target pump
+     */
+    std::optional<float> Get_speed(uint8_t pump_index);
+    
+    /**
+     * @brief   Set the flowrate of a pump
+     * 
+     * @param pump_index    Index of the target pump
+     * @param flowrate      The desired flowrate
+     * @return true         Pumps flowrate was successfully set to the given value
+     * @return false        Pumps flowrate could not be set to the given value
+     */
+    bool Set_flowrate(uint8_t pump_index, float flowrate);
+    
+    /**
+     * @brief   Get the flowrate of a pump
+     * 
+     * @param pump_index        Index of the target pump
+     * @return std::nullopt     Pump flowrate could not be retrieved
+     * @return value            Retrieved flowrate of the target pump
+     */
+    std::optional<float> Get_flowrate(uint8_t pump_index);
+    
+    /**
+     * @brief   Stop a pump
+     * 
+     * @param pump_index    Index of the target pump
+     * @return true         Pump was stopped successfully
+     * @return false        Pump could not be stopped
+     */
+    bool Stop(uint8_t pump_index);
+    
+    /**
+     * @brief   Stop all pumps
+     */
+    void Stop_all();
+    
+    /**
+     * @brief   Set the max flowrate of a pump
+     * 
+     * @param pump_index    Index of the target pump
+     * @param flowrate      The desired flowrate
+     * @return true         Pumps max flowrate was successfully set to the given value
+     * @return false        Pumps max flowrate could not be set to the given value
+     * 
+     */
+    bool Set_max_flowrate(uint8_t pump_index, float flowrate);
+    
+    /**
+     * @brief   Get the minimal flowrate of a pump
+     * 
+     * @param pump_index        Index of the target pump
+     * @return std::nullopt     Pumps minimal flowrate could not be retrieved
+     * @return value            Retrieved minimal flowrate of the target pump
+     */
+    std::optional<float> Min_flowrate(uint8_t pump_index);
+    
+    /**
+     * @brief   Get the maximal flowrate of a pump
+     * 
+     * @param pump_index        Index of the target pump
+     * @return std::nullopt     Pumps maximal flowrate could not be retrieved
+     * @return value            Retrieved maximal flowrate of the target pump
+     */
+    std::optional<float> Max_flowrate(uint8_t pump_index);
+    
+    /**
+     * @brief   Make a pump move a given amount of liquid with a given flowrate
+     * 
+     * @param pump_index        Index of the target pump
+     * @param volume_ml         Amount of liquid to be moved
+     * @param flowrate          The flowrate at witch the liquid will be moved
+     * @return true             Pump successfully started the procedure
+     * @return false            Pump is unable to start the procedure
+     */
+    bool move(uint8_t pump_index, float volume_ml, float flowrate);
 
 private:
     /**
