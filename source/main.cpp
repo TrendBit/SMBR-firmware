@@ -22,7 +22,7 @@ int main(){
     #endif
 
     new USB_thread();
-    new CLI_service();
+    auto cli = new CLI_service();
 
     #ifdef CONFIG_CONTROL_MODULE
         new Control_module();
@@ -33,6 +33,8 @@ int main(){
     #else
         #error "No module defined, use 'make menuconfig' to select module"
     #endif
-
+    
+    Base_module::Singleton_instance()->Connect_to_cli(*cli);
+    
     fra::Thread::StartScheduler();
 }

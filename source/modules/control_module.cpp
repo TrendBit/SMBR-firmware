@@ -109,3 +109,6 @@ std::optional<float> Control_module::Board_temperature(){
     adc_mutex->Unlock();
     return temp;
 }
+
+void Control_module::Setup_cli(CLI_service& cli) const {
+}

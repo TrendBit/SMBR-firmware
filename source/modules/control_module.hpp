@@ -108,6 +108,12 @@ private:
      * @brief   Initializes module check procedures
      */
     void Setup_module_check();
+    
+    /**
+     * @brief       Connect to the given cli
+     * @param cli   The CLI to connect to
+     */
+    virtual void Setup_cli(CLI_service& cli) const override final;
 
     /**
      * @brief   Retrieves current temperature of board from onboard thermistor

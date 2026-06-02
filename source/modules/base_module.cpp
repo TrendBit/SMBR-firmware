@@ -3,6 +3,8 @@
 #include "threads/common_thread.hpp"
 #include "threads/module_check_thread.hpp" 
 #include "module_check/invalid_instance_check.hpp"
+#include <exception>
+#include <optional>
 
 Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl):
 Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
@@ -39,6 +41,10 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
         yellow_led.value()->Set(true);
     }
     module_check_thread = new Module_check_thread();
+    
+    register_temperature_readout("board",[this]()->std::optional<float>{
+        return this->Board_temperature();
+    });
 
     if(enumerator){
         module_check_thread->AttachCheck(new Invalid_instance_check(this,enumerator));
@@ -90,4 +96,49 @@ std::optional<float> Base_module::Version_voltage() const{
     float version_voltage = version_voltage_channel->Read_voltage();
     adc_mutex->Unlock();
     return version_voltage;
+}
+
+void Base_module::register_temperature_readout(std::string readout_name, std::function<std::optional<float>()> getter_function){
+    this->temperature_readouts[readout_name] = std::move(getter_function);
+}
+
+void Base_module::Connect_to_cli(CLI_service& cli) const{    
+    cli.Bind("module_info",[this,&cli]()->void{
+        std::string result = "";
+        result += emio::format("Module type: {}\r\n", magic_enum::enum_name(this->module_type));
+        result += emio::format("Instance: {}\r\n", magic_enum::enum_name(this->Instance_enumeration()));
+        cli.Print(result);
+    }, "Basic info about this module.");
+    
+    cli.Bind("temperatures", [this, &cli](std::vector<std::string> args)-> void{
+        if(args.size() == 0){
+            for(const auto& [name, getter] : this->temperature_readouts){
+                std::optional<float> temperature = getter();
+                if(temperature.has_value()){
+                    cli.Print_ln(emio::format("{}: {}°C",name,temperature.value()));
+                }else{
+                    cli.Print_ln(emio::format("{}: err",name));
+                }
+            }
+        }else{
+            for(const auto& arg : args){
+                //returns .end() if the key isn't in the map
+                auto map_iterator = this->temperature_readouts.find(arg); 
+                
+                if(map_iterator != this->temperature_readouts.end()){
+                    std::optional<float> temperature = map_iterator->second();
+                    if(temperature.has_value()){
+                        cli.Print_ln(emio::format("{}: {}°C",arg,temperature.value()));
+                    }else{
+                        cli.Print_ln(emio::format("{}: err",arg));
+                    }
+                }else{
+                    cli.Print_error("unknown temperature readout");
+                }
+                
+            }
+        }
+    }, "the current temperature of all, or selected installed sensors","[sensor sensor ...]?");
+    
+    this->Setup_cli(cli);
 }

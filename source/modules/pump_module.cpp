@@ -69,3 +69,5 @@ std::optional<float> Pump_module::Board_temperature(){
     adc_mutex->Unlock();
     return temp;
 }
+void Pump_module::Setup_cli(CLI_service& cli) const {
+}

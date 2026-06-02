@@ -65,6 +65,12 @@ private:
      * @brief   Component responsible for control of pumps connected to module
      */
     Pump_controller * pump_controller;
+    
+    /**
+     * @brief       Connect to the given cli
+     * @param cli   The CLI to connect to
+     */
+    virtual void Setup_cli(CLI_service& cli) const override final;
 
 public:
     /**

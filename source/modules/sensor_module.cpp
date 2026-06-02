@@ -97,3 +97,6 @@ void Sensor_module::Setup_module_check(){
         module_check_thread->AttachCheck(new Spectrophotometer_emitor_temp_check(spectrophotometer));
     }
 }
+
+void Sensor_module::Setup_cli(CLI_service& cli) const {
+}

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "cli.hpp"
 #include "codes/codes.hpp"
 #include "components/memory.hpp"
 #include "components/enumerator.hpp"
@@ -19,6 +20,11 @@
 #include "config.hpp"
 #include "hal/gpio/gpio.hpp"
 #include "hal/adc/adc_channel.hpp"
+
+#include <unordered_map>
+#include <string>
+#include <functional>
+#include <optional>
 
 namespace fra = cpp_freertos;
 
@@ -104,6 +110,11 @@ protected:
      * @brief   ADC channel reading version dividers voltage of module
      */
     ADC_channel * version_voltage_channel = nullptr;
+    
+    /**
+     * @brief   Holds registered temperature readouts
+     */
+    std::unordered_map<std::string, std::function<std::optional<float>()>> temperature_readouts;
 
 protected:
     /**
@@ -124,7 +135,21 @@ protected:
      * @param yellow_led_pin GPIO pin of yellow LED
      */
     Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl, uint yellow_led_pin);
-
+    
+    /**
+     * @brief Method implemented by derived class, which should bind all of its commands to the given cli
+     */
+    virtual void Setup_cli(CLI_service& cli) const = 0;
+    
+    /**
+     * @brief Register the given getter_function as a temperature readout (generaly from a sensor) under the given 
+     *        name. It is later used to provide a structured readout of all installed sensors.
+     * 
+     * @param readout_name      Name under which the readout will be refered to.
+     * @param getter_function   A function that provides the readouts current value.
+     */
+    void register_temperature_readout(std::string readout_name, std::function<std::optional<float>()> getter_function);
+    
 private:
     /**
      * @brief Construct a new Base_module object, called internally from public constructors
@@ -187,5 +212,11 @@ public:
      * @brief Get pointer to this class instance using "singleton" pattern
      */
     static Base_module * Singleton_instance();
-
+    
+    /**
+     * @brief Binds all of this modules commands to the given cli.
+     * 
+     * @param cli   CLI_service that will be populated with this modules commands.
+     */
+    void Connect_to_cli(CLI_service& cli) const;
 };
