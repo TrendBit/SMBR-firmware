@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "can_bus/app_message.hpp"
@@ -99,18 +100,18 @@ public:
     /**
      * @brief   Get intensity of LED channel
      *
-     * @param channel   Channel number of LED
-     * @return float    Intensity of LED, value from 0 to 1.0
-     */
-    bool Get_intensity(uint8_t channel);
 
     /**
      * @brief  Response to request for temperature of LED panel
      *
      * @return true     Temperature was sent
      * @return false    Temperature was not sent, sensor not available
+     * @param channel       Channel number of LED
+     * @return float        Intensity of LED, value from 0 to 1.0
+     * @return std::nullopt Intesity could not be retrieved
      */
     bool Get_temperature();
+    std::optional<float> Get_intensity(uint8_t channel);
 
     /**
      * @brief   Detect if power of LED illumination is limited by power budget

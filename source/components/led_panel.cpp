@@ -32,7 +32,20 @@ bool LED_panel::Receive(Application_message message){
                 Logger::Error("LED_get_intensity_request interpretation failed");
                 return false;
             }
-            Get_intensity(led_get_intensity.channel);
+            std::optional<float> intensity = Get_intensity(led_get_intensity.channel);
+            
+            if(not intensity.has_value()){
+                Logger::Error("LED_get_intensity_request failed");
+                return false;
+            }
+            
+            Logger::Debug(
+                "Get LED intensity Channel: {:d}, Intensity: {:04.2f}", 
+                led_get_intensity.channel, 
+                intensity.value()
+            );
+            App_messages::LED_panel::Get_intensity_response response(led_get_intensity.channel, intensity.value());
+            Send_CAN_message(response);
             return true;
         }
 
@@ -57,16 +70,12 @@ bool LED_panel::Set_intensity(uint8_t channel, float intensity){
     return true;
 }
 
-bool LED_panel::Get_intensity(uint8_t channel){
+std::optional<float> LED_panel::Get_intensity(uint8_t channel){
     if (channel >= channels.size()){
         Logger::Error("LED channel out of range");
-        return false;
+        return std::nullopt;
     }
-    float intensity = channels[channel]->Intensity();
-    Logger::Debug("Get LED intensity Channel: {:d}, Intensity: {:04.2f}", channel, intensity);
-    App_messages::LED_panel::Get_intensity_response response(channel, intensity);
-    Send_CAN_message(response);
-    return true;
+    return std::optional<float>{channels[channel]->Intensity()};
 }
 
 bool LED_panel::Get_temperature(){
