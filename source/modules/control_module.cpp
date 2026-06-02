@@ -6,6 +6,9 @@
 #include "module_check/core_load_check.hpp"
 #include "module_check/heater_plate_temp_check.hpp"
 #include "module_check/mixer_rpm_check.hpp"
+#include <cstdint>
+#include <optional>
+#include <vector>
 
 Control_module::Control_module():
     Base_module(
@@ -27,6 +30,7 @@ void Control_module::Setup_components(){
     Setup_aerator();
     Setup_mixer();
     Setup_module_check();
+    Setup_cli_temps();
 }
 
 void Control_module::Setup_LEDs(){
@@ -97,6 +101,20 @@ void Control_module::Setup_module_check(){
     module_check_thread->AttachCheck(new Board_temperature_check(this));
     module_check_thread->AttachCheck(new Core_temperature_check(common_core));
     module_check_thread->AttachCheck(new Core_load_check(common_core));
+}
+
+void Control_module::Setup_cli_temps(){
+    if (led_panel) {
+        register_temperature_readout("led_panel", [this]()->std::optional<float>{
+            return std::optional<float>{this->led_panel->Temperature()};
+        });
+    }
+    if (heater) {
+        register_temperature_readout("heater", [this]()->std::optional<float>{
+            return std::optional<float>{this->heater->Temperature()};
+        });
+    }
+    
 }
 
 std::optional<float> Control_module::Board_temperature(){
