@@ -1,4 +1,6 @@
 #include "cli.hpp"
+#include "tools/color.hpp"
+#include <charconv>
 
 CLI_service::CLI_service():cli(new CLI(0, 256, 32,"\033[94m>\033[0m ")){
 
@@ -10,11 +12,11 @@ CLI_service::CLI_service():cli(new CLI(0, 256, 32,"\033[94m>\033[0m ")){
           cli->Print(Device_info());
     };
 
-    cli->Bind("status", status,"None");
-    cli->Bind("device_info", device_info_print, "Constains version, build timestamp, git commit hash, etc.");
-    cli->Bind("bootloader", [this]()->void { Bootloader(); }, "Reboots MCU into bootloader mode for fw update");
-    cli->Bind("restart", [this]()->void { Restart(); }, "Restart MCU using watchdog");
-    cli->Bind("thread_statistics", [this]()->void { Thread_statistics(); }, "Print statistics of FreeRTOS threads");
+    Bind("status", status,"None");
+    Bind("device_info", device_info_print, "Constains version, build timestamp, git commit hash, etc.");
+    Bind("bootloader", [this]()->void { Bootloader(); }, "Reboots MCU into bootloader mode for fw update");
+    Bind("restart", [this]()->void { Restart(); }, "Restart MCU using watchdog");
+    Bind("thread_statistics", [this]()->void { Thread_statistics(); }, "Print statistics of FreeRTOS threads");
 
     /**
      * @brief Service thread for CLI
@@ -68,4 +70,90 @@ void CLI_service::Thread_statistics() {
 
     // Print the runtime stats
     cli->Print(runTimeStats);
+}
+
+
+
+void CLI_service::Bind(const std::string &command, std::function<void()> function, const std::string help_message){
+    this->cli->Bind(command, function, help_message);
+}
+void CLI_service::Bind(
+    const std::string &command, 
+    std::function<void(std::vector<std::string>)> function, 
+    const std::string help_message,
+    const std::string arguments
+){
+    this->cli->Bind(command, function, help_message + dye::light_black("\r\n\tUsage: " + arguments));
+}
+void CLI_service::Print(const std::string &message){
+    this->cli->Print(message);
+}
+void CLI_service::Print_ln(const std::string &message){
+    this->cli->Print(message + "\r\n");
+}
+
+void CLI_service::Print_error(const std::string &message){
+    this->cli->Print(dye::red("error: " + message) + "\r\n");
+}
+
+
+bool CLI_service::Check_argument_count(const std::vector<std::string>& args, CLI_service& cli, size_t minimum_arguments, size_t maximum_arguments){
+    if(args.size() < minimum_arguments){
+        cli.Print_ln(dye::red(emio::format("not enough arguments, minimum is {}",minimum_arguments)));
+        return false;
+    }
+    if(args.size() > maximum_arguments && maximum_arguments != SIZE_MAX){
+        cli.Print_ln(dye::red(emio::format("too many arguments, maximum is {}",maximum_arguments)));
+        return false;
+    }
+    
+    return true;
+}
+
+bool CLI_service::Parse_argument(const std::string& arg, CLI_service& cli, float parsed_value){
+    auto [ptr, ec] = std::from_chars(
+        arg.data(),
+        arg.data() + arg.size(),
+        parsed_value
+    );
+    
+    // tests also if the string was parsed till the end.
+    if (ec != std::errc() || ptr != arg.data() + arg.size()) {
+        cli.Print_ln(dye::red("invalid argument (expected a float)"));
+        return false;
+    }
+    
+    return true;
+}
+
+bool CLI_service::Parse_argument(const std::string& arg, CLI_service& cli, int parsed_value){
+    auto [ptr, ec] = std::from_chars(
+        arg.data(),
+        arg.data() + arg.size(),
+        parsed_value
+    );
+    
+    // tests also if the string was parsed till the end.
+    if (ec != std::errc() || ptr != arg.data() + arg.size()) {
+        cli.Print_ln(dye::red("invalid argument (expected an integer)"));
+        return false;
+    }
+    
+    return true;
+}
+
+bool CLI_service::Parse_argument(const std::string& arg, CLI_service& cli, unsigned int parsed_value){
+    auto [ptr, ec] = std::from_chars(
+        arg.data(),
+        arg.data() + arg.size(),
+        parsed_value
+    );
+    
+    // tests also if the string was parsed till the end.
+    if (ec != std::errc() || ptr != arg.data() + arg.size()) {
+        cli.Print_ln(dye::red("invalid argument (expected an integer)"));
+        return false;
+    }
+    
+    return true;
 }

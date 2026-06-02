@@ -7,9 +7,10 @@
 
 #pragma once
 
+#include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
-#include <unordered_map>
 
 #include "tools/cli.hpp"
 #include "tools/color.hpp"
@@ -91,5 +92,117 @@ public:
      * @brief   Restart MCU, using watchdog
      */
     void Restart();
+    
+    /**
+     * @brief   Bind function to CLI command
+     *
+     * @param command   Command string
+     * @param function  Function to be called when command is received
+     * @param help      Help string
+     */
+    void Bind(const std::string &command, std::function<void()> function, const std::string help_message);
 
+    /**
+     * @brief   Bind function to CLI command
+     *
+     * @param command   Command string
+     * @param function  Function to be called when command is received, 
+     *                  this variant receives arguments from CLI
+     * @param help      Help string
+     * @param arguments Usage string explaining what are the arguments of this command.
+     *                  Use simple text for mandatory arguments, wrap optional in [argument]?
+     *                  Commonly typed arguments should have their type as argument(type)
+     */
+    void Bind(
+        const std::string &command, 
+        std::function<void(std::vector<std::string>)> function, 
+        const std::string help_message,
+        const std::string arguments
+    );
+    
+    /**
+     * @brief  Print message to CLI, prints data event when interactive mode is disabled
+     *
+     * @param message  Message to be printed
+     */
+    void Print(const std::string &message);
+    
+    /**
+     * @brief  Print message to CLI, prints data event when interactive mode is disabled. 
+     *         Automatically adds newline.
+     *
+     * @param message  Message to be printed
+     */
+    void Print_ln(const std::string &message);
+    
+    /**
+     * @brief  Prints an error message to CLI. Automatically adds newline;
+     *
+     * @param message  Message to be printed
+     */
+    void Print_error(const std::string &message);
+    
+    /**
+     * @brief Checks if the given args vector contains the right amount of arguments.
+     *        If not, it prints out an error message to the cli.
+     * 
+     * @param args                The commands arguments
+     * @param cli                 The cli that will be used to output an error if needed
+     * @param minimum_arguments   How many arguments should the command have at minimum
+     * @param minimum_arguments   How many arguments should the command have at maximum (optional)
+     * 
+     * @return true     The argument count is OK
+     * @return false    The argument count is not correct and an error has been printed
+     */
+    static bool Check_argument_count(
+        const std::vector<std::string>& args, 
+        CLI_service& cli, 
+        size_t minimum_arguments, 
+        size_t maximum_arguments = SIZE_MAX
+    );
+    
+    /**
+     * @brief Parse the given argument as a given type. 
+     * 
+     * @param arg           The argument that should be parsed
+     * @param cli           A cli that will be used to output an error if needed
+     * @param parsed_value  An output of the method, containing the parsed argument
+     * 
+     * @return true     Parsing of the argument was successfull
+     * @return false    Parsing of the argument was not successfull, and an error has been printed
+     * 
+     * @note This funtion was not inlined and templated because it uses large header files 
+     *       that would not be used anywhere else. The given types should be enough for most uses.
+     */
+    static bool Parse_argument(const std::string& arg, CLI_service& cli, float parsed_value);
+    
+    /**
+     * @brief Parse the given argument as a given type. 
+     * 
+     * @param arg           The argument that should be parsed
+     * @param cli           A cli that will be used to output an error if needed
+     * @param parsed_value  An output of the method, containing the parsed argument
+     * 
+     * @return true     Parsing of the argument was successfull
+     * @return false    Parsing of the argument was not successfull, and an error has been printed
+     * 
+     * @note This funtion was not inlined and templated because it uses large header files 
+     *       that would not be used anywhere else. The given types should be enough for most uses.
+     */
+    static bool Parse_argument(const std::string& arg, CLI_service& cli, int parsed_value);
+    
+    /**
+     * @brief Parse the given argument as a given type. 
+     * 
+     * @param arg           The argument that should be parsed
+     * @param cli           A cli that will be used to output an error if needed
+     * @param parsed_value  An output of the method, containing the parsed argument
+     * 
+     * @return true     Parsing of the argument was successfull
+     * @return false    Parsing of the argument was not successfull, and an error has been printed
+     * 
+     * @note This funtion was not inlined and templated because it uses large header files 
+     *       that would not be used anywhere else. The given types should be enough for most uses.
+     */
+    static bool Parse_argument(const std::string& arg, CLI_service& cli, unsigned int parsed_value);
 };
