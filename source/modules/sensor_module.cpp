@@ -1,5 +1,8 @@
 #include "sensor_module.hpp"
 #include "cli.hpp"
+#include "codes/tools/magic_enum.hpp"
+#include "components/spectrophotometer.hpp"
+#include "fluorometer/fluorometer_config.hpp"
 #include "threads/module_check_thread.hpp"
 #include "module_check/board_temperature_check.hpp"
 #include "module_check/core_temperature_check.hpp"
@@ -12,6 +15,9 @@
 #include "module_check/fluorometer_emitor_temp_check.hpp"
 #include "module_check/fluorometer_detector_temp_check.hpp"
 #include "module_check/spectrophotometer_emitor_temp_check.hpp"
+#include "tools/color.hpp"
+#include <string>
+#include <vector>
 
 Sensor_module::Sensor_module():
     Base_module(
@@ -138,5 +144,197 @@ void Sensor_module::Setup_cli_temps(){
     }
 }
 
+
+bool Parse_channels(
+    const std::vector<std::string>& args,
+    CLI_service& cli, 
+    bool fill_on_empty, 
+    std::vector<Spectrophotometer::Channels>& selected_channels,
+    size_t skip_args = 0
+){
+    if(args.size()==skip_args){
+        if(fill_on_empty){
+            std::vector<Spectrophotometer::Channels> all_channels{
+                Spectrophotometer::Channels::UV,
+                Spectrophotometer::Channels::Blue,
+                Spectrophotometer::Channels::Green,
+                Spectrophotometer::Channels::Orange,
+                Spectrophotometer::Channels::Red,
+                Spectrophotometer::Channels::IR
+            };
+            selected_channels = std::move(all_channels);
+        }else{
+            cli.Print_error("missing channels");
+            return false;
+        }
+    }else{
+        for (size_t i = skip_args; i < args.size(); i++){
+            const auto& arg = args[i];
+            Spectrophotometer::Channels channel;
+            
+            if(arg == "UV"){
+                channel = Spectrophotometer::Channels::UV;
+            }else if(arg == "Blue"){
+                channel = Spectrophotometer::Channels::Blue;
+            }else if(arg == "Green"){
+                channel = Spectrophotometer::Channels::Green;
+            }else if(arg == "Orange"){
+                channel = Spectrophotometer::Channels::Orange;
+            }else if(arg == "Red"){
+                channel = Spectrophotometer::Channels::Red;
+            }else if(arg == "IR"){
+                channel = Spectrophotometer::Channels::IR;
+            }else{
+                cli.Print_error("invalid channel");
+                return false;
+            }
+            
+            selected_channels.push_back(channel);
+        }
+    }
+    return true;
+}
+
 void Sensor_module::Setup_cli(CLI_service& cli) const {
+    if(fluorometer){
+        cli.Bind("fluorometer_capture",[this, &cli](std::vector<std::string> args){
+            if( not CLI_service::Check_argument_count(args, cli, 3, 5)){
+                return;
+            }
+            
+            Fluorometer_config::Gain gain;
+            const auto& gain_arg = args[0];
+            
+            if(gain_arg == "x1"){
+                gain = Fluorometer_config::Gain::x1;
+            }else if(gain_arg == "x10"){
+                gain = Fluorometer_config::Gain::x10;
+            }else if(gain_arg == "x50"){
+                gain = Fluorometer_config::Gain::x50;
+            }else if(gain_arg == "Auto"){
+                gain = Fluorometer_config::Gain::Auto;
+            }else{
+                cli.Print_error("Invalid gain selected");
+                return;
+            }
+            
+            float intensity = 0.0;
+            float capture_length = 0.0;
+            if( not CLI_service::Parse_argument(args[1],cli,intensity)
+            ||  not CLI_service::Parse_argument(args[2],cli,capture_length)
+            ){
+                return;
+            }
+            
+            // samples defined
+            if(args.size() == 4){
+                uint samples = 0;
+                if( not CLI_service::Parse_argument(args[3],cli,samples)){
+                    return;
+                }
+                
+                if(fluorometer->Capture_OJIP(gain, intensity, capture_length, samples)){
+                    cli.Print_ln("success");
+                }else{
+                    cli.Print_error("Capture_OJIP failed");
+                }
+                
+                return;
+            }
+            
+            // samples and timing defined
+            if(args.size() == 5){
+                uint samples = 0;
+                if( not CLI_service::Parse_argument(args[3],cli,samples)){
+                    return;
+                }
+                Fluorometer_config::Timing timing;
+                const auto& timing_arg = args[4];
+                
+                if(timing_arg == "Linear"){
+                    timing = Fluorometer_config::Timing::Linear;
+                }else if(timing_arg == "Logarithmic"){
+                    timing = Fluorometer_config::Timing::Logarithmic;
+                }else{
+                    cli.Print_error("Invalid timing selected");
+                    return;
+                }
+                
+                if(fluorometer->Capture_OJIP(gain, intensity, capture_length, samples, timing)){
+                    cli.Print_ln("success");
+                }else{
+                    cli.Print_error("Capture_OJIP failed");
+                }
+                
+                return;
+            }
+            
+            if(fluorometer->Capture_OJIP(gain, intensity, capture_length)){
+                cli.Print_ln("success");
+            }else{
+                cli.Print_error("Capture_OJIP failed");
+            }
+            
+        },"create an OJIP capture","gain emitor_intesity(float) capture_length(float) [samples(int)]? [timing]?");
+        
+        cli.Bind("fluorometer_check",[this, &cli](){
+            if(fluorometer->Capture_done()){
+                cli.Print_ln("done");
+            }else{
+                cli.Print_ln(dye::yellow("in progress"));
+            }
+            
+        },"check if the fluorometer capture is complete");
+        
+        cli.Bind("fluorometer_retrieve",[this, &cli](){
+            if(fluorometer->Capture_done()){
+                cli.Print_ln("TODO"); //#TODO how to export this?
+            }else{
+                cli.Print_ln(dye::yellow("in progress"));
+            }
+        },"retrieve the last capture data");
+    }
+    
+    if(spectrophotometer){
+        cli.Bind("spectrophotometer_measure",[this, &cli](std::vector<std::string> args){
+            if(not CLI_service::Check_argument_count(args, cli, 0)){
+                return;
+            }
+            
+            std::vector<Spectrophotometer::Channels> channels;
+            if (not Parse_channels(args, cli, true, channels)){
+                return;
+            }
+            
+            for(const auto& channel : channels){
+                auto measurement = spectrophotometer->Measure_channel(channel);
+                cli.Print_ln(
+                    emio::format("{}: {}  {}%",
+                        magic_enum::enum_name(channel),
+                        measurement.absolute_value,
+                        measurement.relative_value
+                ));
+            }
+        },"measure all, or selected channels","[channel channel ...]?");
+        
+        cli.Bind("spectrophotometer_measure_intensity",[this, &cli](std::vector<std::string> args){
+            if(not CLI_service::Check_argument_count(args, cli, 0)){
+                return;
+            }
+            
+            std::vector<Spectrophotometer::Channels> channels;
+            if (not Parse_channels(args, cli, true, channels)){
+                return;
+            }
+            
+            for(const auto& channel : channels){
+                auto measurement = spectrophotometer->Measure_intensity(channel);
+                cli.Print_ln(
+                    emio::format("{}: {}%",
+                        magic_enum::enum_name(channel),
+                        measurement
+                ));
+            }
+        },"measure all, or selected channels intensity","[channel channel ...]?");
+    }
 }
