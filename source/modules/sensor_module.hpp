@@ -116,6 +116,11 @@ private:
     void Setup_module_check();
     
     /**
+     * @brief   Initializes cli temperature readouts
+     */
+    void Setup_cli_temps();
+    
+    /**
      * @brief       Connect to the given cli
      * @param cli   The CLI to connect to
      */

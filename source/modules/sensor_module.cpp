@@ -1,4 +1,5 @@
 #include "sensor_module.hpp"
+#include "cli.hpp"
 #include "threads/module_check_thread.hpp"
 #include "module_check/board_temperature_check.hpp"
 #include "module_check/core_temperature_check.hpp"
@@ -95,6 +96,45 @@ void Sensor_module::Setup_module_check(){
     }
     if (spectrophotometer) {
         module_check_thread->AttachCheck(new Spectrophotometer_emitor_temp_check(spectrophotometer));
+    }
+}
+
+void Sensor_module::Setup_cli_temps(){
+    if (bottle_temperature) {
+        register_temperature_readout("bottle", [this]()->std::optional<float>{
+            return std::optional<float>{this->bottle_temperature->Temperature()};
+        });
+        
+        register_temperature_readout("bottle_top", [this]()->std::optional<float>{
+            return std::optional<float>{this->bottle_temperature->Top_temperature()};
+        });
+        
+        register_temperature_readout("bottle_sensor_top", [this]()->std::optional<float>{
+            return std::optional<float>{this->bottle_temperature->Top_sensor_temperature()};
+        });
+        
+        register_temperature_readout("bottle_bottom", [this]()->std::optional<float>{
+            return std::optional<float>{this->bottle_temperature->Bottom_temperature()};
+        });
+        
+        register_temperature_readout("bottle_sensor_bottom", [this]()->std::optional<float>{
+            return std::optional<float>{this->bottle_temperature->Bottom_sensor_temperature()};
+        });
+    }
+    
+    if (fluorometer) {
+        register_temperature_readout("fluorometer_emitor", [this]()->std::optional<float>{
+            return std::optional<float>{this->fluorometer->Emitor_temperature()};
+        });
+        register_temperature_readout("fluorometer_detector", [this]()->std::optional<float>{
+            return std::optional<float>{this->fluorometer->Detector_temperature()};
+        });
+    }
+    
+    if (spectrophotometer) {
+        register_temperature_readout("spectrophotometer", [this]()->std::optional<float>{
+            return std::optional<float>{this->spectrophotometer->Temperature()};
+        });
     }
 }
 
