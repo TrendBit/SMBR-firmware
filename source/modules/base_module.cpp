@@ -3,8 +3,6 @@
 #include "threads/common_thread.hpp"
 #include "threads/module_check_thread.hpp" 
 #include "module_check/invalid_instance_check.hpp"
-#include <exception>
-#include <optional>
 
 Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl):
 Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::nullopt)

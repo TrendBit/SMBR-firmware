@@ -16,8 +16,6 @@
 #include "module_check/fluorometer_detector_temp_check.hpp"
 #include "module_check/spectrophotometer_emitor_temp_check.hpp"
 #include "tools/color.hpp"
-#include <string>
-#include <vector>
 
 Sensor_module::Sensor_module():
     Base_module(

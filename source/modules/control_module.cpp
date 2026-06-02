@@ -7,8 +7,6 @@
 #include "module_check/heater_plate_temp_check.hpp"
 #include "module_check/mixer_rpm_check.hpp"
 #include <cstdint>
-#include <optional>
-#include <vector>
 
 Control_module::Control_module():
     Base_module(
