@@ -139,8 +139,13 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_stop",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 1, pump_count)){
+        if(not CLI_service::Check_argument_count(args, cli, 0, pump_count)){
             return;
+        }
+        
+        if(args.size() == 0){
+            pump_controller->Stop_all();
+            cli.Print_ln("all pumps stopped");
         }
         
         for (const auto& arg : args){
