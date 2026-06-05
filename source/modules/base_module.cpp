@@ -1,8 +1,12 @@
 #include "base_module.hpp"
 
+#include "cli.hpp"
+#include "codes/codes.hpp"
 #include "threads/common_thread.hpp"
 #include "threads/module_check_thread.hpp" 
 #include "module_check/invalid_instance_check.hpp"
+#include <cstdint>
+#include <vector>
 
 Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerator, uint green_led_pin, uint i2c_sda, uint i2c_scl):
 Base_module(module_type, enumerator, green_led_pin, i2c_sda, i2c_scl, std::nullopt)
@@ -137,6 +141,52 @@ void Base_module::Connect_to_cli(CLI_service& cli) const{
             }
         }
     }, "the current temperature of all, or selected installed sensors","[sensor sensor ...]?");
+
+    if(enumerator){
+        cli.Bind("set_instance", [this, &cli](std::vector<std::string> args)->void{
+            if( not CLI_service::Check_argument_count(args, cli, 1, 1)){
+                return;
+            }
+            
+            Codes::Instance selected_instance_parsed = Codes::Instance::Undefined;
+            const auto& arg = args[0];
+            if(arg == "1"){
+                selected_instance_parsed = Codes::Instance::Instance_1;
+            }else if(arg == "2"){
+                selected_instance_parsed = Codes::Instance::Instance_2;
+            }else if(arg == "3"){
+                selected_instance_parsed = Codes::Instance::Instance_3;
+            }else if(arg == "4"){
+                selected_instance_parsed = Codes::Instance::Instance_4;
+            }else if(arg == "5"){
+                selected_instance_parsed = Codes::Instance::Instance_5;
+            }else if(arg == "6"){
+                selected_instance_parsed = Codes::Instance::Instance_6;
+            }else if(arg == "7"){
+                selected_instance_parsed = Codes::Instance::Instance_7;
+            }else if(arg == "8"){
+                selected_instance_parsed = Codes::Instance::Instance_8;
+            }else if(arg == "9"){
+                selected_instance_parsed = Codes::Instance::Instance_9;
+            }else if(arg == "10"){
+                selected_instance_parsed = Codes::Instance::Instance_10;
+            }else if(arg == "11"){
+                selected_instance_parsed = Codes::Instance::Instance_11;
+            }else if(arg == "12"){
+                selected_instance_parsed = Codes::Instance::Instance_12;
+            }else{
+                cli.Print_error("invalid instance");
+                return;
+            }
+            
+            
+            if(not enumerator->Enumerate(selected_instance_parsed)){
+                cli.Print_error("unable to enumerate instance");
+            }else{
+                cli.Print_ln("success");
+            }
+        },"set the instance index of this module (only works for modules with instance other than Exclusive).","target_instance(1-12)");
+    }
     
     this->Setup_cli(cli);
 }
