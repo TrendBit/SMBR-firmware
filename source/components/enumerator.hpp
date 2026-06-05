@@ -192,6 +192,16 @@ public:
      * @return false    Current instance is undefined, in error state or still in process of enumeration
      */
     bool Valid() const;
+    
+    /**
+     * @brief   Start the reservation process for the wanted_instance instance.
+     *          Loads instance from memory if requested_instance = Undefined
+     * 
+     * @param requested_instance Which instance will try to be reserved by the module.
+     * @return true     Instance is being reserved
+     * @return false    The reservation process is allready started and cannot be interupted. 
+     */
+    bool Enumerate(Codes::Instance requested_instance);
 
 private:
     /**
@@ -222,16 +232,6 @@ private:
      * @param blue  Blue component of color (0-255)
      */
     void Set_RGB_LED_color(uint8_t red, uint8_t green, uint8_t blue) const;
-
-    /**
-     * @brief   Start the reservation process for the wanted_instance instance.
-     *          Loads instance from memory if requested_instance = Undefined
-     * 
-     * @param requested_instance Which instance will try to be reserved by the module.
-     * @return true     Instance is being reserved
-     * @return false    The reservation process is allready started and cannot be interupted. 
-     */
-    bool Enumerate(Codes::Instance requested_instance);
 
     /**
      * @brief   Register the wanted_instance as current and save it to the EEPROM memory.
