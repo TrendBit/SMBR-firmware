@@ -99,11 +99,11 @@ void CLI_service::Print_error(const std::string &message){
 
 bool CLI_service::Check_argument_count(const std::vector<std::string>& args, CLI_service& cli, size_t minimum_arguments, size_t maximum_arguments){
     if(args.size() < minimum_arguments){
-        cli.Print_ln(dye::red(emio::format("not enough arguments, minimum is {}",minimum_arguments)));
+        cli.Print_error(emio::format("not enough arguments, minimum is {}",minimum_arguments));
         return false;
     }
     if(args.size() > maximum_arguments && maximum_arguments != SIZE_MAX){
-        cli.Print_ln(dye::red(emio::format("too many arguments, maximum is {}",maximum_arguments)));
+        cli.Print_error(emio::format("too many arguments, maximum is {}",maximum_arguments));
         return false;
     }
     
@@ -119,7 +119,7 @@ bool CLI_service::Parse_argument(const std::string& arg, CLI_service& cli, float
     
     // tests also if the string was parsed till the end.
     if (ec != std::errc() || ptr != arg.data() + arg.size()) {
-        cli.Print_ln(dye::red("invalid argument (expected a float)"));
+        cli.Print_error("invalid argument (expected a float)");
         return false;
     }
     
@@ -135,7 +135,7 @@ bool CLI_service::Parse_argument(const std::string& arg, CLI_service& cli, int p
     
     // tests also if the string was parsed till the end.
     if (ec != std::errc() || ptr != arg.data() + arg.size()) {
-        cli.Print_ln(dye::red("invalid argument (expected an integer)"));
+        cli.Print_error("invalid argument (expected an integer)");
         return false;
     }
     
@@ -151,7 +151,7 @@ bool CLI_service::Parse_argument(const std::string& arg, CLI_service& cli, unsig
     
     // tests also if the string was parsed till the end.
     if (ec != std::errc() || ptr != arg.data() + arg.size()) {
-        cli.Print_ln(dye::red("invalid argument (expected an integer)"));
+        cli.Print_error("invalid argument (expected an integer)");
         return false;
     }
     
