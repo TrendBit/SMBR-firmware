@@ -231,6 +231,7 @@ void Control_module::Setup_cli(CLI_service& cli) const {
             }
         },"set intensity of selected channels","channel channel...");
         
+        /*
         cli.Bind("led_power_limited",[this, &cli](){
             if(led_panel->Power_limited()){
                 cli.Print_ln("not limited");
@@ -246,5 +247,6 @@ void Control_module::Setup_cli(CLI_service& cli) const {
                 cli.Print_ln(dye::yellow("limited"));
             }
         },"Detect if power of LED illumination is limited by temperature of module");
+        */
     }
 }
