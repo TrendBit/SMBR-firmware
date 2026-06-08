@@ -139,7 +139,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_stop",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 0, pump_count)){
+        if(not cli.Check_argument_count(args, 0, pump_count)){
             return;
         }
         
@@ -172,7 +172,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_get_speed",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 0, pump_count)){
+        if(not cli.Check_argument_count(args, 0, pump_count)){
             return;
         }
         
@@ -192,7 +192,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_get_flowrate",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 0, pump_count)){
+        if(not cli.Check_argument_count(args, 0, pump_count)){
             return;
         }
         
@@ -212,7 +212,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_get_max_flowrate",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 0, pump_count)){
+        if(not cli.Check_argument_count(args, 0, pump_count)){
             return;
         }
         
@@ -232,7 +232,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_get_min_flowrate",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 0, pump_count)){
+        if(not cli.Check_argument_count(args, 0, pump_count)){
             return;
         }
         
@@ -252,12 +252,12 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_set_speed",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 2, pump_count+1)){
+        if(not cli.Check_argument_count(args, 2, pump_count+1)){
             return;
         }
         
         float speed = 0.0;
-        if(not CLI_service::Parse_argument(args[0],cli,speed)){
+        if(not cli.Parse_argument(args[0],speed)){
             return;
         }
         
@@ -278,12 +278,12 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_set_flowrate",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 2, pump_count+1)){
+        if(not cli.Check_argument_count(args, 2, pump_count+1)){
             return;
         }
         
         float flowrate = 0.0;
-        if(not CLI_service::Parse_argument(args[0],cli,flowrate)){
+        if(not cli.Parse_argument(args[0],flowrate)){
             return;
         }
         
@@ -304,12 +304,12 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
     cli.Bind("pump_set_max_flowrate",[this,&cli](std::vector<std::string> args)->void{
         uint8_t pump_count = pump_controller->Pump_count();
         
-        if(not CLI_service::Check_argument_count(args, cli, 2, pump_count+1)){
+        if(not cli.Check_argument_count(args, 2, pump_count+1)){
             return;
         }
         
         float flowrate = 0.0;
-        if(not CLI_service::Parse_argument(args[0],cli,flowrate)){
+        if(not cli.Parse_argument(args[0],flowrate)){
             return;
         }
         
