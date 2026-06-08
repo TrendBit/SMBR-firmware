@@ -186,12 +186,12 @@ bool Parse_channels(
 void Control_module::Setup_cli(CLI_service& cli) const {
     if( led_panel ){
         cli.Bind("led_set_intensity",[this, &cli](std::vector<std::string> args){
-            if(not CLI_service::Check_argument_count(args,cli,2)){
+            if(not cli.Check_argument_count(args,2)){
                 return;
             }
             
             float intensity = 0.0;
-            if(not CLI_service::Parse_argument(args[0],cli,intensity)){
+            if(not cli.Parse_argument(args[0],intensity)){
                 return;
             }
             
@@ -211,7 +211,7 @@ void Control_module::Setup_cli(CLI_service& cli) const {
         },"set intensity of selected channels","intensity(float) channel channel...");
         
         cli.Bind("led_get_intensity",[this, &cli](std::vector<std::string> args){
-            if(not CLI_service::Check_argument_count(args,cli,0)){
+            if(not cli.Check_argument_count(args,0)){
                 return;
             }
             
