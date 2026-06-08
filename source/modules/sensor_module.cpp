@@ -1,6 +1,7 @@
 #include "sensor_module.hpp"
 #include "cli.hpp"
 #include "codes/tools/magic_enum.hpp"
+#include "components/fluorometer.hpp"
 #include "components/spectrophotometer.hpp"
 #include "fluorometer/fluorometer_config.hpp"
 #include "threads/module_check_thread.hpp"
@@ -287,9 +288,19 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
         
         cli.Bind("fluorometer_retrieve",[this, &cli](){
             if(fluorometer->Capture_done()){
-                cli.Print_ln("TODO"); //#TODO how to export this?
+                const Fluorometer::OJIP& data = *fluorometer->Retrieve_OJIP();
+                cli.Print_ln(emio::format("ID: {}",data.measurement_id));
+                cli.Print_ln(emio::format("emitor intensity: {}",data.emitor_intensity));
+                cli.Print_ln(emio::format("detector gain:    {}",magic_enum::enum_name(data.detector_gain)));
+                cli.Print_ln(emio::format("sample range:     {}",data.sample_range));
+                cli.Print_ln(emio::format("sample count:     {}",data.sample_count));
+                cli.Print_ln("SAMPLES START --------------------------");
+                for(size_t i = 0; i < data.sample_count; i++){
+                    cli.Print_ln(emio::format("{} | {}",data.sample_time_us[i], data.intensity[i]));
+                }
+                cli.Print_ln("SAMPLES END --------------------------");
             }else{
-                cli.Print_ln(dye::yellow("in progress"));
+                cli.Print_error("in progress");
             }
         },"retrieve the last capture data");
     }
