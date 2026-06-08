@@ -199,7 +199,7 @@ bool Pump_controller::Set_flowrate(uint8_t pump_index, float flowrate){
 std::optional<float> Pump_controller::Get_flowrate(uint8_t pump_index){
     if (not Valid_pump_index(pump_index)) {
         Logger::Error("Pumps_get_flowrate_request invalid pump index: {}", pump_index);
-        return false;
+        return std::nullopt;
     }
 
     Logger::Debug("Pump {} flowrate requested", pump_index);
@@ -229,6 +229,7 @@ bool Pump_controller::Set_max_flowrate(uint8_t pump_index, float flowrate){
         return false;
     }
     
+    Logger::Debug("Pump {} maximal flowrate set to: {:03.2f}", pump_index, flowrate);
     pumps[pump_index - 1]->Set_Maximal_flowrate(flowrate);
 
     std::optional<float> written = memory->Write_Pump_max_flowrate(pump_index, flowrate);
