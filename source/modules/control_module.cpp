@@ -152,7 +152,7 @@ bool Parse_channels(
     size_t skip_args = 0
 ){    
     
-    const size_t channel_count = 10;
+    const size_t channel_count = 4;
     if(args.size()==skip_args){
         if(fill_on_empty){
             selected_channels.reserve(channel_count);
@@ -216,7 +216,7 @@ void Control_module::Setup_cli(CLI_service& cli) const {
             }
             
             std::vector<uint8_t> channels;
-            if(not Parse_channels(args,cli,false,channels)){
+            if(not Parse_channels(args,cli,true,channels)){
                 return;
             }
             
@@ -224,7 +224,7 @@ void Control_module::Setup_cli(CLI_service& cli) const {
                 std::optional<float> intensity = led_panel->Get_intensity(channel);
                 
                 if(intensity.has_value()){
-                    cli.Print_ln(emio::format("channel {}: {}",channel, intensity));
+                    cli.Print_ln(emio::format("channel {}: {}",channel, intensity.value()));
                 }else{
                     cli.Print_error("Get_intensity failed");
                 }
