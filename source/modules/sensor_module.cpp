@@ -226,6 +226,11 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
                 return;
             }
             
+            if(intensity < 0.1 || intensity > 1.0) {
+                cli.Print_error("Intensity out of range");
+                return;
+            }
+            
             // samples defined
             if(args.size() == 4){
                 uint samples = 0;
@@ -275,7 +280,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
                 cli.Print_error("Capture_OJIP failed");
             }
             
-        },"create an OJIP capture","gain emitor_intesity(float) capture_length(float) [samples(int)]? [timing]?");
+        },"create an OJIP capture","gain(x1 | x10 | x50 | Auto) emitor_intesity(0.1 - 1.0) capture_length(float) [samples(int)]? [timing(Linear | Logarithmic)]?");
         
         cli.Bind("fluorometer_check",[this, &cli](){
             if(fluorometer->Capture_done()){
