@@ -147,25 +147,22 @@ public:
      *        If not, it prints out an error message to the cli.
      * 
      * @param args                The commands arguments
-     * @param cli                 The cli that will be used to output an error if needed
      * @param minimum_arguments   How many arguments should the command have at minimum
      * @param minimum_arguments   How many arguments should the command have at maximum (optional)
      * 
      * @return true     The argument count is OK
      * @return false    The argument count is not correct and an error has been printed
      */
-    static bool Check_argument_count(
+    bool Check_argument_count(
         const std::vector<std::string>& args, 
-        CLI_service& cli, 
         size_t minimum_arguments, 
         size_t maximum_arguments = SIZE_MAX
     );
     
     /**
-     * @brief Parse the given argument as a given type. 
+     * @brief Parse the given argument as a given type. Outputs an error to the cli if there is something wrong.
      * 
      * @param arg           The argument that should be parsed
-     * @param cli           A cli that will be used to output an error if needed
      * @param parsed_value  An output of the method, containing the parsed argument
      * 
      * @return true     Parsing of the argument was successfull
@@ -174,14 +171,13 @@ public:
      * @note This funtion was not inlined and templated because it uses large header files 
      *       that would not be used anywhere else. The given types should be enough for most uses.
      */
-    static bool Parse_argument(const std::string& arg, CLI_service& cli, float parsed_value);
+    bool Parse_argument(const std::string& arg, float parsed_value);
     
     /**
-     * @brief Parse the given argument as a given type. 
-     * 
-     * @param arg           The argument that should be parsed
-     * @param cli           A cli that will be used to output an error if needed
-     * @param parsed_value  An output of the method, containing the parsed argument
+    * @brief Parse the given argument as a given type. Outputs an error to the cli if there is something wrong.
+    * 
+    * @param arg           The argument that should be parsed
+    * @param parsed_value  An output of the method, containing the parsed argument
      * 
      * @return true     Parsing of the argument was successfull
      * @return false    Parsing of the argument was not successfull, and an error has been printed
@@ -189,14 +185,13 @@ public:
      * @note This funtion was not inlined and templated because it uses large header files 
      *       that would not be used anywhere else. The given types should be enough for most uses.
      */
-    static bool Parse_argument(const std::string& arg, CLI_service& cli, int parsed_value);
+    bool Parse_argument(const std::string& arg, int parsed_value);
     
     /**
-     * @brief Parse the given argument as a given type. 
-     * 
-     * @param arg           The argument that should be parsed
-     * @param cli           A cli that will be used to output an error if needed
-     * @param parsed_value  An output of the method, containing the parsed argument
+    * @brief Parse the given argument as a given type. Outputs an error to the cli if there is something wrong.
+    * 
+    * @param arg           The argument that should be parsed
+    * @param parsed_value  An output of the method, containing the parsed argument
      * 
      * @return true     Parsing of the argument was successfull
      * @return false    Parsing of the argument was not successfull, and an error has been printed
@@ -204,5 +199,5 @@ public:
      * @note This funtion was not inlined and templated because it uses large header files 
      *       that would not be used anywhere else. The given types should be enough for most uses.
      */
-    static bool Parse_argument(const std::string& arg, CLI_service& cli, unsigned int parsed_value);
+    bool Parse_argument(const std::string& arg, unsigned int parsed_value);
 };
