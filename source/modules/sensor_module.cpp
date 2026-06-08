@@ -196,7 +196,7 @@ bool Parse_channels(
 void Sensor_module::Setup_cli(CLI_service& cli) const {
     if(fluorometer){
         cli.Bind("fluorometer_capture",[this, &cli](std::vector<std::string> args){
-            if( not CLI_service::Check_argument_count(args, cli, 3, 5)){
+            if( not cli.Check_argument_count(args, 3, 5)){
                 return;
             }
             
@@ -218,8 +218,8 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
             
             float intensity = 0.0;
             float capture_length = 0.0;
-            if( not CLI_service::Parse_argument(args[1],cli,intensity)
-            ||  not CLI_service::Parse_argument(args[2],cli,capture_length)
+            if( not cli.Parse_argument(args[1],intensity)
+            ||  not cli.Parse_argument(args[2],capture_length)
             ){
                 return;
             }
@@ -227,7 +227,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
             // samples defined
             if(args.size() == 4){
                 uint samples = 0;
-                if( not CLI_service::Parse_argument(args[3],cli,samples)){
+                if( not cli.Parse_argument(args[3],samples)){
                     return;
                 }
                 
@@ -243,7 +243,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
             // samples and timing defined
             if(args.size() == 5){
                 uint samples = 0;
-                if( not CLI_service::Parse_argument(args[3],cli,samples)){
+                if( not cli.Parse_argument(args[3],samples)){
                     return;
                 }
                 Fluorometer_config::Timing timing;
@@ -295,7 +295,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
     
     if(spectrophotometer){
         cli.Bind("spectrophotometer_measure",[this, &cli](std::vector<std::string> args){
-            if(not CLI_service::Check_argument_count(args, cli, 0)){
+            if(not cli.Check_argument_count(args, 0)){
                 return;
             }
             
@@ -316,7 +316,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
         },"measure all, or selected channels","[channel channel ...]?");
         
         cli.Bind("spectrophotometer_measure_intensity",[this, &cli](std::vector<std::string> args){
-            if(not CLI_service::Check_argument_count(args, cli, 0)){
+            if(not cli.Check_argument_count(args, 0)){
                 return;
             }
             
