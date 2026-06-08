@@ -110,7 +110,7 @@ bool CLI_service::Check_argument_count(const std::vector<std::string>& args, siz
     return true;
 }
 
-bool CLI_service::Parse_argument(const std::string& arg, float parsed_value){
+bool CLI_service::Parse_argument(const std::string& arg, float& parsed_value){
     auto [ptr, ec] = std::from_chars(
         arg.data(),
         arg.data() + arg.size(),
@@ -126,7 +126,7 @@ bool CLI_service::Parse_argument(const std::string& arg, float parsed_value){
     return true;
 }
 
-bool CLI_service::Parse_argument(const std::string& arg, int parsed_value){
+bool CLI_service::Parse_argument(const std::string& arg, int& parsed_value){
     auto [ptr, ec] = std::from_chars(
         arg.data(),
         arg.data() + arg.size(),
@@ -142,7 +142,7 @@ bool CLI_service::Parse_argument(const std::string& arg, int parsed_value){
     return true;
 }
 
-bool CLI_service::Parse_argument(const std::string& arg, unsigned int parsed_value){
+bool CLI_service::Parse_argument(const std::string& arg, unsigned int& parsed_value){
     auto [ptr, ec] = std::from_chars(
         arg.data(),
         arg.data() + arg.size(),

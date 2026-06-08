@@ -171,7 +171,7 @@ public:
      * @note This funtion was not inlined and templated because it uses large header files 
      *       that would not be used anywhere else. The given types should be enough for most uses.
      */
-    bool Parse_argument(const std::string& arg, float parsed_value);
+    bool Parse_argument(const std::string& arg, float& parsed_value);
     
     /**
     * @brief Parse the given argument as a given type. Outputs an error to the cli if there is something wrong.
@@ -185,7 +185,7 @@ public:
      * @note This funtion was not inlined and templated because it uses large header files 
      *       that would not be used anywhere else. The given types should be enough for most uses.
      */
-    bool Parse_argument(const std::string& arg, int parsed_value);
+    bool Parse_argument(const std::string& arg, int& parsed_value);
     
     /**
     * @brief Parse the given argument as a given type. Outputs an error to the cli if there is something wrong.
@@ -199,5 +199,5 @@ public:
      * @note This funtion was not inlined and templated because it uses large header files 
      *       that would not be used anywhere else. The given types should be enough for most uses.
      */
-    bool Parse_argument(const std::string& arg, unsigned int parsed_value);
+    bool Parse_argument(const std::string& arg, unsigned int& parsed_value);
 };
