@@ -36,6 +36,7 @@ void Sensor_module::Setup_components(){
     Setup_fluorometer();
     Setup_spectrophotometer();
     Setup_module_check();
+    Setup_cli_temps();
 }
 
 std::optional<float> Sensor_module::Board_temperature(){
