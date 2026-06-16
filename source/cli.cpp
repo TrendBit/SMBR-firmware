@@ -17,6 +17,8 @@ CLI_service::CLI_service():cli(new CLI(0, 256, 32,"\033[94m>\033[0m ")){
     Bind("bootloader", [this]()->void { Bootloader(); }, "Reboots MCU into bootloader mode for fw update");
     Bind("restart", [this]()->void { Restart(); }, "Restart MCU using watchdog");
     Bind("thread_statistics", [this]()->void { Thread_statistics(); }, "Print statistics of FreeRTOS threads");
+    
+    Bind("command_list",[this]()->void { this->Print_command_list(); }, "Print all of the supported module commands without help messages");
 
     /**
      * @brief Service thread for CLI
@@ -27,6 +29,12 @@ CLI_service::CLI_service():cli(new CLI(0, 256, 32,"\033[94m>\033[0m ")){
             rtos::Delay(10);
         }
     }, 1024, 8);
+}
+
+void CLI_service::Print_command_list(){
+    for(const auto& command : this->registered_commands){
+        this->Print_ln(command);
+    }
 }
 
 std::string CLI_service::Device_info(){
@@ -76,6 +84,7 @@ void CLI_service::Thread_statistics() {
 
 void CLI_service::Bind(const std::string &command, std::function<void()> function, const std::string help_message){
     this->cli->Bind(command, function, help_message);
+    this->registered_commands.push_back(command);
 }
 void CLI_service::Bind(
     const std::string &command, 
@@ -84,6 +93,7 @@ void CLI_service::Bind(
     const std::string arguments
 ){
     this->cli->Bind(command, function, help_message + dye::light_black("\r\n\tUsage: " + arguments));
+    this->registered_commands.push_back(command+"*");
 }
 void CLI_service::Print(const std::string &message){
     this->cli->Print(message);

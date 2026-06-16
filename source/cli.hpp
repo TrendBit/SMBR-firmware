@@ -55,6 +55,10 @@ private:
      * @brief   Thread which handle CLI service
      */
     fra::Thread * cli_service_thread;
+    
+    std::vector<std::string> registered_commands;
+    
+    void Print_command_list();
 
 public:
     CLI_service();
