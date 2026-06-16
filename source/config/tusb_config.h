@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  *
  */
+#include "config.hpp"
 
 #ifndef _TUSB_CONFIG_H_
 #define _TUSB_CONFIG_H_
@@ -94,7 +95,11 @@
 #endif
 
 //------------- CLASS -------------//
-#define CFG_TUD_CDC               2
+#ifdef CONFIG_LOGGER_USB
+    #define CFG_TUD_CDC           2
+#else
+    #define CFG_TUD_CDC           1
+#endif
 #define CFG_TUD_MSC               0
 #define CFG_TUD_HID               0
 #define CFG_TUD_MIDI              0

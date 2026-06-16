@@ -42,11 +42,17 @@ config BOOTLOADER_OFFSET
 
 comment "Development configurations"
 
-config LOGGER
-    bool "Logger output"
+config LOGGER_UART
+    bool "Logger UART output"
     default y
     help
         Enable debug output to serial line (baudrate: 961200)
+
+config LOGGER_USB
+    bool "Logger USB output"
+    default n
+    help
+        Enable debug output to USB line (baudrate: 961200)
 
 choice
     prompt "Logger level"

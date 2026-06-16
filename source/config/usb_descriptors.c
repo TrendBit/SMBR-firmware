@@ -25,6 +25,7 @@
 
 #include "pico/unique_id.h"
 #include "tusb.h"
+#include "config.hpp"
 
 /* A combination of interfaces must have a unique product id, since PC will save device driver after the first plug.
  * Same VID/PID with different interface e.g MSC (first), then CDC (later) will possibly cause system error on PC.
@@ -79,8 +80,10 @@ uint8_t const * tud_descriptor_device_cb(void){
 enum {
     ITF_NUM_CDC_0 = 0,
     ITF_NUM_CDC_0_DATA,
+#ifdef CONFIG_LOGGER_USB
     ITF_NUM_CDC_1,
     ITF_NUM_CDC_1_DATA,
+#endif
     ITF_NUM_TOTAL
 };
 
@@ -93,9 +96,11 @@ enum {
 # define EPNUM_CDC_0_OUT   0x02
 # define EPNUM_CDC_0_IN    0x82
 
+#ifdef CONFIG_LOGGER_USB
 # define EPNUM_CDC_1_NOTIF 0x83
 # define EPNUM_CDC_1_OUT   0x04
 # define EPNUM_CDC_1_IN    0x84
+#endif
 
 #elif CFG_TUSB_MCU == OPT_MCU_SAMG || CFG_TUSB_MCU == OPT_MCU_SAMX7X
 // SAMG & SAME70 don't support a same endpoint number with different direction IN and OUT
@@ -137,8 +142,11 @@ uint8_t const desc_fs_configuration[] =
     // 1st CDC: Interface number, string index, EP notification address and size, EP data address (out, in) and size.
     TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_0, 4,             EPNUM_CDC_0_NOTIF, 8,                EPNUM_CDC_0_OUT, EPNUM_CDC_0_IN,64),
 
-    // 2nd CDC: Interface number, string index, EP notification address and size, EP data address (out, in) and size.
-    TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_1, 4,             EPNUM_CDC_1_NOTIF, 8,                EPNUM_CDC_1_OUT, EPNUM_CDC_1_IN,64),
+    
+    #ifdef CONFIG_LOGGER_USB
+        // 2nd CDC: Interface number, string index, EP notification address and size, EP data address (out, in) and size.
+        TUD_CDC_DESCRIPTOR(ITF_NUM_CDC_1, 4,             EPNUM_CDC_1_NOTIF, 8,                EPNUM_CDC_1_OUT, EPNUM_CDC_1_IN,64),
+    #endif
 };
 
 #if TUD_OPT_HIGH_SPEED
@@ -220,7 +228,9 @@ char const *string_desc_arr [] =
     "Phenobottle - TestBed",       // 2: Product
     "00000000",                    // 3: Serials, should use chip ID
     "Command_line_interface",      // 4: CDC Interface 0
+#ifdef CONFIG_LOGGER_USB
     "Log_output",                  // 5: CDC Interface 1
+#endif
 };
 
 static uint16_t _desc_str[32];
