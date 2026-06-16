@@ -73,6 +73,17 @@ Base_module * Base_module::Singleton_instance(){
     return singleton_instance;
 }
 
+UID_t Base_module::UID(){
+    std::array<uint8_t, PICO_UUID_LEN> pico_uid;
+    UID_t fast_hash_uid;
+
+    pico_get_unique_board_id((pico_unique_board_id_t*)pico_uid.data());
+    uint64_t hash = fasthash64(pico_uid.data(), PICO_UUID_LEN, KATAPULT_HASH_SEED);
+    std::copy(reinterpret_cast<uint8_t*>(&hash), reinterpret_cast<uint8_t*>(&hash) + CANBUS_UUID_LEN, fast_hash_uid.begin());
+
+    return fast_hash_uid;
+}
+
 uint Base_module::Send_CAN_message(App_messages::Base_message &message) {
     if (Singleton_instance()) {
         return Singleton_instance()->can_thread->Send((message));

@@ -178,6 +178,15 @@ public:
     static Codes::Instance Instance_enumeration();
 
     /**
+     * @brief   Calculate unique ID of module, this is based on PICO unique ID
+     *          Hashes pico uid using fash-hash and reduce it to 6 bytes in order to have same output as katapult
+     *              This is made in order to distinguish modules but has same ui in bootloader and normal mode
+     *
+     * @return UID_t Unique ID of module, reduced to 6 bytes (CANBUS_UUID_LEN)
+     */
+    static UID_t UID();
+    
+    /**
      * @brief Wrapper function to send message to CAN bus via can_thread
      *
      * @param message  Message to be sent
