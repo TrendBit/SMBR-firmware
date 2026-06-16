@@ -48,7 +48,7 @@ std::string CLI_service::Device_info(){
 
     std::string device_info = "";
     device_info += emio::format("Device name: {}\r\n", DEVICE_NAME);
-    device_info += emio::format("Unique ID: {}\r\n", unique_id);
+    device_info += emio::format("MCU Unique ID: {}\r\n", unique_id);
     device_info += emio::format("Vendor: {}\r\n", VENDOR_NAME);
     device_info += emio::format("Build timestamp: {}\r\n", __TIMESTAMP__);
     device_info += emio::format("Firmware version: {}.{}.{}\r\n", FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_PATCH);
