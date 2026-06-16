@@ -1,15 +1,6 @@
 #include "enumerator.hpp"
-
-UID_t UID(){
-    std::array<uint8_t, PICO_UUID_LEN> pico_uid;
-    UID_t fast_hash_uid;
-
-    pico_get_unique_board_id((pico_unique_board_id_t*)pico_uid.data());
-    uint64_t hash = fasthash64(pico_uid.data(), PICO_UUID_LEN, KATAPULT_HASH_SEED);
-    std::copy(reinterpret_cast<uint8_t*>(&hash), reinterpret_cast<uint8_t*>(&hash) + CANBUS_UUID_LEN, fast_hash_uid.begin());
-
-    return fast_hash_uid;
-}
+#include "components/common_core.hpp"
+#include "modules/base_module.hpp"
 
 Enumerator::Enumerator(Codes::Module module_type, EEPROM_storage * memory, Codes::Instance instance_type) :
     Component(Codes::Component::Enumerator),
@@ -331,9 +322,10 @@ bool Enumerator::Receive(Application_message message){
                 Logger::Error("Enumerator_set interpretation failed");
                 return false;
             }
+            
+            const UID_t uid = Base_module::UID();
 
-            if (enumerator_set.uid != UID()){
-                UID_t uid = UID();
+            if (enumerator_set.uid != uid){
                 std::stringstream sstream;
                 for(auto part : uid){
                     sstream << static_cast<int>(part) << ",";
