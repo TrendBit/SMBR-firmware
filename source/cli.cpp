@@ -1,6 +1,7 @@
 #include "cli.hpp"
 #include "tools/color.hpp"
 #include <charconv>
+#include "config.hpp"
 
 CLI_service::CLI_service():cli(new CLI(0, 256, 32,"\033[94m>\033[0m ")){
 
@@ -53,6 +54,47 @@ std::string CLI_service::Device_info(){
     device_info += emio::format("Firmware version: {}.{}.{}\r\n", FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_PATCH);
     device_info += emio::format("Git commit hash: {}\r\n", FW_GIT_COMMIT_HASH_STR);
     device_info += emio::format("Compiler: {} {}.{}.{}\r\n", FW_COMPILER_NAME, __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+    
+    device_info += "Watchdog: ";
+    #ifdef CONFIG_WATCHDOG
+    device_info += "Enabled";
+    #else
+    device_info += "Disabled";
+    #endif
+    device_info += "\r\n";
+    
+    device_info += "Logger uart output: ";
+    #ifdef CONFIG_LOGGER_UART
+    device_info += "Enabled";
+    #else
+    device_info += "Disabled";
+    #endif
+    device_info += "\r\n";
+    
+    device_info += "Logger usb output: ";
+    #ifdef CONFIG_LOGGER_USB
+    device_info += "Enabled";
+    #else
+    device_info += "Disabled";
+    #endif
+    device_info += "\r\n";
+    
+    device_info += "Logger level: ";
+    #ifdef CONFIG_LOGGER_LEVEL
+    device_info += emio::format("{}",CONFIG_LOGGER_LEVEL);
+    #else
+    device_info += "Disabled"
+    #endif
+    device_info += "\r\n";
+    
+    device_info += "Bootloader: ";
+    #ifdef CONFIG_BOOTLOADER
+    device_info += "Enabled";
+    #else
+    device_info += "Disabled";
+    #endif
+    device_info += "\r\n";
+    
     return device_info;
 };
 
