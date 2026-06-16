@@ -26,7 +26,6 @@ int main(){
         }
     #endif
 
-    new USB_thread();
     auto cli = new CLI_service();
     
     #ifdef CONFIG_CONTROL_MODULE
@@ -40,6 +39,8 @@ int main(){
     #endif
     
     Base_module::Singleton_instance()->Connect_to_cli(*cli);
+    
+    new USB_thread();
     
     fra::Thread::StartScheduler();
 }
