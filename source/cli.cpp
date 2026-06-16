@@ -2,6 +2,8 @@
 #include "tools/color.hpp"
 #include <charconv>
 #include "config.hpp"
+#include "config/usb_descriptors.h"
+#include "config/cpp_proxy.hpp"
 
 CLI_service::CLI_service():cli(new CLI(0, 256, 32,"\033[94m>\033[0m ")){
 
@@ -47,7 +49,7 @@ std::string CLI_service::Device_info(){
     }
 
     std::string device_info = "";
-    device_info += emio::format("Device name: {}\r\n", DEVICE_NAME);
+    device_info += emio::format("Device name: {}\r\n", Generate_product_name_cpp());
     device_info += emio::format("MCU Unique ID: {}\r\n", unique_id);
     device_info += emio::format("Vendor: {}\r\n", VENDOR_NAME);
     device_info += emio::format("Build timestamp: {}\r\n", __TIMESTAMP__);

@@ -21,9 +21,6 @@
 #include "pico/unique_id.h"
 #include "hardware/watchdog.h"
 
-#define DEVICE_NAME "SMPBR - TestBed"
-#define VENDOR_NAME "TrendBit s.r.o."
-
 #ifndef FW_VERSION_MAJOR
     #define FW_VERSION_MAJOR 0
 #endif
