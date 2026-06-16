@@ -239,7 +239,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
                 }
                 
                 if(fluorometer->Capture_OJIP(gain, intensity, capture_length, samples)){
-                    cli.Print_ln("success");
+                    cli.Print_notice("success");
                 }else{
                     cli.Print_error("Capture_OJIP failed");
                 }
@@ -266,7 +266,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
                 }
                 
                 if(fluorometer->Capture_OJIP(gain, intensity, capture_length, samples, timing)){
-                    cli.Print_ln("success");
+                    cli.Print_notice("success");
                 }else{
                     cli.Print_error("Capture_OJIP failed");
                 }
@@ -275,7 +275,7 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
             }
             
             if(fluorometer->Capture_OJIP(gain, intensity, capture_length)){
-                cli.Print_ln("success");
+                cli.Print_notice("success");
             }else{
                 cli.Print_error("Capture_OJIP failed");
             }
@@ -321,6 +321,8 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
                 return;
             }
             
+            cli.Print_notice("CHANNEL  ABSOLUTE  RELATIVE");
+            
             for(const auto& channel : channels){
                 auto measurement = spectrophotometer->Measure_channel(channel);
                 cli.Print_ln(
@@ -341,6 +343,8 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
             if (not Parse_channels(args, cli, true, channels)){
                 return;
             }
+            
+            cli.Print_notice("CHANNEL  INTENSITY");
             
             for(const auto& channel : channels){
                 auto measurement = spectrophotometer->Measure_intensity(channel);

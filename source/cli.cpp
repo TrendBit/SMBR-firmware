@@ -95,7 +95,11 @@ void CLI_service::Print_ln(const std::string &message){
 void CLI_service::Print_error(const std::string &message){
     this->cli->Print(dye::red("error: " + message) + "\r\n");
 }
-
+void CLI_service::Print_notice(const std::string &message){
+    if(this->cli->Interactive()){
+        this->cli->Print(dye::light_black(message) + "\r\n");
+    }
+}
 
 bool CLI_service::Check_argument_count(const std::vector<std::string>& args, size_t minimum_arguments, size_t maximum_arguments){
     if(args.size() < minimum_arguments){

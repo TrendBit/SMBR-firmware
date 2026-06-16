@@ -203,7 +203,7 @@ void Control_module::Setup_cli(CLI_service& cli) const {
             
             for(const auto& channel : channels){
                 if(led_panel->Set_intensity(channel, intensity)){
-                    cli.Print_ln("success");
+                    cli.Print_notice("success");
                 }else{
                     cli.Print_error("Set_intensity failed");
                 }

@@ -136,11 +136,21 @@ public:
     void Print_ln(const std::string &message);
     
     /**
-     * @brief  Prints an error message to CLI. Automatically adds newline;
+     * @brief  Prints an error message to CLI. Automatically adds newline.
      *
      * @param message  Message to be printed
      */
     void Print_error(const std::string &message);
+    
+    /**
+     * @brief  Prints a notice message to CLI that should be used to
+     *         signalize a successfull command to the user.
+     *         Does not appear in non-interactive mode.
+     *         Automatically adds newline.
+     *
+     * @param message  Message to be printed
+     */
+    void Print_notice(const std::string &message);
     
     /**
      * @brief Checks if the given args vector contains the right amount of arguments.

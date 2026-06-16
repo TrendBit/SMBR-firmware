@@ -184,7 +184,7 @@ void Base_module::Connect_to_cli(CLI_service& cli) const{
                 if(not enumerator->Enumerate(selected_instance_parsed)){
                     cli.Print_error("unable to enumerate instance");
                 }else{
-                    cli.Print_ln("success");
+                    cli.Print_notice("success");
                 }
             },"set the instance index of this module (only works for modules with instance other than Exclusive).","target_instance(1-12)");
         }

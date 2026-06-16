@@ -145,7 +145,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
         
         if(args.size() == 0){
             pump_controller->Stop_all();
-            cli.Print_ln("all pumps stopped");
+            cli.Print_notice("all pumps stopped");
         }
         
         for (const auto& arg : args){
@@ -159,7 +159,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
                 continue;
             }
             
-            cli.Print_ln("success");
+            cli.Print_notice("success");
         }
     },"stops all or selected pumps","[pump_index pump_index ...]?");
     
@@ -270,7 +270,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
             if(not pump_controller->Set_speed(pump_index, speed)){
                 cli.Print_error("Set_speed failed");
             }else{
-                cli.Print_ln("success");
+                cli.Print_notice("success");
             }
         }
     },"set speed for selected pumps","speed(float) pump_index pump_index ...");
@@ -296,7 +296,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
             if(not pump_controller->Set_flowrate(pump_index, flowrate)){
                 cli.Print_error("Set_flowrate failed");
             }else{
-                cli.Print_ln("success");
+                cli.Print_notice("success");
             }
         }
     },"set flowrate for selected pumps","flowrate(float) pump_index pump_index ...");
@@ -322,7 +322,7 @@ void Pump_module::Setup_cli(CLI_service& cli) const {
             if(not pump_controller->Set_max_flowrate(pump_index, flowrate)){
                 cli.Print_error("Set_max_flowrate failed");
             }else{
-                cli.Print_ln("success");
+                cli.Print_notice("success");
             }
         }
     },"set max flowrate for selected pumps", "flowrate(float) pump_index pump_index ...");
