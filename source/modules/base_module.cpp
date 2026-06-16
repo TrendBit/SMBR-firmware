@@ -120,6 +120,11 @@ void Base_module::Connect_to_cli(CLI_service& cli) const{
         std::string result = "";
         result += emio::format("Module type: {}\r\n", magic_enum::enum_name(this->module_type));
         result += emio::format("Instance: {}\r\n", magic_enum::enum_name(this->Instance_enumeration()));
+        result += emio::format("Unique ID: ");
+        for(const auto& uid_part : UID()){
+            result += emio::format("{:x}",uid_part);
+        }
+        result += "\r\n";
         cli.Print(result);
     }, "Basic info about this module.");
     
