@@ -213,3 +213,19 @@ bool CLI_service::Parse_argument(const std::string& arg, unsigned int& parsed_va
     
     return true;
 }
+
+
+bool CLI_service::Parse_argument(const std::string& arg, bool& parsed_value){
+    if(arg == "true" || arg == "1" || arg == "y" || arg == "Y"){
+        parsed_value = true;
+        return true;
+    }
+    
+    if(arg == "false" || arg == "0" || arg == "n" || arg == "N"){
+        parsed_value = false;
+        return true;
+    }
+    
+    this->Print_error("invalid argument (expected a true/false)");
+    return false;
+}

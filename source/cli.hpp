@@ -214,4 +214,18 @@ public:
      *       that would not be used anywhere else. The given types should be enough for most uses.
      */
     bool Parse_argument(const std::string& arg, unsigned int& parsed_value);
+    
+    /**
+    * @brief Parse the given argument as a given type. Outputs an error to the cli if there is something wrong.
+    * 
+    * @param arg           The argument that should be parsed
+    * @param parsed_value  An output of the method, containing the parsed argument
+     * 
+     * @return true     Parsing of the argument was successfull
+     * @return false    Parsing of the argument was not successfull, and an error has been printed
+     * 
+     * @note This funtion was not inlined and templated because it uses large header files 
+     *       that would not be used anywhere else. The given types should be enough for most uses.
+     */
+    bool Parse_argument(const std::string& arg, bool& parsed_value);
 };
