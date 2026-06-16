@@ -25,6 +25,8 @@
 #ifndef USB_DESCRIPTORS_H_
 #define USB_DESCRIPTORS_H_
 
+#define VENDOR_NAME "TrendBit s.r.o."
+
 enum
 {
   REPORT_ID_KEYBOARD = 1,
