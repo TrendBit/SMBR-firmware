@@ -5,37 +5,38 @@ import argparse
 from application_codes import *
 
 
-def identify_modules(can_interface, timeout=2, verbose=False):
+def identify_modules(can_interface, timeout=2, verbose=False) -> list[Module]:
 
-    bus = can.interface.Bus(channel=can_interface, bustype='socketcan')
-
-    probe_request_message = Message(message_types["Probe_modules_request"], module_types["Any"], module_instances["All"])
-
-    try:
-        bus.send(probe_request_message.can_message())
-        if verbose:
-            print("Sending module probe request")
-            print("Waiting for responses...")
-    except can.CanError as e:
-        if verbose:
-            print(f"Failed to send message: {e}")
-        exit(0)
-
-    start_time = time.time()
-
-    probe_responses = []
-    while time.time() - start_time < timeout:
-        response = bus.recv(timeout)
-        if response:
-            if response.is_extended_id:
-                probe_responses.append(Message(can_message=response))
-
-    modules = []
-    for resp in probe_responses:
-        if resp.message_type == message_types["Probe_modules_response"]:
-            modules.append(Module(resp))
-
-    return modules
+    with can.interface.Bus(channel=can_interface, bustype='socketcan') as bus:
+        probe_request_message = Message(message_types["Probe_modules_request"], module_types["Any"], module_instances["All"])
+    
+        try:
+            bus.send(probe_request_message.can_message())
+            if verbose:
+                print("Sending module probe request")
+                print("Waiting for responses...")
+        except can.CanError as e:
+            if verbose:
+                print(f"Failed to send message: {e}")
+            exit(0)
+    
+        start_time = time.time()
+    
+        probe_responses = []
+        while time.time() - start_time < timeout:
+            response = bus.recv(timeout)
+            if response:
+                if response.is_extended_id:
+                    probe_responses.append(Message(can_message=response))
+    
+        # removes duplicates
+        modules : dict[str, Module] = {}
+        for resp in probe_responses:
+            if resp.message_type == message_types["Probe_modules_response"]:
+                module = Module.from_message(resp)
+                modules[module.uid_str()] = module
+    
+        return list(modules.values())
 
 if __name__ == "__main__":
     # Parse command line arguments
