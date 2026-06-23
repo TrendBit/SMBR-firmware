@@ -38,12 +38,23 @@ inline const char* __attribute__((used,retain)) info_strings[] = {
     "___INFO___ | git dirty   | " INFO_STRINGS_XSTR(FW_GIT_DIRTY),
     "___INFO___ | build time  | " INFO_STRINGS_XSTR(__TIMESTAMP__),
     "___INFO___ | compiler    | " INFO_STRINGS_XSTR(FW_COMPILER_NAME),
-    #ifdef CONFIG_LOGGER
-    "___INFO___ | logger      | true",
+    
+    #if defined(CONFIG_LOGGER_UART) || defined(CONFIG_LOGGER_USB)
+        #ifdef CONFIG_LOGGER_UART
+        "___INFO___ | logger UART | true",
+        #else
+        "___INFO___ | logger UART | false",
+        #endif
+        #ifdef CONFIG_LOGGER_USB
+        "___INFO___ | logger USB  | true",
+        #else
+        "___INFO___ | logger USB  | false",
+        #endif
     "___INFO___ | logger lvl  | " INFO_STRINGS_XSTR(CONFIG_LOGGER_LEVEL),
     #else
     "___INFO___ | logger      | false",
     #endif
+    
     #ifdef CONFIG_WATCHDOG
     "___INFO___ | watchdog    | true",
     #else
