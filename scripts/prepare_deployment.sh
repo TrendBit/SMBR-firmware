@@ -3,6 +3,7 @@
 # Function to generate firmware
 generate_firmware() {
     local module_name=$1
+    local version=$2
 
     # Set configuration
     setconfig --kconfig=config/Kconfig "${module_name}=y"
@@ -20,10 +21,12 @@ generate_firmware() {
     local module_name_lowercase="${module_name,,}"
 
     # Copy firmware to binaries folder with new name
-    cp build/source/firmware.bin "binaries/${module_name_lowercase}.bin"
+    cp build/source/firmware.bin "binaries/${module_name_lowercase}.${version}.bin"
 }
 
 build_bootloader(){
+    local version=$1
+    
     # Copy bootloader configuration into submodule
     cp bootloader/katapult.config bootloader/katapult/.config
 
@@ -33,7 +36,7 @@ build_bootloader(){
     cd ../..
 
     # Copy bootloader to binaries folder
-    cp bootloader/katapult/out/katapult.uf2 binaries/katapult.uf2
+    cp bootloader/katapult/out/katapult.uf2 "binaries/katapult.${version}.uf2"
 
 }
 
@@ -53,22 +56,6 @@ modules=("CONTROL_MODULE" "SENSOR_MODULE" "PUMP_MODULE")
 # Generate default configuration
 alldefconfig config/Kconfig
 
-# Loop through each module and call the generate_firmware function
-for module in "${modules[@]}"; do
-    echo "Generating firmware for ${module}..."
-    generate_firmware "$module"
-    echo "Firmware generation completed for ${module}."
-done
-
-# Restore original config and regenerate source files
-mv config/.config.backup ${KCONFIG_CONFIG}
-genconfig --header-path source/config.hpp config/Kconfig
-
-# Build bootloader
-build_bootloader
-
-echo "All firmware builds completed."
-
 # Get version branch and commit
 version=$(git describe --tags | sed -E 's/^v([0-9]+\.[0-9]+)(-([0-9]+))?.*/\1.\3/' | sed -E 's/\.$/.0/')
 if [ $? -ne 0 ]; then
@@ -77,6 +64,22 @@ fi
 
 branch=$(git rev-parse --abbrev-ref HEAD)
 commit=$(git describe --always --dirty)
+
+# Loop through each module and call the generate_firmware function
+for module in "${modules[@]}"; do
+    echo "Generating firmware for ${module}..."
+    generate_firmware "$module" "$version"
+    echo "Firmware generation completed for ${module}."
+done
+
+# Restore original config and regenerate source files
+mv config/.config.backup ${KCONFIG_CONFIG}
+genconfig --header-path source/config.hpp config/Kconfig
+
+# Build bootloader
+build_bootloader "$version"
+
+echo "All firmware builds completed."
 
 # Generate the version.txt file
 cat > version.txt <<EOF
