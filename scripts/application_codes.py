@@ -31,11 +31,15 @@ module_instances = {
 }
 
 message_types = {
-    "Probe_modules_request"   : 0x300,
-    "Probe_modules_response"  : 0x301,
-    "Device_reset"            : 0x200,
-    "Device_usb_bootloader"   : 0x201,
-    "Device_can_bootloader"   : 0x202,
+    "Probe_modules_request"      : 0x300,
+    "Probe_modules_response"     : 0x301,
+    "Device_reset"               : 0x200,
+    "Device_usb_bootloader"      : 0x201,
+    "Device_can_bootloader"      : 0x202,
+    "Core_fw_version_request"    : 0xa06,
+    "Core_fw_version_response"   : 0xa07,
+    "Mini_OLED_clear_custom_text": 0x470,
+    "Mini_OLED_print_custom_text": 0x471,
 }
 
 uid_length = 6
