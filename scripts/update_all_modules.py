@@ -31,28 +31,45 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     interface = args.interface
-
-    available_firmwares = [path.stem for path in pathlib.Path(args.directory).glob("*.bin")]
-    if not available_firmwares:
+    
+    # locate firmware files
+    available_firmware_files = [path for path in pathlib.Path(args.directory).glob("*.bin")]
+    if not available_firmware_files:
         print("No firmware binaries found")
         exit(0)
+    
+    # check firmware metadata and select the newest firmwares
+    available_firmwares : dict[str,Firmware] = {}
+    for file in available_firmware_files:
+        try:
+            firmware = Firmware.from_file(str(file))
+            if available_firmwares.get(firmware.module_name):
+                if available_firmwares[firmware.module_name].version > firmware.version:
+                    continue
+            available_firmwares[firmware.module_name] = firmware
+        except FactoryException as e:
+            print(f"File {file} is not a valid firmware: {e}")
 
+    # identify modules
     modules = identify_modules(interface, timeout=2, verbose=False)
     if not modules:
         print("No modules found")
         exit(0)
 
+    # check module bootloader states
     katapult_nodes = query_katapult_nodes(interface)
     if katapult_nodes:
         print(f"Some devices are already in bootloader mode, this cannot be flashed automatically:")
         for node in katapult_nodes:
             print(node)
-    module_firmwares = {}
-
+            
+    # pair modules with their firmwares
+    module_firmwares : dict[Module,str | None] = {}
     for module in modules:
         module_type = module.module_name().lower()
-        if module_type in (fw.lower() for fw in available_firmwares):
-            module_firmwares[module] = module_type
+        fw_candidate = available_firmwares.get(module.module_name().lower())
+        if fw_candidate:
+            module_firmwares[module] = str(fw_candidate.file_name)
         else:
             module_firmwares[module] = None
 
@@ -62,10 +79,10 @@ if __name__ == "__main__":
         print(f"{'-'*25}{'-'*20}{'-'*20}{'-'*25}")
         for module, firmware in module_firmwares.items():
             if firmware is None:
-                firmware_name = "! No firmware found !"
+                firmware_file = "! No firmware found !"
             else:
-                firmware_name = f"{firmware}.bin"
-            print(f"{module.module_name():<25}{module.instance_name():<20}{module.uid_str():<20}{firmware_name:<25}")
+                firmware_file = firmware
+            print(f"{module.module_name():<25}{module.instance_name():<20}{module.uid_str():<20}{firmware_file:<25}")
 
     if not args.yes:
         while(True):
@@ -80,11 +97,11 @@ if __name__ == "__main__":
         if firmware is None:
             print(f"Skipping module {module} - No firmware found")
             continue
-        print(f"Flashing module {module} with {firmware}.bin")
+        print(f"Flashing module {module} with {firmware}")
         print(f"Requesting bootloader entry...")
         if not request_bootloader(interface, module):
             print(f"Failed to enter bootloader mode for module {module}")
             continue
-        asyncio.run(flash_module(interface, module.uid_str(), f"{args.directory}/{firmware}.bin"))
+        asyncio.run(flash_module(interface, module.uid_str(), firmware))
         print(f"Flashing of module {module} is completed")
 
