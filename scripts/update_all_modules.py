@@ -35,7 +35,7 @@ if __name__ == "__main__":
     available_firmwares = [path.stem for path in pathlib.Path(args.directory).glob("*.bin")]
     if not available_firmwares:
         print("No firmware binaries found")
-        exit
+        exit(0)
 
     modules = identify_modules(interface, timeout=2, verbose=False)
     if not modules:
@@ -73,7 +73,7 @@ if __name__ == "__main__":
             if start_flashing == 'n':
                 print("Flashing aborted.")
                 exit(0)
-            elif start_flashing == 'Y':
+            elif start_flashing == 'y':
                 break
 
     for module, firmware in module_firmwares.items():
