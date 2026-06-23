@@ -17,6 +17,13 @@ execute_process(
     ERROR_QUIET
 )
 
+execute_process(
+    COMMAND git rev-parse --abbrev-ref HEAD
+    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+    OUTPUT_VARIABLE GIT_BRANCH
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+
 # Handle no tag existence
 if(NOT RESULT EQUAL 0)
     set(GIT_LAST_TAG "v0.0")
@@ -48,6 +55,7 @@ message(STATUS "FW_VERSION_MAJOR: ${FW_VERSION_MAJOR}")
 message(STATUS "FW_VERSION_MINOR: ${FW_VERSION_MINOR}")
 message(STATUS "FW_VERSION_PATCH: ${FW_VERSION_PATCH}")
 message(STATUS "FW_GIT_COMMIT_HASH: ${GIT_COMMIT_HASH}")
+message(STATUS "FW_GIT_BRANCH: ${GIT_BRANCH}")
 message(STATUS "FW_GIT_DIRTY: ${FW_GIT_DIRTY}")
 
 # Add definitions for compilation
@@ -56,6 +64,7 @@ add_definitions("-DFW_VERSION_MINOR=${FW_VERSION_MINOR}")
 add_definitions("-DFW_VERSION_PATCH=${FW_VERSION_PATCH}")
 add_definitions("-DFW_GIT_COMMIT_HASH_STR=\"${GIT_COMMIT_HASH}\"")
 add_definitions("-DFW_GIT_COMMIT_HASH_HEX=0x${GIT_COMMIT_HASH}")
+add_definitions("-DFW_GIT_BRANCH=\"${GIT_BRANCH}\"")
 add_definitions("-DFW_GIT_DIRTY=${FW_GIT_DIRTY}")
 
 set(COMPILER arm-none-eabi-)
