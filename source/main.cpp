@@ -1,5 +1,6 @@
 #include "main.hpp"
 #include "rtos/wrappers.hpp"
+#include "info.hpp"
 
 namespace fra = cpp_freertos;
 
@@ -27,7 +28,7 @@ int main(){
     #endif
 
     auto cli = new CLI_service();
-    
+
     #ifdef CONFIG_CONTROL_MODULE
         new Control_module();
     #elifdef CONFIG_SENSOR_MODULE
@@ -37,10 +38,10 @@ int main(){
     #else
         #error "No module defined, use 'make menuconfig' to select module"
     #endif
-    
+
     Base_module::Singleton_instance()->Connect_to_cli(*cli);
-    
+
     new USB_thread();
-    
+
     fra::Thread::StartScheduler();
 }
