@@ -24,6 +24,14 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 
+# Read kconfig config
+file(READ "${CMAKE_SOURCE_DIR}/config/.config" KCONFIG_FILE)
+string(STRIP "${KCONFIG_FILE}" KCONFIG_FILE)
+string(REPLACE "\\" "\\\\" KCONFIG_FILE "${KCONFIG_FILE}") # replace \ -> \\
+string(REPLACE "\n" "\\n" KCONFIG_FILE "${KCONFIG_FILE}")  # replace \n -> \\n"
+string(REPLACE "\"" "\\\"" KCONFIG_FILE "${KCONFIG_FILE}") # replace " -> \"
+string(REPLACE "#" "" KCONFIG_FILE "${KCONFIG_FILE}") # remove #
+
 # Handle no tag existence
 if(NOT RESULT EQUAL 0)
     set(GIT_LAST_TAG "v0.0")
@@ -66,6 +74,7 @@ add_definitions("-DFW_GIT_COMMIT_HASH_STR=\"${GIT_COMMIT_HASH}\"")
 add_definitions("-DFW_GIT_COMMIT_HASH_HEX=0x${GIT_COMMIT_HASH}")
 add_definitions("-DFW_GIT_BRANCH=\"${GIT_BRANCH}\"")
 add_definitions("-DFW_GIT_DIRTY=${FW_GIT_DIRTY}")
+add_definitions("-DFW_KCONFIG_FILE=\"${KCONFIG_FILE}\"")
 
 set(COMPILER arm-none-eabi-)
 
