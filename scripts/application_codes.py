@@ -51,7 +51,7 @@ def reverse_dict_search(dictionary, value):
     return "Unknown"
 
 class Message:
-    def __init__(self, message_type=None, module_type=None, instance=None, can_message=None):
+    def __init__(self, message_type=None, module_type=None, instance=None, data=None, can_message=None):
         if can_message is not None:
             self.message_type = (can_message.arbitration_id >> 16) & 0xfff
             self.module_type = (can_message.arbitration_id >> 4) & 0x0f
@@ -61,7 +61,7 @@ class Message:
             self.message_type = message_type
             self.module_type = module_type
             self.instance = instance
-            self.data = []
+            self.data = data
 
     def __str__(self):
         return f"Message type: {reverse_dict_search(message_types,self.message_type)}, Module type: {reverse_dict_search(module_types,self.module_type)}, Instance: {reverse_dict_search(module_instances, self.instance)}"
