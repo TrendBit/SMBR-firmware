@@ -56,7 +56,7 @@ config LOGGER_USB
 
 choice
     prompt "Logger level"
-    depends on LOGGER
+    depends on LOGGER_UART || LOGGER_USB
     default LOGGER_LEVEL_NOTICE
     help
         Severity of log messages which will be printed, lower are discarded
