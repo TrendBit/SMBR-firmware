@@ -75,13 +75,16 @@ class Module:
         self.instance = instance
         self.uid = uid
 
-    def __init__(self, message):
-        self.module_type = message.module_type
-        self.instance = message.instance
+    @classmethod
+    def from_message(cls, message):
+        module_type = message.module_type
+        instance = message.instance
         if len(message.data) == uid_length:
-            self.uid = message.data
+            uid = message.data
         else:
-            self.uid = []
+            uid = []
+        
+        return Module(module_type, instance, uid)
 
     def uid_str(self) -> str:
         return ''.join(f'{byte:02x}' for byte in self.uid)
