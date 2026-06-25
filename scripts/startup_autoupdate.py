@@ -126,7 +126,7 @@ if __name__ == "__main__":
         if verbose:
             print(f"Checking module {module}")
             
-        module_version = check_version(interface,module.uid_str(),args.timeout, verbose)
+        module_version = check_version(interface,module.module_type, module.instance,args.timeout, verbose)
         module_versions[module] = module_version
         
         if verbose:
