@@ -214,12 +214,12 @@ if __name__ == "__main__":
                     continue
                     
                     
-                print(f"Flashing of module {module} is completed")
+                print(f"INFO: Flashing of module {module} is completed")
                 successfull_updates+=1
                 if oled and module.module_type == module_types["Sensor_module"]:
                     time.sleep(2) #wait before printing to oled again
             except:
-                print(f"INFO: Failed to update module {module}")
+                print(f"ERROR: Failed to update module {module}")
                 if oled:
                     replace_oled_text(interface,f"{progress_text} ERROR - unknown",verbose)
                     
