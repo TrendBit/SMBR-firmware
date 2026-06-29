@@ -11,17 +11,17 @@ def request_bootloader(interface, module):
     bootloader_request = Message(message_types["Device_can_bootloader"], module.module_type, module.instance)
     bootloader_request.data = module.uid
 
-    bus = can.interface.Bus(interface, bustype='socketcan')
-    bus.send(bootloader_request.can_message())
-
-    time.sleep(1)
-
-    katapult_nodes = query_katapult_nodes(interface)
-
-    if module.uid_str() in katapult_nodes:
-        return True
-    else:
-        return False
+    with can.interface.Bus(interface, bustype='socketcan') as bus:
+        bus.send(bootloader_request.can_message())
+    
+        time.sleep(1)
+    
+        katapult_nodes = query_katapult_nodes(interface)
+    
+        if module.uid_str() in katapult_nodes:
+            return True
+        else:
+            return False
 
 async def flash_module(interface, uuid : str, firmware_file):
     uuid = int(uuid, 16)
