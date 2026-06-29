@@ -198,7 +198,7 @@ if __name__ == "__main__":
                 if not request_bootloader(interface, module):
                     print(f"ERROR: Failed to enter bootloader mode for module {module}")
                     if oled:
-                        replace_oled_text(interface,f"{progress_text} ERROR - bootloader",verbose)
+                        replace_oled_text(interface,f"{progress_text} ERROR - {module.module_name()} - bootloader",verbose)
                         time.sleep(5)
                     continue
                 
@@ -209,7 +209,7 @@ if __name__ == "__main__":
                     print("WARNING: Unable to restart the device. It is currently stuck in bootloader mode!!")
                     
                     if oled:
-                        replace_oled_text(interface,f"{progress_text} ERROR - flashing",verbose)
+                        replace_oled_text(interface,f"{progress_text} ERROR - {module.module_name()} - flashing",verbose)
                         time.sleep(5)
                     continue
                     
@@ -221,7 +221,7 @@ if __name__ == "__main__":
             except:
                 print(f"ERROR: Failed to update module {module}")
                 if oled:
-                    replace_oled_text(interface,f"{progress_text} ERROR - unknown",verbose)
+                    replace_oled_text(interface,f"{progress_text} ERROR - {module.module_name()} - unknown",verbose)
                     
         if oled:
             replace_oled_text(interface,"Updates done ", verbose)
