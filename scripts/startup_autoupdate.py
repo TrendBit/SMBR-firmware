@@ -177,7 +177,7 @@ if __name__ == "__main__":
                 elif start_flashing == 'y':
                     print("Flashing...")
                     break
-    
+        successfull_updates = 0
         i = 0
         # flash firmwares
         for module, firmware in module_updates.items():
@@ -215,6 +215,7 @@ if __name__ == "__main__":
                     
                     
                 print(f"Flashing of module {module} is completed")
+                successfull_updates+=1
                 if oled and module.module_type == module_types["Sensor_module"]:
                     time.sleep(2) #wait before printing to oled again
             except:
@@ -228,7 +229,8 @@ if __name__ == "__main__":
                 print_to_oled(interface,".", verbose)
                 time.sleep(1)
             clear_oled(interface, verbose)
-    
+
+        print(f"INFO: Successfully updated {successfull_updates}/{len(module_updates)} modules")
     else:
         if oled:
             clear_oled(interface, verbose)
