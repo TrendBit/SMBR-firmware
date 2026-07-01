@@ -78,7 +78,7 @@ class Firmware:
             
             match cols[1].strip():
                 case "version":
-                    version_chunks = cols[2].split(".")
+                    version_chunks = cols[2].strip()[1:-1].split(".")
                     major = int(version_chunks[0])
                     minor = int(version_chunks[1])
                     patch = int(version_chunks[2])
