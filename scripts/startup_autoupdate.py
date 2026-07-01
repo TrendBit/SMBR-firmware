@@ -186,9 +186,13 @@ if __name__ == "__main__":
                 start_flashing = input("\nDo you want to proceed with flashing? [Y/n]: ").strip().lower()
                 if start_flashing == 'n':
                     print("Flashing aborted.")
+                    if oled:
+                        clear_oled(interface, verbose)
                     exit(0)
                 elif start_flashing == 'y':
                     print("Flashing...")
+                    if oled:
+                        clear_oled(interface, verbose)
                     break
         successfull_updates = 0
         i = 0
