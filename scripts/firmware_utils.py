@@ -75,17 +75,20 @@ class Firmware:
             if len(cols) != 3:
                 continue
             
-            
-            match cols[1].strip():
-                case "version":
-                    version_chunks = cols[2].strip()[1:-1].split(".")
-                    major = int(version_chunks[0])
-                    minor = int(version_chunks[1])
-                    patch = int(version_chunks[2])
-                case "module name":
-                    module_name = cols[2].strip()[1:-1].lower()
-                case _:
-                    pass
+            field = cols[1].strip()
+            try:
+                match field:
+                    case "version":
+                        version_chunks = cols[2].strip()[1:-1].split(".")
+                        major = int(version_chunks[0])
+                        minor = int(version_chunks[1])
+                        patch = int(version_chunks[2])
+                    case "module name":
+                        module_name = cols[2].strip()[1:-1].lower()
+                    case _:
+                        pass
+            except Exception as e:
+                print(f"WARNING: file {file_path} contains a field \"{field}\" doens not contain a valid value: {e}")
         
         if (module_name != None 
             and major != None 
