@@ -24,6 +24,12 @@ examples_text = '''Examples:
 '''
 
 if __name__ == "__main__":
+    init_time=time.time()
+    def log_time(identifier: str):
+        global init_time
+        print(f"INFO: [{identifier}] time taken: {time.time() - init_time}")
+        init_time = time.time()
+        
     logging.getLogger().setLevel(logging.ERROR)
     # Parse command line arguments
     parser = argparse.ArgumentParser(
@@ -51,6 +57,9 @@ if __name__ == "__main__":
         except FactoryException as e:
             print(f"ERROR: Given version is invalid: {e}")
             exit(1)
+
+    if verbose:
+        log_time("parse args")
     
     # locate firmware files
     available_firmware_files = [path for path in pathlib.Path(args.directory).glob("*.bin")]
@@ -63,6 +72,7 @@ if __name__ == "__main__":
         replace_oled_text(interface,"Checking for module updates...",verbose)
     
     if verbose:
+        log_time("find firmwares")
         print("-------")
         print("loading firmwares:")
         print("")
@@ -92,6 +102,7 @@ if __name__ == "__main__":
     if verbose:
         print(f"loaded firmwares: \n{"\n".join(f"{module_name}: ({firmware.version}) {firmware.file_name}" for module_name, firmware in available_firmwares.items())}")
         print("")
+        log_time("load firmwares")
         print("-------")
         print("Identifying modules:")
         print("")
@@ -104,6 +115,7 @@ if __name__ == "__main__":
     
     if verbose:
         print("")
+        log_time("identify modules")
         print("-------")
         
     # identify non-flashable modules
@@ -151,6 +163,7 @@ if __name__ == "__main__":
 
     if verbose:
         print("")
+        log_time("assign firmwares to modules")
         print("-------")
 
     if module_updates:
@@ -216,6 +229,8 @@ if __name__ == "__main__":
                     
                 print(f"INFO: Flashing of module {module} is completed")
                 successfull_updates+=1
+                if verbose:
+                    log_time(f"flash module {module}")
                 if oled and module.module_type == module_types["Sensor_module"]:
                     time.sleep(2) #wait before printing to oled again
             except:
