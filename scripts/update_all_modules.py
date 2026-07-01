@@ -1,6 +1,7 @@
 from identify_modules import *
 from query_katapult_nodes import *
 from flash_module import *
+from firmware_utils import Firmware, FactoryException
 
 import time
 import pathlib
