@@ -29,8 +29,9 @@ def check_version(can_interface, module_type: int, module_instance : int, timeou
                 if response.is_extended_id:
                     message = Message(can_message=response)
                     if message.message_type == message_types["Core_fw_version_response"]:
-                        version = FirmwareVersion.from_message(message)
-                        break
+                        if message.module_type == module_type and message.instance == module_instance:
+                            version = FirmwareVersion.from_message(message)
+                            break
 
         if not version:
             print("Failed to retrieve module version (timed out)")
@@ -43,8 +44,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Get version of module via CAN")
     parser.add_argument('--interface', type=str, default='can0', help='CAN interface to use, default can0')
     parser.add_argument('--timeout', type=int, default=1, help='Timeout in seconds, default 2')
+    parser.add_argument('-i', '--instance', type=str, default='Exclusive', help='Instance of the module to check, default Exclusive')
     parser.add_argument('-t', '--type', type=str, help='Type of the module to check', required=True)
-    parser.add_argument('-i', '--instance', type=str, help='Instance of the module to check', required=True)
     
     args = parser.parse_args()
     if  args.type not in module_types:
