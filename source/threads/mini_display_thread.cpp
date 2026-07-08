@@ -1,7 +1,9 @@
 #include "mini_display_thread.hpp"
 
 
+#include "logger.hpp"
 #include "resources/trendbit_logo.hpp"
+#include <string>
 /**
  * @brief   TrendBit logo image declaration
  */
@@ -85,9 +87,16 @@ bool Mini_display_thread::Initialize_hardware(){
     return true;
 }
 
+void lv_log_callback(const char* msg){
+    std::string message = msg;
+    message.pop_back(); //remove endline
+    Logger::Trace("LVGL LOG: {}",message);
+}
+
 bool Mini_display_thread::Initialize_lvgl(){
     lv_init();
-
+    lv_log_register_print_cb(lv_log_callback);
+    
     // Initialize display buffer
     lv_disp_draw_buf_init(&display_buffer, buffer_memory, nullptr, BUFF_SIZE);
 
