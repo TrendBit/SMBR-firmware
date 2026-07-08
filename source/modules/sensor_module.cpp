@@ -356,4 +356,23 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
             }
         },"measure all, or selected channels intensity","[channel channel ...]?");
     }
+
+    if(mini_oled){
+        cli.Bind("oled_print",[this, &cli](std::vector<std::string> args){
+            if(mini_oled->lvgl_thread){
+                mini_oled->lvgl_thread->Clear_custom_text();
+                if(args.size() == 0){
+                    cli.Print_notice("display cleared");
+                }else{
+                    for(const auto& arg : args){
+                        mini_oled->lvgl_thread->Print_custom_text(arg + " ");
+                    }
+                    cli.Print_notice("text printed to display");
+                }
+            }else{
+                cli.Print_error("Display not initialized!");
+            }
+        },"measure all, or selected channels","[channel channel ...]?");
+        
+    }
 }
