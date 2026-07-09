@@ -3,7 +3,7 @@
 #include <charconv>
 #include "config.hpp"
 #include "config/usb_descriptors.h"
-#include "config/cpp_proxy.hpp"
+#include "tools/cpp_proxy.hpp"
 
 CLI_service::CLI_service():cli(new CLI(0, 256, 32,"\033[94m>\033[0m ")){
 
