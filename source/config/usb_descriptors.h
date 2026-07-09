@@ -25,7 +25,7 @@
 #ifndef USB_DESCRIPTORS_H_
 #define USB_DESCRIPTORS_H_
 
-#define VENDOR_NAME "TrendBit s.r.o."
+#define VENDOR_NAME "TrendBit a.s."
 
 enum
 {
