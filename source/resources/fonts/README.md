@@ -8,6 +8,7 @@ lvgl.io/docs/open/8.0/overview/font
 E4F1 - heater icon
 F2DB - microchip
 F485 - bottle icon
+F06C - leaf icon
 
 ## material icons
 E5DA - sub arrow

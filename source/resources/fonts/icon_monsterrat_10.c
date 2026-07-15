@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 10 px
  * Bpp: 1
- * Opts: --bpp 1 --size 10 --no-compress --stride 1 --align 1 --font MaterialSymbolsSharp.ttf --range 58842 --font fa-solid-900.ttf --range 58609,62171,62597 --format lvgl -o material_symbols_sharp_10.c
+ * Opts: --bpp 1 --size 10 --no-compress --stride 1 --align 1 --font fa-solid-900.ttf --range 58609,62171,62597,61548 --font MaterialSymbolsSharp.ttf --range 58842 --format lvgl -o icon_monsterrat_10.c
  ******************************************************************************/
 
 #ifdef __has_include
@@ -20,11 +20,11 @@
 
 
 
-#ifndef MATERIAL_SYMBOLS_SHARP_10
-#define MATERIAL_SYMBOLS_SHARP_10 1
+#ifndef ICON_MONSTERRAT_10
+#define ICON_MONSTERRAT_10 1
 #endif
 
-#if MATERIAL_SYMBOLS_SHARP_10
+#if ICON_MONSTERRAT_10
 
 /*-----------------
  *    BITMAPS
@@ -38,6 +38,10 @@ static LV_ATTRIBUTE_LARGE_CONST const uint8_t glyph_bitmap[] = {
 
     /* U+E5DA "" */
     0x82, 0x9, 0x22, 0xfc, 0x21, 0x0,
+
+    /* U+F06C "" */
+    0x0, 0x40, 0x30, 0xfc, 0x7f, 0x3, 0xcf, 0xf7,
+    0xfa, 0xfe, 0x9e, 0x20, 0x0,
 
     /* U+F2DB "" */
     0x21, 0xb, 0x47, 0xfb, 0x3, 0x5e, 0xb7, 0xb5,
@@ -58,7 +62,8 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
     {.bitmap_index = 0, .adv_w = 160, .box_w = 10, .box_h = 10, .ofs_x = 0, .ofs_y = -1},
     {.bitmap_index = 13, .adv_w = 160, .box_w = 6, .box_h = 7, .ofs_x = 2, .ofs_y = 1},
     {.bitmap_index = 19, .adv_w = 160, .box_w = 10, .box_h = 10, .ofs_x = 0, .ofs_y = -1},
-    {.bitmap_index = 32, .adv_w = 120, .box_w = 8, .box_h = 10, .ofs_x = 0, .ofs_y = -1}
+    {.bitmap_index = 32, .adv_w = 160, .box_w = 10, .box_h = 10, .ofs_x = 0, .ofs_y = -1},
+    {.bitmap_index = 45, .adv_w = 120, .box_w = 8, .box_h = 10, .ofs_x = 0, .ofs_y = -1}
 };
 
 /*---------------------
@@ -66,7 +71,7 @@ static const lv_font_fmt_txt_glyph_dsc_t glyph_dsc[] = {
  *--------------------*/
 
 static const uint16_t unicode_list_0[] = {
-    0x0, 0xe9, 0xdea, 0xf94
+    0x0, 0xe9, 0xb7b, 0xdea, 0xf94
 };
 
 /*Collect the unicode lists and glyph_id offsets*/
@@ -74,7 +79,7 @@ static const lv_font_fmt_txt_cmap_t cmaps[] =
 {
     {
         .range_start = 58609, .range_length = 3989, .glyph_id_start = 1,
-        .unicode_list = unicode_list_0, .glyph_id_ofs_list = NULL, .list_length = 4, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
+        .unicode_list = unicode_list_0, .glyph_id_ofs_list = NULL, .list_length = 5, .type = LV_FONT_FMT_TXT_CMAP_SPARSE_TINY
     }
 };
 
@@ -118,9 +123,9 @@ extern const lv_font_t lv_font_montserrat_10;
 
 /*Initialize a public general font descriptor*/
 #if LVGL_VERSION_MAJOR >= 8
-const lv_font_t material_symbols_sharp_10 = {
+const lv_font_t icon_monsterrat_10 = {
 #else
-lv_font_t material_symbols_sharp_10 = {
+lv_font_t icon_monsterrat_10 = {
 #endif
     .get_glyph_dsc = lv_font_get_glyph_dsc_fmt_txt,    /*Function pointer to get glyph's data*/
     .get_glyph_bitmap = lv_font_get_bitmap_fmt_txt,    /*Function pointer to get glyph's bitmap*/
@@ -143,4 +148,4 @@ lv_font_t material_symbols_sharp_10 = {
 
 
 
-#endif /*#if MATERIAL_SYMBOLS_SHARP_10*/
+#endif /*#if ICON_MONSTERRAT_10*/
