@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "mutex.hpp"
 #include "thread.hpp"
 #include "rtos/wrappers.hpp"
 #include "rtos/repeated_execution.hpp"
@@ -35,6 +36,20 @@
  *          Manages display initialization, LVGL integration, and periodic UI updates
  */
 class Mini_display_thread : public cpp_freertos::Thread {
+public:
+    enum class Scheduler_state : uint8_t {
+        Stopped   = 0x00,
+        Paused    = 0x01,
+        Running   = 0x02,
+    };
+    enum class Redraw_segments : uint8_t {
+        temps    = 0x01,
+        recipe   = 0x02,
+        hostname = 0x04,
+        version  = 0x08,
+        ip       = 0x0f,
+        sid      = 0x10
+    };
 private:
     /**
      * @brief  I2C bus instance for communication with the display
@@ -79,7 +94,7 @@ private:
      *          background
      */
     struct {
-        // header with SID and recipe scheduler state
+        // header with hostname and recipe scheduler state
         struct {
             lv_obj_t * background = nullptr;
             lv_obj_t * title = nullptr;
@@ -117,6 +132,11 @@ private:
      * @brief   LVGL style changing the text to large size
      */
     lv_style_t style_large_text;
+
+    /**
+     * @brief   LVGL style changing the text align to center
+     */
+    lv_style_t style_centered_text;
 
     /**
      * @brief   Time between display updates in ms
@@ -173,6 +193,27 @@ private:
      */
     float fluorometer_temperature = 0.0f;
 
+    /**
+     * @brief   State of the scheduler (use stopped if no script is loaded)
+     */
+    Scheduler_state scheduler_state = Scheduler_state::Stopped;
+
+    /**
+     * @brief   Flag that controls if certain parts of the display should be redrawn
+     *  temps    = 0x01
+     *  recipe   = 0x02
+     *  hostname = 0x04
+     *  version  = 0x08
+     *  ip       = 0x0f
+     *  sid      = 0x10
+     */
+    uint8_t redraws = 0x00;
+
+    /**
+     * @brief   Mutex, locking the displayed values while LVGL is redrawing display
+     */
+    cpp_freertos::MutexStandard lvgl_render_mtx;
+
 public:
     /**
      * @brief Create display thread instance
@@ -218,13 +259,6 @@ public:
     void Update_ip(std::array<uint8_t, 4> ip);
 
     /**
-     * @brief Update the IP address displayed on screen
-     *
-     * @param ip Array containing the 4 octets of the IP address
-     */
-    void Update_recipe(std::array<uint8_t, 4> ip);
-
-    /**
      * @brief Update the display with custom text
      *
      * @param text Text to display
@@ -235,34 +269,48 @@ public:
      * @brief Clear the custom text from the display
      */
     void Clear_custom_text();
+
+    /**
+     * @brief   Set the loaded recipe. Use "" if no recipe is loaded.
+     * 
+     * @param recipe_name   Name of the new recipe.
+     */
+    void Update_recipe(std::string recipe_name);
+
+    /**
+     * @brief   Set the recipe scheduler state.
+     * 
+     * @param state   New state of the scheduler.
+     */
+    void Update_scheduler_state(Scheduler_state state);
     
     /**
      * @brief   Set the target temperature of heater to display
      *
      * @param temperature   Target temperature of heater to display
      */
-    void Set_target_temperature(float temperature) { target_temperature = temperature;}
+    void Update_target_temperature(float temperature);
 
     /**
      * @brief   Set the heater plate temperature to display
      *
      * @param temperature   Heater plate temperature to display
      */
-    void Set_plate_temperature(float temperature) { plate_temperature = temperature;}
+    void Update_plate_temperature(float temperature);
 
     /**
      * @brief   Set the bottle temperature to display
      *
      * @param temperature   Bottle temperature to display
      */
-    void Set_bottle_temperature(float temperature) { bottle_temperature = temperature;}
+    void Update_bottle_temperature(float temperature);
 
     /**
      * @brief   Set the fluorometer emitor temperature to display
      *
      * @param temperature   Fluorometer emitor temperature to display
      */
-    void Set_fluorometer_temperature(float temperature) { fluorometer_temperature = temperature;}
+    void Update_fluorometer_temperature(float temperature);
 
 protected:
     /**

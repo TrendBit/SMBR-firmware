@@ -5,8 +5,10 @@
 #include <cmath>
 #include <cstdio>
 #include <src/core/lv_obj_style.h>
+#include <src/font/lv_symbol_def.h>
 #include <src/misc/lv_color.h>
 #include <src/misc/lv_style.h>
+#include <src/misc/lv_txt.h>
 #include <src/widgets/lv_label.h>
 #include <src/widgets/lv_line.h>
 #include <string>
@@ -102,7 +104,7 @@ bool Mini_display_thread::Initialize_hardware(){
 void lv_log_callback(const char* msg){
     std::string message = msg;
     message.pop_back(); //remove endline
-    Logger::Trace("LVGL LOG: {}",message);
+    Logger::Error("LVGL LOG: {}",message);
 }
 
 bool Mini_display_thread::Initialize_lvgl(){
@@ -135,6 +137,9 @@ void Mini_display_thread::Initialize_styles(void){
     lv_style_init(&style_large_text);
 
     lv_style_set_text_font(&style_large_text, &lv_font_montserrat_12);
+
+    lv_style_init(&style_centered_text);
+    lv_style_set_text_align(&style_centered_text, LV_TEXT_ALIGN_CENTER);
 }
 
 void Mini_display_thread::Initialize_screen_saver(){
@@ -209,23 +214,28 @@ void Mini_display_thread::Initialize_ui(){
     // header
     ui.header.background = lv_obj_create(main_screen);
     lv_obj_set_pos(ui.header.background, 0, 0);
-    lv_obj_set_size(ui.header.background, main_col_width, small_text_height);
+    lv_obj_set_size(ui.header.background, main_col_width, large_text_height);
     lv_obj_add_style(ui.header.background, &style_inverted, 0);
+    
     ui.header.title = lv_label_create(ui.header.background);
     lv_obj_set_pos(ui.header.title, 1, 0);
+    lv_obj_add_style(ui.header.title, &style_large_text, 0);
+    
     ui.header.icon = lv_label_create(ui.header.background);
     lv_obj_set_align(ui.header.icon, LV_ALIGN_RIGHT_MID);
 
     // info lines
     ui.info.background = lv_obj_create(main_screen);
-    lv_obj_set_size(ui.info.background, main_col_width, full_height - small_text_height);
-    lv_obj_set_pos(ui.info.background, 0, small_text_height);
+    lv_obj_set_size(ui.info.background, main_col_width, full_height - large_text_height);
+    lv_obj_set_pos(ui.info.background, 0, large_text_height);
     for (size_t i = 0; i < std::size(ui.info.lines); i++){
         auto& line = ui.info.lines[i];
         line = lv_label_create(ui.info.background);
         lv_obj_set_pos(line, 0, (i)*small_text_height);
+        lv_obj_set_width(line, main_col_width);
     }
-    lv_obj_set_align(ui.info.lines[0], LV_ALIGN_TOP_MID);
+    lv_label_set_long_mode(ui.info.lines[0], LV_LABEL_LONG_SCROLL);
+    lv_obj_add_style(ui.info.lines[0], &style_centered_text, 0);
 
     // gap line
     ui.gap_line = lv_obj_create(main_screen);
@@ -251,12 +261,13 @@ void Mini_display_thread::Initialize_ui(){
 
     ui.popup.text = lv_label_create(ui.popup.background);
     lv_obj_set_width(ui.popup.text, full_width);
-    lv_label_set_long_mode(ui.popup.text, LV_LABEL_LONG_SCROLL_CIRCULAR);
+    lv_label_set_long_mode(ui.popup.text, LV_LABEL_LONG_SCROLL);
+    lv_obj_add_style(ui.popup.text, &style_centered_text, 0);
 
     // Set initial values
     Update_SID(0);
-    Update_ip({ 222, 222, 2, 222 });
-    Update_hostname("ABCDEFGH");
+    Update_ip({ 0, 0, 0, 0 });
+    Update_hostname("--none--");
     Clear_custom_text();
     Redraw_Temperature_lines();
     Redraw_Hostname_line();
@@ -275,6 +286,32 @@ void Mini_display_thread::Display_loop(){
 
     while (true) {
         rtos::Delay(cycle_time);
+        
+        if(redraws){
+            cpp_freertos::LockGuard lock(lvgl_render_mtx);
+            
+            if(redraws & 0x01){
+                Redraw_Recipe_lines();
+            }
+            if(redraws & 0x02){
+                Redraw_Temperature_lines();
+            }
+            if(redraws & 0x04){
+                Redraw_Hostname_line();
+            }
+            if(redraws & 0x08){
+                Redraw_Version_line();
+            }
+            if(redraws & 0x0f){
+                Redraw_IP_line();
+            }
+            if(redraws & 0x10){
+                Redraw_SID_line();
+            }
+            // redraw the whole screen or else the whole screen distorts
+            lv_obj_invalidate(main_screen);
+            redraws = 0;
+        }
 
         uint32_t current_tick = cpp_freertos::Ticks::GetTicks();
         uint32_t elapsed      = (current_tick >= last_tick) ?
@@ -290,18 +327,53 @@ void Mini_display_thread::Display_loop(){
 }
 
 void Mini_display_thread::Update_SID(uint16_t sid){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
     this->sid = sid;
-    Redraw_SID_line();
+    redraws = redraws | 0x10;
 }
 
 void Mini_display_thread::Update_hostname(std::string hostname){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
     this->hostname = hostname;
-    Redraw_Hostname_line();
+    redraws = redraws | 0x04;
 }
 
 void Mini_display_thread::Update_ip(std::array<uint8_t, 4> ip){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
     this->ip_label = emio::format("{:d}.{:d}.{:d}.{:d}", ip[0], ip[1], ip[2], ip[3]);
-    Redraw_IP_line();
+    redraws = redraws | 0x0f;
+}
+
+void Mini_display_thread::Update_recipe(std::string recipe_name){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
+    loaded_recipe = recipe_name;
+    redraws = redraws | 0x01;
+}
+void Mini_display_thread::Update_scheduler_state(Scheduler_state state){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
+    scheduler_state = state;
+    redraws = redraws | 0x01;
+}
+
+void Mini_display_thread::Update_target_temperature(float temperature){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
+    target_temperature = temperature;
+    redraws = redraws | 0x02;
+}
+void Mini_display_thread::Update_plate_temperature(float temperature){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
+    plate_temperature = temperature;
+    redraws = redraws | 0x02;
+}
+void Mini_display_thread::Update_bottle_temperature(float temperature){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
+    bottle_temperature = temperature;
+    redraws = redraws | 0x02;
+}
+void Mini_display_thread::Update_fluorometer_temperature(float temperature){
+    cpp_freertos::LockGuard lock(lvgl_render_mtx);
+    fluorometer_temperature = temperature;
+    redraws = redraws | 0x02;
 }
 
 void Mini_display_thread::Print_custom_text(std::string text){
@@ -321,7 +393,7 @@ void Mini_display_thread::Clear_custom_text(){
 void Mini_display_thread::Redraw_Temperature_lines(){
     lv_label_set_text(ui.side_col.lines[0], emio::format("{:04.1f}",bottle_temperature).c_str());
     lv_label_set_text(ui.side_col.lines[1], emio::format("{:04.1f}",plate_temperature).c_str());
-    if(std::isinf(target_temperature)){
+    if(std::isinf(target_temperature) || std::isnan(target_temperature)){ //std::isinf does not detect this correctly, thus this workaround
         lv_label_set_text(ui.side_col.lines[2], "---");
     }else{
         lv_label_set_text(ui.side_col.lines[2], emio::format("{:04.1f}",target_temperature).c_str());
@@ -334,8 +406,24 @@ void Mini_display_thread::Redraw_Hostname_line(){
 }
 
 void Mini_display_thread::Redraw_Recipe_lines(){
-    lv_label_set_text(ui.header.icon, LV_SYMBOL_PLAY);
-    lv_label_set_text(ui.info.lines[0], emio::format("{}", "--no recipe--").c_str());
+    switch (scheduler_state) {
+        case Mini_display_thread::Scheduler_state::Stopped:{
+            lv_label_set_text(ui.header.icon, LV_SYMBOL_STOP);
+        } break;
+        
+        case Mini_display_thread::Scheduler_state::Paused:{
+            lv_label_set_text(ui.header.icon, LV_SYMBOL_PAUSE);
+        } break;
+        
+        case Mini_display_thread::Scheduler_state::Running:{
+            lv_label_set_text(ui.header.icon, LV_SYMBOL_PLAY);
+        } break;
+        
+        default:{
+            lv_label_set_text(ui.header.icon, "?");
+        }break;
+    }
+    lv_label_set_text(ui.info.lines[0], emio::format("{}", (loaded_recipe=="")?"--no recipe--":loaded_recipe).c_str());
 }
 
 void Mini_display_thread::Redraw_IP_line(){

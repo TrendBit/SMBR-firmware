@@ -1,4 +1,7 @@
 #include "mini_oled.hpp"
+#include "can_bus/app_message.hpp"
+#include "codes/codes.hpp"
+#include "fluorometer/emitor_temperature_response.hpp"
 
 Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, Fluorometer * const fluorometer, uint32_t data_update_rate_s) :
     Component(Codes::Component::Mini_OLED),
@@ -9,7 +12,7 @@ Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, Fluorometer 
     fluorometer(fluorometer)
 {
 
-    auto update_data_lambda = [this, data_update_rate_s](){
+    auto update_data_lambda = [this, bottle_temp_sensor, fluorometer](){
           Application_message sid_request(Codes::Module::Core_module, Codes::Instance::Exclusive, Codes::Message_type::Core_SID_request);
           Application_message ip_request(Codes::Module::Core_module, Codes::Instance::Exclusive, Codes::Message_type::Core_IP_request);
           Application_message hostname_request(Codes::Module::Core_module, Codes::Instance::Exclusive, Codes::Message_type::Core_hostname_request);
@@ -25,15 +28,16 @@ Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, Fluorometer 
           Send_CAN_message(plate_temp_request);
 
           Logger::Trace("Mini-OLED update messages dispatched");
+
+          lvgl_thread->Update_bottle_temperature(bottle_temp_sensor->Temperature());
+          lvgl_thread->Update_fluorometer_temperature(fluorometer->Emitor_temperature().value_or(0.0f));
       };
 
     Message_router::Register_bypass(Codes::Message_type::Core_SID_response, Codes::Component::Mini_OLED);
     Message_router::Register_bypass(Codes::Message_type::Core_IP_response, Codes::Component::Mini_OLED);
     Message_router::Register_bypass(Codes::Message_type::Core_hostname_response, Codes::Component::Mini_OLED);
-    Message_router::Register_bypass(Codes::Message_type::Core_serial_response, Codes::Component::Mini_OLED);
     Message_router::Register_bypass(Codes::Message_type::Heater_get_target_temperature_response, Codes::Component::Mini_OLED);
     Message_router::Register_bypass(Codes::Message_type::Heater_get_plate_temperature_response, Codes::Component::Mini_OLED);
-    Message_router::Register_bypass(Codes::Message_type::Bottle_temperature_response, Codes::Component::Mini_OLED);
 
     update_data = new rtos::Repeated_execution(update_data_lambda, data_update_rate_s * 1000, true);
 }
@@ -55,18 +59,6 @@ bool Mini_OLED::Receive(Application_message message){
 
             Logger::Debug("Received SID: 0x{:04x}", sid_response.sid);
             lvgl_thread->Update_SID(sid_response.sid);
-            return true;
-        }
-
-        case Codes::Message_type::Core_serial_response: {
-            App_messages::Core::Serial_response serial_response;
-
-            if (!serial_response.Interpret_data(message.data)) {
-                Logger::Error("Serial_response interpretation failed");
-                return false;
-            }
-
-            Logger::Debug("Received serial: {}", serial_response.serial_number);
             return true;
         }
 
@@ -135,7 +127,7 @@ bool Mini_OLED::Receive(Application_message message){
             }
 
             Logger::Debug("Received target temperature: {:05.2f}˚C", target_temperature_response.temperature);
-            lvgl_thread->Set_target_temperature(target_temperature_response.temperature);
+            lvgl_thread->Update_target_temperature(target_temperature_response.temperature);
             return true;
         }
 
@@ -148,8 +140,20 @@ bool Mini_OLED::Receive(Application_message message){
             }
 
             Logger::Debug("Received plate temperature: {:05.2f}˚C", plate_temperature_response.temperature);
-            lvgl_thread->Set_plate_temperature(plate_temperature_response.temperature);
-            lvgl_thread->Set_bottle_temperature(bottle_temp_sensor->Temperature());
+            lvgl_thread->Update_plate_temperature(plate_temperature_response.temperature);
+            return true;
+        }
+
+        case Codes::Message_type::Fluorometer_emitor_temperature_response: {
+            App_messages::Fluorometer::Emitor_temperature_response fluoro_emitor_temperature_response;
+
+            if (!fluoro_emitor_temperature_response.Interpret_data(message.data)) {
+                Logger::Error("Fluoro_emitor_temperature_response interpretation failed");
+                return false;
+            }
+
+            Logger::Debug("Recieved fluorometer emitor temperature: {:05.2f}˚C", fluoro_emitor_temperature_response.temperature);
+            lvgl_thread->Update_fluorometer_temperature(fluoro_emitor_temperature_response.temperature);
             return true;
         }
 
