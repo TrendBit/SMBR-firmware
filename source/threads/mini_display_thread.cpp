@@ -1,12 +1,18 @@
 #include "mini_display_thread.hpp"
+#include "config.hpp"
 
 
-#include "logger.hpp"
-#include "resources/trendbit_logo.hpp"
+#include <cmath>
+#include <cstdio>
 #include <src/core/lv_obj_style.h>
 #include <src/misc/lv_color.h>
 #include <src/misc/lv_style.h>
+#include <src/widgets/lv_label.h>
+#include <src/widgets/lv_line.h>
 #include <string>
+#include "resources/trendbit_logo.hpp"
+#include <src/core/lv_obj.h>
+#include <src/core/lv_obj_pos.h>
 #include <src/font/lv_font.h>
 #include <src/misc/lv_area.h>
 /**
@@ -102,7 +108,7 @@ void lv_log_callback(const char* msg){
 bool Mini_display_thread::Initialize_lvgl(){
     lv_init();
     lv_log_register_print_cb(lv_log_callback);
-    
+
     // Initialize display buffer
     lv_disp_draw_buf_init(&display_buffer, buffer_memory, nullptr, BUFF_SIZE);
 
@@ -189,31 +195,75 @@ void Mini_display_thread::Initialize_screen_saver(){
     lv_obj_align(img, LV_ALIGN_CENTER, 0, 0);
 }
 
+const short full_width = 126;
+const short full_height = 62;
+const short main_col_width = 90;
+const short col_gap = 1;
+const short side_col_width = full_width - main_col_width - col_gap;
+const short small_text_height = 12;
+const short large_text_height = 14;
+
 void Mini_display_thread::Initialize_ui(){
 
     main_screen = lv_obj_create(NULL);
+    // header
+    ui.header.background = lv_obj_create(main_screen);
+    lv_obj_set_pos(ui.header.background, 0, 0);
+    lv_obj_set_size(ui.header.background, main_col_width, small_text_height);
+    lv_obj_add_style(ui.header.background, &style_inverted, 0);
+    ui.header.title = lv_label_create(ui.header.background);
+    lv_obj_set_pos(ui.header.title, 1, 0);
+    ui.header.icon = lv_label_create(ui.header.background);
+    lv_obj_set_align(ui.header.icon, LV_ALIGN_RIGHT_MID);
 
-    // Create labels
-    labels.line_1 = lv_label_create(main_screen);
-    labels.line_2 = lv_label_create(main_screen);
-    labels.line_3 = lv_label_create(main_screen);
-    labels.line_4 = lv_label_create(main_screen);
+    // info lines
+    ui.info.background = lv_obj_create(main_screen);
+    lv_obj_set_size(ui.info.background, main_col_width, full_height - small_text_height);
+    lv_obj_set_pos(ui.info.background, 0, small_text_height);
+    for (size_t i = 0; i < std::size(ui.info.lines); i++){
+        auto& line = ui.info.lines[i];
+        line = lv_label_create(ui.info.background);
+        lv_obj_set_pos(line, 0, (i)*small_text_height);
+    }
+    lv_obj_set_align(ui.info.lines[0], LV_ALIGN_TOP_MID);
 
-    // Position labels
-    lv_obj_set_pos(labels.line_1, 4, 1);
-    lv_obj_set_pos(labels.line_2, 4, 17);
-    lv_obj_set_pos(labels.line_3, 4, 33);
-    lv_obj_set_pos(labels.line_4, 4, 49);
-    lv_label_set_long_mode(labels.line_4, LV_LABEL_LONG_SCROLL);
-    lv_obj_set_width(labels.line_4, 120);
+    // gap line
+    ui.gap_line = lv_obj_create(main_screen);
+    lv_obj_set_pos(ui.gap_line, main_col_width, 0);
+    lv_obj_set_size(ui.gap_line, col_gap, full_height);
+    lv_obj_add_style(ui.gap_line, &style_inverted, 0);
+    
+    // side column
+    ui.side_col.background = lv_obj_create(main_screen);
+    lv_obj_set_pos(ui.side_col.background, main_col_width + col_gap, 0);
+    lv_obj_set_size(ui.side_col.background, side_col_width, full_height);
+    for (size_t i = 0; i < std::size(ui.side_col.lines); i++){
+        auto& line = ui.side_col.lines[i];
+        line = lv_label_create(ui.side_col.background);
+        lv_obj_set_pos(line, 1, i*small_text_height);
+    }
+
+    ui.popup.background = lv_obj_create(main_screen);
+    lv_obj_set_size(ui.popup.background, full_width, large_text_height);
+    lv_obj_set_pos(ui.popup.background, 0, full_height-large_text_height);
+    lv_obj_add_style(ui.popup.background, &style_inverted, 0);
+    lv_obj_add_style(ui.popup.background, &style_large_text, 0);
+
+    ui.popup.text = lv_label_create(ui.popup.background);
+    lv_obj_set_width(ui.popup.text, full_width);
+    lv_label_set_long_mode(ui.popup.text, LV_LABEL_LONG_SCROLL_CIRCULAR);
 
     // Set initial values
     Update_SID(0);
-    Update_ip({ 0, 0, 0, 0 });
-    Update_hostname("none");
+    Update_ip({ 222, 222, 2, 222 });
+    Update_hostname("ABCDEFGH");
     Clear_custom_text();
-    Update_serial(0);
-    Update_temps();
+    Redraw_Temperature_lines();
+    Redraw_Hostname_line();
+    Redraw_Recipe_lines();
+    Redraw_SID_line();
+    Redraw_IP_line();
+    Redraw_Version_line();
 
     // Preview logo and then switch to main screen
     lv_scr_load(screen_saver);
@@ -241,41 +291,61 @@ void Mini_display_thread::Display_loop(){
 
 void Mini_display_thread::Update_SID(uint16_t sid){
     this->sid = sid;
-    Update_ID_line();
-}
-
-void Mini_display_thread::Update_serial(uint32_t serial){
-    if(custom_text.empty()){
-        lv_label_set_text(labels.line_4, emio::format("Serial: {:d}", serial).c_str());
-    }
+    Redraw_SID_line();
 }
 
 void Mini_display_thread::Update_hostname(std::string hostname){
     this->hostname = hostname;
-    Update_ID_line();
+    Redraw_Hostname_line();
 }
 
 void Mini_display_thread::Update_ip(std::array<uint8_t, 4> ip){
-    std::string ip_label = emio::format("IP: {:d}.{:d}.{:d}.{:d}", ip[0], ip[1], ip[2], ip[3]);
-    lv_label_set_text(labels.line_2, ip_label.c_str());
+    this->ip_label = emio::format("{:d}.{:d}.{:d}.{:d}", ip[0], ip[1], ip[2], ip[3]);
+    Redraw_IP_line();
 }
 
 void Mini_display_thread::Print_custom_text(std::string text){
     custom_text += text;
     // Format to wider with to clear previous text
-    lv_label_set_text(labels.line_4, emio::format("{:20s}", custom_text).c_str());
+    lv_label_set_text(ui.popup.text, emio::format("{}", custom_text).c_str());
+    lv_obj_set_pos(ui.popup.background, 0, full_height - large_text_height);
 }
 
 void Mini_display_thread::Clear_custom_text(){
     custom_text = "";
     // Format to wider with to clear previous text
-    lv_label_set_text(labels.line_4, emio::format("{:20s}", custom_text).c_str());
+    lv_label_set_text(ui.popup.text, emio::format("{:20s}", custom_text).c_str());
+    lv_obj_set_pos(ui.popup.background, 0, full_height*2);
 }
 
-void Mini_display_thread::Update_temps(){
-    lv_label_set_text(labels.line_3, emio::format("B{:04.1f}  P{:04.1f}  T{:04.1f}", bottle_temperature, plate_temperature, target_temperature).c_str());
+void Mini_display_thread::Redraw_Temperature_lines(){
+    lv_label_set_text(ui.side_col.lines[0], emio::format("{:04.1f}",bottle_temperature).c_str());
+    lv_label_set_text(ui.side_col.lines[1], emio::format("{:04.1f}",plate_temperature).c_str());
+    if(std::isinf(target_temperature)){
+        lv_label_set_text(ui.side_col.lines[2], "---");
+    }else{
+        lv_label_set_text(ui.side_col.lines[2], emio::format("{:04.1f}",target_temperature).c_str());
+    }
+    lv_label_set_text(ui.side_col.lines[3], emio::format("{:04.1f}",fluorometer_temperature).c_str());
 }
 
-void Mini_display_thread::Update_ID_line(){
-    lv_label_set_text(labels.line_1, emio::format("{:12s} 0x{:04x}", hostname, sid).c_str());
+void Mini_display_thread::Redraw_Hostname_line(){
+    lv_label_set_text(ui.header.title, emio::format("{:8s}", hostname).c_str());
+}
+
+void Mini_display_thread::Redraw_Recipe_lines(){
+    lv_label_set_text(ui.header.icon, LV_SYMBOL_PLAY);
+    lv_label_set_text(ui.info.lines[0], emio::format("{}", "--no recipe--").c_str());
+}
+
+void Mini_display_thread::Redraw_IP_line(){
+    lv_label_set_text(ui.info.lines[2], emio::format("IP: {}", ip_label).c_str());
+}
+
+void Mini_display_thread::Redraw_Version_line(){
+    lv_label_set_text(ui.info.lines[1], emio::format("Ver: {:d}.{:d}.{:d}", FW_VERSION_MAJOR, FW_VERSION_MINOR, FW_VERSION_PATCH).c_str());
+}
+
+void Mini_display_thread::Redraw_SID_line(){
+    lv_label_set_text(ui.info.lines[3], emio::format("SID: 0x{:04x}", sid).c_str());
 }

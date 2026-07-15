@@ -11,6 +11,7 @@
 #include "rtos/wrappers.hpp"
 #include "rtos/repeated_execution.hpp"
 #include "rtos/delayed_execution.hpp"
+#include <cstddef>
 #include <src/widgets/lv_bar.h>
 
 #include <stdint.h>
@@ -72,16 +73,49 @@ private:
     lv_obj_t * screen_saver;
 
     /**
-     * @brief   User interface labels
+     * @brief   Main screen structure
+     * @note    background is the area in which a certain part is displayed,
+     *          all other components of this part should be children of
+     *          background
      */
     struct {
-        lv_obj_t* line_1;
-        lv_obj_t* line_2;
-        lv_obj_t* line_3;
-        lv_obj_t* line_4;
-    } labels;
+        // header with SID and recipe scheduler state
+        struct {
+            lv_obj_t * background = nullptr;
+            lv_obj_t * title = nullptr;
+            lv_obj_t * icon = nullptr;
+        } header;
 
+        // info lines
+        struct {
+            lv_obj_t * background = nullptr;
+            lv_obj_t * lines[4] = {nullptr};
+        } info;
+
+        // separating line
+        lv_obj_t * gap_line = nullptr;
+
+        // temperature lines
+        struct {
+            lv_obj_t * background = nullptr;
+            lv_obj_t * lines[4] = {nullptr};
+        } side_col;
+
+        // custom text popup
+        struct {
+            lv_obj_t * background  = nullptr;
+            lv_obj_t * text  = nullptr;
+        } popup;
+    } ui;
+
+    /**
+     * @brief   LVGL style inverting the color of background and text to black on white
+     */
     lv_style_t style_inverted;
+
+    /**
+     * @brief   LVGL style changing the text to large size
+     */
     lv_style_t style_large_text;
 
     /**
@@ -110,9 +144,19 @@ private:
     std::string hostname = "none";
 
     /**
+     * @brief   Loaded recipe name ("" if there is no recipe loaded)
+     */
+    std::string loaded_recipe = "";
+
+    /**
+     * @brief   Formatted IP address string to display
+     */
+    std::string ip_label = "";
+
+    /**
      * @brief   Target temperature to display
      */
-    float target_temperature = 0.0f;
+    float target_temperature = std::numeric_limits<float>::infinity();
 
     /**
      * @brief   Heater plate temperature to display
@@ -123,6 +167,11 @@ private:
      * @brief   Bottle temperature to display
      */
     float bottle_temperature = 0.0f;
+
+    /**
+     * @brief   Fluorometer temperature to display (emitor)
+     */
+    float fluorometer_temperature = 0.0f;
 
 public:
     /**
@@ -169,6 +218,13 @@ public:
     void Update_ip(std::array<uint8_t, 4> ip);
 
     /**
+     * @brief Update the IP address displayed on screen
+     *
+     * @param ip Array containing the 4 octets of the IP address
+     */
+    void Update_recipe(std::array<uint8_t, 4> ip);
+
+    /**
      * @brief Update the display with custom text
      *
      * @param text Text to display
@@ -200,6 +256,13 @@ public:
      * @param temperature   Bottle temperature to display
      */
     void Set_bottle_temperature(float temperature) { bottle_temperature = temperature;}
+
+    /**
+     * @brief   Set the fluorometer emitor temperature to display
+     *
+     * @param temperature   Fluorometer emitor temperature to display
+     */
+    void Set_fluorometer_temperature(float temperature) { fluorometer_temperature = temperature;}
 
 protected:
     /**
@@ -280,8 +343,34 @@ private:
      */
     static void Round_area(lv_disp_drv_t *drv, lv_area_t *area);
 
+
     /**
-     * @brief   Update first line of display containing hostname and SID
+     * @brief Update displayed value temperature lines
      */
-    void Update_ID_line();
+    void Redraw_Temperature_lines();
+    
+    /**
+     * @brief Update displayed value for hostname line
+     */
+    void Redraw_Hostname_line();
+
+    /**
+     * @brief Update displayed values for lines relating to current recipe and scheduler state
+     */
+    void Redraw_Recipe_lines();
+
+    /**
+     * @brief Update displayed value for SID line
+     */
+    void Redraw_SID_line();
+
+    /**
+     * @brief Update displayed value for IP line
+     */
+    void Redraw_IP_line();
+
+    /**
+     * @brief Update displayed value for Version line
+     */
+    void Redraw_Version_line();
 };
