@@ -81,6 +81,9 @@ private:
         lv_obj_t* line_4;
     } labels;
 
+    lv_style_t style_inverted;
+    lv_style_t style_large_text;
+
     /**
      * @brief   Time between display updates in ms
      */
@@ -233,6 +236,11 @@ private:
      * @return false If initialization failed
      */
     bool Initialize_lvgl();
+
+    /**
+     * @brief Initialize LVGL styles
+     */
+    void Initialize_styles();
 
     /**
      * @brief Initialize user interface elements for data screen

@@ -3,7 +3,12 @@
 
 #include "logger.hpp"
 #include "resources/trendbit_logo.hpp"
+#include <src/core/lv_obj_style.h>
+#include <src/misc/lv_color.h>
+#include <src/misc/lv_style.h>
 #include <string>
+#include <src/font/lv_font.h>
+#include <src/misc/lv_area.h>
 /**
  * @brief   TrendBit logo image declaration
  */
@@ -67,6 +72,7 @@ Mini_display_thread::Mini_display_thread(uint32_t cycle_time, std::string name)
 void Mini_display_thread::Run(){
     Initialize_hardware();
     Initialize_lvgl();
+    Initialize_styles();
     Initialize_screen_saver();
     Initialize_ui();
     Display_loop();
@@ -110,6 +116,19 @@ bool Mini_display_thread::Initialize_lvgl(){
     display_driver.ver_res    = 64;
 
     return lv_disp_drv_register(&display_driver) != nullptr;
+}
+
+void Mini_display_thread::Initialize_styles(void){
+    lv_style_init(&style_inverted);
+
+    lv_style_set_bg_color(&style_inverted, lv_color_black());
+    lv_style_set_bg_opa(&style_inverted, LV_OPA_COVER);
+
+    lv_style_set_text_color(&style_inverted, lv_color_white());
+
+    lv_style_init(&style_large_text);
+
+    lv_style_set_text_font(&style_large_text, &lv_font_montserrat_12);
 }
 
 void Mini_display_thread::Initialize_screen_saver(){
