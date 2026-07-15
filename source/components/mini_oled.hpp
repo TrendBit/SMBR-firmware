@@ -11,6 +11,7 @@
 #include "can_bus/message_router.hpp"
 #include "components/component.hpp"
 #include "components/bottle_temperature.hpp"
+#include "components/fluorometer.hpp"
 #include "rtos/repeated_execution.hpp"
 #include "rtos/delayed_execution.hpp"
 #include "logger.hpp"
@@ -44,7 +45,7 @@ public:
      *
      * @param data_update_rate_s    Rate of data update in seconds
      */
-    Mini_OLED(Bottle_temperature * const bottle_temp_sensor, uint32_t data_update_rate_s = 30);
+    Mini_OLED(Bottle_temperature * const bottle_temp_sensor, Fluorometer * const fluorometer, uint32_t data_update_rate_s = 30);
 
     /**
      * @brief Thread responsible for display rendering
@@ -60,6 +61,11 @@ public:
      * @brief   Pointer to temperature sensor of bottle which supplies temperature data for display
      */
     Bottle_temperature * const bottle_temp_sensor;
+
+    /**
+     * @brief   Pointer to the fluorometer component which supplies temperature data for display
+     */
+    Fluorometer * const fluorometer;
 
     /**
      * @brief   Receive message implementation from Message_receiver interface for General/Admin messages (normal frame)

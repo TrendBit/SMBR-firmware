@@ -33,8 +33,8 @@ Sensor_module::Sensor_module():
 void Sensor_module::Setup_components(){
     Logger::Debug("Sensor module component setup");
     Setup_bottle_thermometers();
-    Setup_Mini_OLED();
     Setup_fluorometer();
+    Setup_Mini_OLED();
     Setup_spectrophotometer();
     Setup_module_check();
     Setup_cli_temps();
@@ -54,7 +54,7 @@ std::optional<float> Sensor_module::Board_temperature(){
 
 void Sensor_module::Setup_Mini_OLED(){
     Logger::Debug("Setting up Mini OLED");
-    mini_oled = new Mini_OLED(bottle_temperature, 10);
+    mini_oled = new Mini_OLED(bottle_temperature, fluorometer, 10);
 }
 
 void Sensor_module::Setup_bottle_thermometers(){

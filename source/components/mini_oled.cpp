@@ -1,11 +1,12 @@
 #include "mini_oled.hpp"
 
-Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, uint32_t data_update_rate_s) :
+Mini_OLED::Mini_OLED(Bottle_temperature * const bottle_temp_sensor, Fluorometer * const fluorometer, uint32_t data_update_rate_s) :
     Component(Codes::Component::Mini_OLED),
     Message_receiver(Codes::Component::Mini_OLED),
     data_update_rate_s(data_update_rate_s),
     lvgl_thread(new Mini_display_thread()),
-    bottle_temp_sensor(bottle_temp_sensor)
+    bottle_temp_sensor(bottle_temp_sensor),
+    fluorometer(fluorometer)
 {
 
     auto update_data_lambda = [this, data_update_rate_s](){
