@@ -153,14 +153,7 @@ public:
      * @param sid System ID to display
      */
     void Update_SID(uint16_t sid);
-
-    /**
-     * @brief Update the serial number displayed on screen
-     *
-     * @param serial Serial number to display
-     */
-    void Update_serial(uint32_t serial);
-
+    
     /**
      * @brief Update the hostname displayed on screen
      *
@@ -186,12 +179,7 @@ public:
      * @brief Clear the custom text from the display
      */
     void Clear_custom_text();
-
-    /**
-     * @brief   Update the display with the current temperatures
-     */
-    void Update_temps();
-
+    
     /**
      * @brief   Set the target temperature of heater to display
      *

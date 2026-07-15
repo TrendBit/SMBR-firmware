@@ -66,7 +66,6 @@ bool Mini_OLED::Receive(Application_message message){
             }
 
             Logger::Debug("Received serial: {}", serial_response.serial_number);
-            lvgl_thread->Update_serial(serial_response.serial_number);
             return true;
         }
 
@@ -150,7 +149,6 @@ bool Mini_OLED::Receive(Application_message message){
             Logger::Debug("Received plate temperature: {:05.2f}˚C", plate_temperature_response.temperature);
             lvgl_thread->Set_plate_temperature(plate_temperature_response.temperature);
             lvgl_thread->Set_bottle_temperature(bottle_temp_sensor->Temperature());
-            lvgl_thread->Update_temps();
             return true;
         }
 
