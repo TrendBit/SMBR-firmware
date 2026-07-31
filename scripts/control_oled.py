@@ -24,8 +24,7 @@ def print_to_oled(can_interface, message : str, verbose=False):
                 if verbose:
                     print(f"Sending oled print chunk: '{chunk}'")
             except can.CanError as e:
-                print(f"Failed to send message: {e}")
-                exit(1)
+                raise Exception(f"Failed to send message: {e}")
 
 def clear_oled(can_interface, verbose = False):
     with can.interface.Bus(channel=can_interface, bustype='socketcan') as bus:
@@ -36,8 +35,7 @@ def clear_oled(can_interface, verbose = False):
             if verbose:
                 print(f"Sending clear oled message")
         except can.CanError as e:
-            print(f"Failed to send message: {e}")
-            exit(1)
+            raise Exception(f"Failed to send message: {e}")
     
 def replace_oled_text(can_interface, message : str, verbose = False):
     clear_oled(can_interface, verbose)

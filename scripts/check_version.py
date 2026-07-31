@@ -18,8 +18,7 @@ def check_version(can_interface, module_type: int, module_instance : int, timeou
                 print("Sending version request")
                 print("Waiting for response...")
         except can.CanError as e:
-            print(f"Failed to send message: {e}")
-            exit(1)
+            raise Exception(f"Failed to send message: {e}")
 
         version = None
         start_time = time.time()
@@ -34,8 +33,7 @@ def check_version(can_interface, module_type: int, module_instance : int, timeou
                             break
 
         if not version:
-            print("Failed to retrieve module version (timed out)")
-            exit(1)
+            raise Exception("Failed to retrieve module version (timed out)")
         
         return version
 
@@ -49,11 +47,9 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
     if  args.type not in module_types:
-        print("unknown module type, valid types: \n",module_types.keys())
-        exit(1)
+        raise Exception("unknown module type, valid types: \n",module_types.keys())
     if  args.instance not in module_instances:
-        print("unknown module instance, valid instances: \n",module_instances.keys())
-        exit(1)
+        raise Exception("unknown module instance, valid instances: \n",module_instances.keys())
 
     version = check_version(args.interface, module_types[args.type], module_instances[args.instance], timeout=args.timeout, verbose=True)
     print("")
