@@ -24,8 +24,8 @@ The version file has to have a line in the following format: `version: <version-
 '''
 
 examples_text = '''Examples:
-    python3 update_all_modules.py binaries/* -s -d binaries/ -f version.txt
-    python3 update_all_modules.py binaries/* -c -d binaries
+    python3 update_all_modules.py -s -d binaries/ -f version.txt -o
+    python3 update_all_modules.py -c -d binaries
 '''
 
 if __name__ == "__main__":
