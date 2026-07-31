@@ -7,7 +7,7 @@ Scripts are using `flashtool.py` adapted from [katapult](https://github.com/Arks
 
 `prepare_deployment.sh` - Builds binary firmware for all supported modules. Prepares a package of files containing the bootloader, firmware files and scripts needed to load the firmware into the modules. This package can then be uploaded to the selected device and the modules can be updated using the `update_all_modules.py` script.  
 
-`update_all_modules.py` - Allows you to automatically update the firmware on all modules connected via CAN. Just run the script with the name of the folder where the firmware binaries are located. These are then flashed to the corresponding modules according to their name and module identification. Modules must not be in bootloader mode and must be running applications.  
+`update_all_modules.py` - Allows you to automatically update the firmware on all modules connected via CAN. Just run the script with the name of the folder where the firmware binaries are located. These are then flashed to the corresponding modules according to their name and module identification. Modules must not be in bootloader mode and must be running applications. Additional flags can be used to only update modules that are do not allready have the target version, or print current progress to the mini oled screen.
 
 `flash_module.py` - Uploads the firmware to the specified module connected via CAN. The module can be defined either by type and instance or by UUID. It can be in bootloader mode or it can run an application on it (the module will be switched to bootloader), but if the module is already in bootloader mode it can only be identified by UUID.  
 
@@ -16,6 +16,12 @@ Scripts are using `flashtool.py` adapted from [katapult](https://github.com/Arks
 `query_katapult_nodes.py` - Lists the UUIDs of all modules that are in the bootloader module.  
 
 `application_codes.py` - Contains only definitions of constants and classes that are used in other scripts, These constants must be updated to match can_codes, otherwise flash errors may occur.  
+
+`firmware_utils.py` - Contains only definitions of classes that are used in other scripts. Can be used to create scripts that use firmware binaries and need to read their metadata.
+
+`control_oled.py` - Prints or clears the mini oled screen.
+
+`check_version.py` - Prints the current version of a given module type + instance.
 
 `auto_single_flash.sh` - Automatically flashes the firmware via USB. The script sends the device to BOOT mode using the serial interface, waits for the USB drive to appear, copies the specified UF2 file to it, and waits for the device to finish rebooting. It performs a single flash per run. Usage: ./auto_single_flash.sh <binary.uf2>
 
