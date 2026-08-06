@@ -767,42 +767,36 @@ bool Fluorometer::Generate_timing(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES>
 }
 
 bool Fluorometer::Timing_generator_logarithmic(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length){
+    if (samples < 2){
+        Logger::Error("Cannot generate logarithmic timing, not enough samples");
+        return false;
+    }
+    
     // Calculate the maximum exponent for logarithmic spacing
-    double max_exponent = log10(capture_length * 1e6);
+    const double max_exponent = log10(capture_length * 1e6);
 
-    double minimal_time_us = 1;
-    std::vector<float> timings(samples, 0.0f);
+    const double minimal_time_us = 1;
 
-    // Generate sampling times in microseconds
-    timings[0] = 0.0;               // Time of the start
-    timings[1] = minimal_time_us;   // Time of first sample
 
-    for (unsigned int i = 2; i < samples; ++i) {
+    capture_timing_us[0] = 0;
+    double last_time = 0;
+
+    for (uint i = 1; i < samples; i++){
         double exponent = (i * max_exponent) / (samples - 1);
         double current_time = pow(10, exponent);
 
-        // Apply the minimum time gap between samples
-        if ((current_time - timings[i - 1]) < minimal_time_us) {
-            double adjusted_time = timings[i - 1] + minimal_time_us;
-            timings[i] = pow(10, log10(adjusted_time));
-        } else {
-            timings[i] = current_time;
+        // apply minimal gap time
+        if ((current_time - last_time) < minimal_time_us) {
+            double adjusted_time = last_time + minimal_time_us;
+            current_time = pow(10, log10(adjusted_time));
         }
+        
+        // Convert timings to clock cycles of source between capture
+        capture_timing_us[i] = static_cast<uint32_t>(current_time-last_time);
+
+        last_time = current_time;
     }
 
-    // Convert timings to clock cycles of source between capture
-    capture_timing_us[0] = 0;
-    for (unsigned int i = 1; i < samples; ++i) {
-        capture_timing_us[i] = static_cast<uint32_t>(timings[i]-timings[i-1]);
-    }
-
-
-    // Print timing data
-    /*
-    for (unsigned int i = 0; i < samples; ++i) {
-        Logger::Print_raw(emio::format("Timing: {:10.1f} {:10d} \r\n", timings[i], capture_timing_us[i]));
-    }
-    */
 
     return true;
 }
@@ -810,23 +804,16 @@ bool Fluorometer::Timing_generator_logarithmic(etl::vector<uint32_t, FLUOROMETER
 bool Fluorometer::Timing_generator_linear(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES> &capture_timing_us, uint samples, float capture_length){
     double step = capture_length / (samples-1);
 
-    std::vector<float> timings(samples, 0.0f);
-
-    for (unsigned int i = 0; i < samples; ++i) {
-        timings[i] = step * i * 1e6;
-    }
-
     capture_timing_us[0] = 0;
+    double last_time = 0;
+    
+    
     for (unsigned int i = 1; i < samples; ++i) {
-        capture_timing_us[i] = static_cast<uint32_t>(timings[i]-timings[i-1]);
+        double current_time = step * i * 1e6;
+        
+        // Convert timings to clock cycles of source between capture
+        capture_timing_us[i] = static_cast<uint32_t>(current_time-last_time);
     }
-
-    // Print timing data
-    /*
-    for (unsigned int i = 0; i < samples; ++i) {
-        Logger::Print_raw(emio::format("Timing: {:10.1f} {:10d} \r\n", timings[i], capture_timing_us[i]));
-    }
-    */
 
     return true;
 }
