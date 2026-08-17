@@ -1,6 +1,17 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.14 (startup_updates)
+- Add info strings into built binaries
+    - They contain the whole kconfig file
+    - Prefixed with `___INFO___`
+- Add version numbers in file names of binaries, created with `make deploy`
+- Updated most scripts in `scripts/`
+    - Add utility classes for handling firmware files
+    - Add scripts to check module versions and control the mini oled display
+    - Add update_all_modules optian that updates only modules not having the target version
+    - Other improvements to stability and ease of use
+
 # 0.13 (cli)
 - Add command line interface
     - Accessible via USB
