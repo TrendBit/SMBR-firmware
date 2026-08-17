@@ -1,6 +1,14 @@
 # Changelog SMPBR Firmware  
 The version number consists of MAJOR.MINOR identifiers. It follows [Semantic Versioning 2.0.0](https://semver.org/) to some extent, except that it does not contain a PATCH version. Minor version changes add functionality that is backwards compatible. Major version changes may not be fully backwards compatible with the api. The file format is loosely based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).  
 
+# 0.13 (cli)
+- Add command line interface
+    - Accessible via USB
+    - Intended to be used with modules, that are not connected to the bioreactor
+    - Supported commands and their description can be shown with `help`
+- Changed USB descriptors (now include module name)
+- Added build options for logger output (UART, USB, none or both)
+
 # 0.12 (pump_module)
 - Add support for new external pump module
   - Can connect 2 or 4 peristaltic pumps and control them
