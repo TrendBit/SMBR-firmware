@@ -681,10 +681,50 @@ bool Fluorometer::Export_data(OJIP * data){
     Logger::Notice("Reseting watchdog before export");
     watchdog_update();
 
-    float gain_value = Fluorometer_config::gain_values.at(calibration_data.gain) / Fluorometer_config::gain_values.at(data->detector_gain);
+    float gain_value = 1;
+    if (calibration_data.calibrated) {
+        // this code sets the gain value (compensation), by searching for the 
+        // lowest intensity after 100us (after LED startup), and compares it
+        // to the intensity at that time from calibration data. Then, sets the
+        // gain value to normalize them.
+        // 
+        // I expect that the lowest intensity is not tempered by the algae.
+        size_t first_stable_index = 0;
+        Logger::Notice("searching for sample later than 100us");
+        for (size_t i = 0; i < data->sample_time_us.size(); ++i) {
+            uint32_t current_time_us = data->sample_time_us[i];
+            if (current_time_us > 100){ //about the point where LED intensity stabilises
+                first_stable_index = i;
+                break;
+            }
+        }
+        Logger::Notice("sample found at index: {}",first_stable_index);
+
+        uint16_t min_intensity = data->intensity[first_stable_index];
+        uint16_t min_intensity_time = data->sample_time_us[first_stable_index];
+        Logger::Notice("searching for minimum");
+        for (size_t i = first_stable_index; i < data->sample_time_us.size()*0.9; ++i) {
+            uint16_t current_intensity = data->intensity[i];
+            if (current_intensity < min_intensity){
+                min_intensity = current_intensity;
+                min_intensity_time = i;
+            }
+        }
+        
+        Logger::Notice("minimum found at time: {}, value: {}",min_intensity_time, min_intensity);
+        
+        size_t calibration_index = find_closest_calibration_index(calibration_data.timing_us,min_intensity_time);
+        uint16_t calibration_value = calibration_data.adc_value[calibration_index];
+
+        
+        Logger::Notice("calibration index: {}, value: {}", calibration_index, calibration_value);
+        
+        gain_value = static_cast<float>(calibration_value) / static_cast<float>(min_intensity);
+    }
 
     Logger::Notice("Gain compensation: {:.2f}", gain_value);
 
+    
 
     // Process each captured sample
     for (size_t i = 0; i < data->sample_time_us.size(); ++i) {
