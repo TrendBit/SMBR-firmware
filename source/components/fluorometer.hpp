@@ -279,14 +279,38 @@ private:
     uint16_t Detector_raw_value();
 
     /**
-     * @brief Filter OJIP data in-place using exponential smoothing
+     * @brief Filter OJIP data in-place using biquad, median and box blur 
+     *        filters with default values
      *
      * @param data Pointer to OJIP data to filter
-     * @param tau_ms Time constant for filter in milliseconds
      * @return bool Success status
      */
-    bool Filter_OJIP_data(OJIP* data, float tau_ms);
+    bool Filter_OJIP_data(OJIP* data);
+    
+    /**
+     * @bried Filter OJIP data in-place using 4th degree biquad filter
+     * 
+     * @param data Pointer to OJIP data to filter
+     * @note The filter will linearily interpolate neighbouring samples
+     *       to a resolution of 1us, until fc is lower than 0.5 (nyquist frequency)
+     * @return bool Success status
+     */
+    bool Apply_biquad_filter(OJIP* data, size_t target_frequency, double q);
+    
+    /**
+     * @bried Filter OJIP data in-place using a median filter
+     * 
+     * @param data Pointer to OJIP data to filter
+     */
+    bool Apply_median_filter(OJIP* data, uint8_t window_span);
 
+    /**
+     * @bried Filter OJIP data in-place using a box blur filter
+     * 
+     * @param data Pointer to OJIP data to filter
+     */
+    bool Apply_box_blur_filter(OJIP* data, uint8_t window_span);
+    
     /**
      * @brief Converts existing output value of detector to range 0-1.0f
      *

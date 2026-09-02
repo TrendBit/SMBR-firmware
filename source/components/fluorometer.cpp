@@ -2,6 +2,9 @@
 
 #include "memory.hpp"
 #include "threads/fluorometer_thread.hpp"
+#include "tools/biquad_filter.hpp"
+#include <cstddef>
+#include <cstdint>
 
 Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex, fra::MutexStandard * const adc_mutex):
     Component(Codes::Component::Fluorometer),
@@ -461,7 +464,7 @@ bool Fluorometer::OJIP_phase_4_Post_processing(uint64_t start_time, uint64_t sto
 
     // Filter OJIP data
     if (samples_captured > 0) {
-        Filter_OJIP_data(&OJIP_data, 5.0f);
+        Filter_OJIP_data(&OJIP_data);
     } else {
         Logger::Warning("No valid samples captured, skipping filtering");
     }
@@ -471,7 +474,19 @@ bool Fluorometer::OJIP_phase_4_Post_processing(uint64_t start_time, uint64_t sto
     return true;
 }
 
-bool Fluorometer::Filter_OJIP_data(OJIP* data, float tau_ms) {
+
+/*
+ * @brief Helper lambda to compare two numbers, made for qsort.
+ */
+int compare_int(const void *a, const void *b) {  
+    uint16_t va = *static_cast<const uint16_t*>(a);
+    uint16_t vb = *static_cast<const uint16_t*>(b);
+    if (va < vb) return -1;
+    if (va > vb) return 1;
+    return 0;
+}
+
+bool Fluorometer::Filter_OJIP_data(OJIP* data) {
     if (!data || data->intensity.empty() || data->sample_time_us.empty()) {
         Logger::Error("Cannot filter OJIP data: null pointer or empty data");
         return false;
@@ -481,45 +496,118 @@ bool Fluorometer::Filter_OJIP_data(OJIP* data, float tau_ms) {
         Logger::Error("Cannot filter OJIP data: timestamp and intensity size mismatch");
         return false;
     }
-
-    // Create temporary buffer for filtered values
-    std::vector<uint16_t> filtered(data->intensity.size());
-
-    // Initialize filter with first value
-    filtered[0] = data->intensity[0];
-    float y = static_cast<float>(data->intensity[0]);
-
-    // Apply exponential filter with irregular time intervals
-    for (size_t i = 1; i < data->intensity.size(); ++i) {
-        // Calculate time difference in milliseconds
-        float dt_ms = static_cast<float>(data->sample_time_us[i] - data->sample_time_us[i-1]) / 1000.0f;
-
-        // Safety check for time differences
-        if (dt_ms <= 0.0f) dt_ms = 0.001f;  // minimum 1µs
-
-        // Calculate time dilation factor
-        float time_dilation_factor = static_cast<float>(data->sample_time_us[i]) / 10000.0f;
-        if (time_dilation_factor < 0.1f) time_dilation_factor = 0.1f;
-
-        // Calculate smoothing coefficient
-        float alpha = 1.0f - std::exp(-dt_ms / (tau_ms * time_dilation_factor));
-
-        // Apply filter
-        y = alpha * static_cast<float>(data->intensity[i]) + (1.0f - alpha) * y;
-
-        // Store filtered value
-        filtered[i] = static_cast<uint16_t>(std::round(y));
-    }
-
-    // Copy filtered values back to the original buffer
-    for (size_t i = 0; i < data->intensity.size(); ++i) {
-        data->intensity[i] = filtered[i];
-    }
-
-    Logger::Notice("OJIP data filtered with tau={:.1f}ms", tau_ms);
+    
+    Apply_biquad_filter(data, 22000, 0.50);
+    Apply_median_filter(data, 3);
+    Apply_box_blur_filter(data, 2);
+    
+    Logger::Notice("OJIP data filtered");
     return true;
 }
 
+bool Fluorometer::Apply_biquad_filter(OJIP* data, size_t target_frequency, double q){
+    const BiquadFilter::Type type = BiquadFilter::Type::Lowpass;
+    const double fc = target_frequency / 1e6;
+    const double max_sample_time = (0.5 / target_frequency) * 1e6;
+    const double peak = 3;
+
+    BiquadFilter filter1 = BiquadFilter(type, fc, q, peak);
+    BiquadFilter filter2 = BiquadFilter(type, fc, q, peak);
+    BiquadFilter filter3 = BiquadFilter(type, fc, q, peak);
+    BiquadFilter filter4 = BiquadFilter(type, fc, q, peak);
+
+    // first two values are troublesome because they often contain high intensity, thus they are skipped
+    for (size_t i = 2; i < data->intensity.size()-1; i++){
+        size_t dt_us = data->sample_time_us[i] - data->sample_time_us[i-1];
+
+        // if sample time is above nyquist frequency, stop filtering
+        if (max_sample_time <= dt_us){
+            break;
+        }
+        
+        // skip duplicate samples
+        if (dt_us == 0){
+            data->intensity[i] = data->intensity[i-1];
+        }else if (dt_us > 1){
+            Logger::Trace("Resampling {} samples", dt_us);
+            // Resample the interval onto a uniform 1 us grid using linear
+            // interpolation so the filter always runs at the designed 1 MHz rate
+            const int32_t v0 = data->intensity[i-1];
+            const int32_t v1 = data->intensity[i];
+            for (size_t step = 1; step < dt_us; ++step){
+                const uint16_t interp = static_cast<uint16_t>(v0 + (v1 - v0) * static_cast<int32_t>(step) / static_cast<int32_t>(dt_us));
+                filter1.process(filter2.process(filter3.process(filter4.process(interp))));
+            }
+            data->intensity[i] = 
+                filter1.process(
+                filter2.process(
+                filter3.process(
+                filter4.process(
+                    data->intensity[i]
+                ))));
+        }else{
+            data->intensity[i] = 
+                filter1.process(
+                filter2.process(
+                filter3.process(
+                filter4.process(
+                    data->intensity[i]
+                ))));
+        }
+    }
+    
+    return true;
+}
+
+bool Fluorometer::Apply_median_filter(OJIP* data, uint8_t window_span){
+    const size_t window_size = (window_span*2) + 1;
+    // rolling buffer for the original, and still relevant values
+    std::vector<uint16_t> window{};
+    window.resize(window_size);
+
+    // buffer for sorting the values from window
+    std::vector<uint16_t> cache{};
+    cache.resize(window_size);
+    
+    // copy first n values to the window buffer
+    std::memcpy(window.data(), &data->intensity[0], window_size * sizeof(uint16_t));
+    
+    // start with a offset to fit the filter, end with the same offset
+    for (size_t i = window_span; (i + window_span) < data->intensity.size(); i++){
+        const size_t curr_iteration = i - window_span;
+        
+        cache = window;
+        qsort(cache.data(), window_size, sizeof(uint16_t), compare_int);
+        window[curr_iteration%window_size] = data->intensity[i+1];
+        data->intensity[i] = cache[window_span+1];
+    }
+    
+    return true;
+}
+
+bool Fluorometer::Apply_box_blur_filter(OJIP* data, uint8_t window_span){
+    const size_t window_size = (window_span*2) + 1;
+    
+    // rolling buffer for the original, and still relevant values
+    std::vector<uint16_t> window{};
+    window.resize(window_size);
+    
+    std::memcpy(window.data(), &data->intensity[0], window_size * sizeof(uint16_t));
+    
+    // start with a offset to fit the filter, end with the same offset
+    for (size_t i = window_span; (i + window_span) < data->intensity.size(); i++){
+        const size_t curr_iteration = i - window_span;
+        size_t sum = 0;
+        for (size_t j = 0; j < window_size; j++){
+            sum += window[j];
+        }
+        
+        window[curr_iteration%window_size] = data->intensity[i+1];
+        data->intensity[i] = sum/window_size;
+    }
+    
+    return true;
+}
 
 void Fluorometer::Print_curve_data(OJIP * data){
     for (size_t i = 0; i < data->sample_time_us.size(); i++) {
