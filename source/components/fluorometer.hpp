@@ -156,9 +156,9 @@ private:
         .calibrated = false,
         .adc_value = {0},
         .timing_us = {0},
-        .gain = Fluorometer_config::Gain::x10,
-        .sample_count = 1000,
-        .intensity = 1.0,
+        .gain = Fluorometer_config::Gain::x50,
+        .sample_count = 2000,
+        .intensity = 0.5,
         .length = 1.0,
         .timing = Fluorometer_config::Timing::Logarithmic
     };
