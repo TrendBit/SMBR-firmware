@@ -318,6 +318,75 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
             fluorometer->Calibrate();
             
         },"runs a calibration run and saves the result to EEPROM");
+
+        cli.Bind("fluorometer_get_config",[this, &cli](){
+            cli.Print("Calibrated: ");
+            if(fluorometer->Is_calibrated()){
+                cli.Print_ln("true");
+            }else{
+                cli.Print_ln("false");
+            }
+            cli.Print("Using calibration: ");
+            if(fluorometer->Calibration()){
+                cli.Print_ln("true");
+            }else{
+                cli.Print_ln("false");
+            }
+            cli.Print("Using filtering: ");
+            if(fluorometer->Filtering()){
+                cli.Print_ln("true");
+            }else{
+                cli.Print_ln("false");
+            }
+        },"get fluorometer configuration (calibration state, filtering etc.)");
+
+        cli.Bind("fluorometer_erase_calibration",[this, &cli](){
+            if(!fluorometer->Is_calibrated()){
+                cli.Print_error("no calibration loaded");
+                return;
+            }
+            
+            if(fluorometer->Erase_calibration()){
+                cli.Print_notice("success");
+            }else{
+                cli.Print_error("unable to erase calibration");
+            }
+        },"erase loaded calibration data");
+
+        cli.Bind("fluorometer_set_calibration", [this, &cli](std::vector<std::string> args){
+            if( not cli.Check_argument_count(args, 1, 1)){
+                return;
+            }
+
+            bool new_state;
+            if( not cli.Parse_argument(args[0], new_state)){
+                return;
+            }
+
+            if( fluorometer->Calibration(new_state)){
+                cli.Print_notice("success");
+            }else{
+                cli.Print_error("unable to set calibration");
+            }
+            
+        },"set fluorometer calibration use","state(bool)");
+
+        cli.Bind("fluorometer_set_filtering", [this, &cli](std::vector<std::string> args){
+            if( not cli.Check_argument_count(args, 1, 1)){
+                return;
+            }
+
+            bool new_state;
+            if( not cli.Parse_argument(args[0], new_state)){
+                return;
+            }
+
+            if( fluorometer->Filtering(new_state)){
+                cli.Print_notice("success");
+            }else{
+                cli.Print_error("unable to set filtering");
+            }
+        },"set fluorometer filtering use","state(bool)");
     }
     
     if(spectrophotometer){
