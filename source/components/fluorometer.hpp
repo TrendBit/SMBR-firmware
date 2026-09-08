@@ -268,6 +268,11 @@ public:
      */
     float Detector_temperature();
 
+    /**
+     * @brief   Perform calibration and save data into EEPROM
+     */
+    void Calibrate();
+
 private:
 
     /**
@@ -348,11 +353,6 @@ private:
      * @return float
      */
     float Measure_noise(uint16_t samples, uint period_us);
-
-    /**
-     * @brief   Perform calibration and save data into EEPROM
-     */
-    void Calibrate();
 
     /**
      * @brief   Load calibration data from eeprom and check for validity
