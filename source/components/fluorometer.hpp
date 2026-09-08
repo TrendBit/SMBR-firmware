@@ -157,7 +157,7 @@ private:
         .adc_value = {0},
         .timing_us = {0},
         .gain = Fluorometer_config::Gain::x50,
-        .sample_count = 2000,
+        .sample_count = FLUOROMETER_CALIBRATION_SAMPLES,
         .intensity = 0.5,
         .length = 1.0,
         .timing = Fluorometer_config::Timing::Logarithmic
@@ -187,6 +187,10 @@ private:
      * @brief   Mutex for synchronizing access to cuvette which is shared by multiple components
      */
     fra::MutexStandard * const adc_mutex;
+
+    bool use_calibration = true;
+
+    bool use_filtering = true;
 
 public:
     /**
@@ -267,6 +271,56 @@ public:
      * @return float    Temperature of detector in °C
      */
     float Detector_temperature();
+
+    /**
+     * @brief   Get current filtering state
+     *
+     * @return true     Filtering is enabled
+     * @return false    Filtering is disabled
+     */
+    bool Filtering();
+
+    /**
+     * @brief   Set filtering state
+     *
+     * @param new_state Desired filtering state to set
+     * @return true     Filtering state was set successfully
+     * @return false    Filtering state could not be set
+     */
+    bool Filtering(bool new_state);
+
+    /**
+     * @brief   Get current calibration state
+     *
+     * @return true     Calibration is enabled
+     * @return false    Calibration is disabled
+     */
+    bool Calibration();
+
+    /**
+     * @brief   Set calibration state
+     *
+     * @param new_state Desired calibration state to set
+     * @return true     Calibration state was set successfully
+     * @return false    Calibration state could not be set
+     */
+    bool Calibration(bool new_state);
+
+    /**
+     * @brief   Check if fluorometer is calibrated
+     *
+     * @return true     Fluorometer is calibrated
+     * @return false    Fluorometer is not calibrated
+     */
+    bool Is_calibrated();
+
+    /**
+     * @brief   Erase calibration data from EEPROM
+     *
+     * @return true     Calibration data was erased successfully
+     * @return false    Calibration data could not be erased
+     */
+    bool Erase_calibration();
 
     /**
      * @brief   Perform calibration and save data into EEPROM

@@ -1,10 +1,12 @@
 #include "fluorometer.hpp"
 
+#include "logger.hpp"
 #include "memory.hpp"
 #include "threads/fluorometer_thread.hpp"
 #include "tools/biquad_filter.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <etl/array.h>
 
 Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * ntc_channel_selector, Thermistor * ntc_thermistors, I2C_bus * const i2c, EEPROM_storage * const memory, fra::MutexStandard * cuvette_mutex, fra::MutexStandard * const adc_mutex):
     Component(Codes::Component::Fluorometer),
@@ -152,6 +154,68 @@ Fluorometer_config::Gain Fluorometer::Gain(){
     }
 }
 
+bool Fluorometer::Filtering(){
+    return use_filtering;
+}
+
+bool Fluorometer::Filtering(bool new_state){
+    if(!Capture_done()){
+        return false;
+    }
+    use_filtering = new_state;
+    return true;
+}
+
+bool Fluorometer::Calibration(){
+    return use_calibration;
+}
+
+bool Fluorometer::Calibration(bool new_state){
+    if(!Capture_done()){
+        return false;
+    }
+    use_calibration = new_state;
+    return true;
+}
+
+bool Fluorometer::Is_calibrated(){
+    return calibration_data.calibrated;
+}
+
+bool Fluorometer::Erase_calibration(){
+    if (!calibration_data.calibrated){
+        return false;
+    }
+    if(!Capture_done()){
+        return false;
+    }
+
+    // prevent captures from starting, to decrease chance of loading a corrupted calibration
+    ojip_capture_finished = false;
+
+    Logger::Warning("Erasing OJIP calibration data");
+
+    // invalidate current calibration
+    calibration_data.calibrated = false;
+
+    bool write_values_status = memory->Erase_OJIP_calibration_timing();
+    if (!write_values_status){
+        Logger::Error("Unable to erase values data");
+    }else{
+        Logger::Notice("OJIP values calibration data erased");
+    }
+    
+    bool write_timing_status = memory->Erase_OJIP_calibration_values();
+    if (!write_timing_status){
+        Logger::Error("Unable to erase values data");
+    }else{
+        Logger::Notice("OJIP timing calibration data erased");
+    }
+    
+    ojip_capture_finished = true;
+
+    return write_timing_status && write_values_status;
+}
 
 bool Fluorometer::Capture_OJIP(Fluorometer_config::Gain gain, float emitor_intensity, float capture_length, uint samples, Fluorometer_config::Timing timing) {
     Logger::Warning("Capture OJIP initiated");
@@ -464,7 +528,12 @@ bool Fluorometer::OJIP_phase_4_Post_processing(uint64_t start_time, uint64_t sto
 
     // Filter OJIP data
     if (samples_captured > 0) {
-        Filter_OJIP_data(&OJIP_data);
+        if (use_filtering){
+            Logger::Notice("Filtering OJIP data...");
+            Filter_OJIP_data(&OJIP_data);
+        } else {
+            Logger::Notice("Skipping OJIP data filtering...");
+        }
     } else {
         Logger::Warning("No valid samples captured, skipping filtering");
     }
@@ -506,6 +575,8 @@ bool Fluorometer::Filter_OJIP_data(OJIP* data) {
 }
 
 bool Fluorometer::Apply_biquad_filter(OJIP* data, size_t target_frequency, double q){
+    Logger::Notice("Applying biquad filter to OJIP data, target_frequency: {}, q: {}",target_frequency, q);
+    
     const BiquadFilter::Type type = BiquadFilter::Type::Lowpass;
     const double fc = target_frequency / 1e6;
     const double max_sample_time = (0.5 / target_frequency) * 1e6;
@@ -515,6 +586,8 @@ bool Fluorometer::Apply_biquad_filter(OJIP* data, size_t target_frequency, doubl
     BiquadFilter filter2 = BiquadFilter(type, fc, q, peak);
     BiquadFilter filter3 = BiquadFilter(type, fc, q, peak);
     BiquadFilter filter4 = BiquadFilter(type, fc, q, peak);
+
+    size_t last_sample_index = 0;
 
     // first two values are troublesome because they often contain high intensity, thus they are skipped
     for (size_t i = 2; i < data->intensity.size()-1; i++){
@@ -529,7 +602,7 @@ bool Fluorometer::Apply_biquad_filter(OJIP* data, size_t target_frequency, doubl
         if (dt_us == 0){
             data->intensity[i] = data->intensity[i-1];
         }else if (dt_us > 1){
-            Logger::Trace("Resampling {} samples", dt_us);
+            Logger::Trace("Resampling to {} samples", dt_us);
             // Resample the interval onto a uniform 1 us grid using linear
             // interpolation so the filter always runs at the designed 1 MHz rate
             const int32_t v0 = data->intensity[i-1];
@@ -554,13 +627,20 @@ bool Fluorometer::Apply_biquad_filter(OJIP* data, size_t target_frequency, doubl
                     data->intensity[i]
                 ))));
         }
+
+        last_sample_index = i;
     }
+    
+    Logger::Notice("Biquad filter ended at sample {}/{}",last_sample_index,data->intensity.size());
     
     return true;
 }
 
 bool Fluorometer::Apply_median_filter(OJIP* data, uint8_t window_span){
     const size_t window_size = (window_span*2) + 1;
+    
+    Logger::Notice("Applying median filter to OJIP data, window_size: {}",window_size);
+    
     // rolling buffer for the original, and still relevant values
     std::vector<uint16_t> window{};
     window.resize(window_size);
@@ -587,6 +667,8 @@ bool Fluorometer::Apply_median_filter(OJIP* data, uint8_t window_span){
 
 bool Fluorometer::Apply_box_blur_filter(OJIP* data, uint8_t window_span){
     const size_t window_size = (window_span*2) + 1;
+    
+    Logger::Notice("Applying box blur filter to OJIP data, window_size: {}",window_size);
     
     // rolling buffer for the original, and still relevant values
     std::vector<uint16_t> window{};
@@ -671,18 +753,20 @@ bool Fluorometer::Export_data(OJIP * data){
     size_t samples_sent = 0;
     size_t samples_calibrated = 0;
 
+    
     if (not calibration_data.calibrated) {
-        Logger::Warning("Calibration data invalid or missing, exporting raw data.");
+        Logger::Warning("Exporting {} samples, calibration data invalid or missing",
+                        data->sample_time_us.size());
     } else {
-        Logger::Notice("Exporting {} samples, applying calibration based on closest timestamp ({} calibration points)",
-                     data->sample_time_us.size(), calibration_size);
+        Logger::Notice("Exporting {} samples, calibration based on closest timestamp ({} calibration points) {}",
+                        data->sample_time_us.size(), calibration_size, (use_calibration)?"will be applied":"will not be applied");
     }
 
     Logger::Notice("Reseting watchdog before export");
     watchdog_update();
 
     float gain_value = 1;
-    if (calibration_data.calibrated) {
+    if (calibration_data.calibrated && use_calibration) {
         // this code sets the gain value (compensation), by searching for the 
         // lowest intensity after 100us (after LED startup), and compares it
         // to the intensity at that time from calibration data. Then, sets the
@@ -720,9 +804,10 @@ bool Fluorometer::Export_data(OJIP * data){
         Logger::Notice("calibration index: {}, value: {}", calibration_index, calibration_value);
         
         gain_value = static_cast<float>(calibration_value) / static_cast<float>(min_intensity);
+
+        Logger::Notice("Gain compensation: {:.2f}", gain_value);
     }
 
-    Logger::Notice("Gain compensation: {:.2f}", gain_value);
 
     
 
@@ -732,7 +817,7 @@ bool Fluorometer::Export_data(OJIP * data){
         uint16_t current_intensity = data->intensity[i]; // Use raw intensity before filtering if filter applied earlier
 
         // Apply calibration if available
-        if (calibration_data.calibrated) {
+        if (calibration_data.calibrated && use_calibration) {
             // Find the index in calibration data with the closest timestamp
             size_t cal_idx = find_closest_calibration_index(calibration_data.timing_us,current_time_us);
 
