@@ -308,6 +308,16 @@ void Sensor_module::Setup_cli(CLI_service& cli) const {
                 cli.Print_error("in progress");
             }
         },"retrieve the last capture data");
+
+        cli.Bind("fluorometer_calibrate",[this, &cli](){
+            if(!fluorometer->Capture_done()){
+                cli.Print_error("capture in progress");
+                return;
+            }
+
+            fluorometer->Calibrate();
+            
+        },"runs a calibration run and saves the result to EEPROM");
     }
     
     if(spectrophotometer){
