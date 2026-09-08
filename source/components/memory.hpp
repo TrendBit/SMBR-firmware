@@ -285,6 +285,16 @@ private:
     bool Read_chunked_data(Record_name name, uint8_t* data_ptr, size_t data_size_bytes);
 
     /**
+     * @brief  Fill a big block of data in eeprom with a predefined value, while not using as much memory
+     * @param name              Record name to read from.
+     * @param data_size_bytes   Total number of bytes to fill.
+     * @param fill_value        Value with which the given segment will be filled.
+     * @return true             Write succeeded.
+     * @return false            Write failed (record not found, size mismatch, or EEPROM error).
+     */
+    bool Fill_chunked_data(Record_name name, size_t data_size_bytes, uint8_t fill_value);
+
+    /**
      * @brief   Checks if a block of memory contains only 0x00 or only 0xFF bytes.
      * @param data_ptr          Pointer to the data block.
      * @param data_size_bytes   Size of the data block in bytes.

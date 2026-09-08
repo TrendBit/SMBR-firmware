@@ -158,6 +158,45 @@ bool EEPROM_storage::Read_chunked_data(Record_name name, uint8_t* data_ptr, size
     return true; // Return status based on loop completion
 }
 
+bool EEPROM_storage::Fill_chunked_data(Record_name name, size_t data_size_bytes, uint8_t fill_value)  {
+    auto it = std::find_if(records.begin(), records.end(),
+        [name](const auto& pair) { return pair.first == name; });
+    if (it == records.end()) {
+        Logger::Error("Record {} not found for writing", static_cast<int>(name));
+        return false;
+    }
+
+    const Record& record = it->second;
+    uint16_t start_address = record.offset;
+
+    if (record.length < data_size_bytes) {
+        Logger::Error("Data ({} bytes) too large for EEPROM record ({} bytes)", data_size_bytes, record.length);
+        return false;
+    }
+
+    constexpr size_t CHUNK_SIZE = 32;
+    size_t bytes_written = 0;
+    bool status = true;
+
+    std::array<uint8_t, CHUNK_SIZE> fill_data = {0};
+    fill_data.fill(fill_value);
+
+    while (bytes_written < data_size_bytes && status) {
+        size_t current_chunk_size = std::min(CHUNK_SIZE, data_size_bytes - bytes_written);
+        uint16_t current_address = start_address + bytes_written;
+        status = eeprom->Write(current_address, fill_data.data(), current_chunk_size);
+        if (!status) {
+            Logger::Error("EEPROM write failed at address 0x{:04x}", current_address);
+            return false;
+        }
+        bytes_written += current_chunk_size;
+        rtos::Delay(5); // Delay for EEPROM write cycle
+    }
+
+    Logger::Debug("EEPROM chunked write succeeded, {} bytes written", bytes_written);
+    return true;
+}
+
 bool EEPROM_storage::Write_OJIP_calibration_values(std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration) {
     const uint8_t* data_ptr = reinterpret_cast<const uint8_t*>(calibration.data());
     size_t data_size_bytes = sizeof(uint16_t) * calibration.size();
