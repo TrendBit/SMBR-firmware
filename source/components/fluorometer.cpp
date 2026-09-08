@@ -25,6 +25,7 @@ Fluorometer::Fluorometer(PWM_channel * led_pwm, uint detector_gain_pin, GPIO * n
     detector_gain->Set_pulls(true, true);
     Gain(Fluorometer_config::Gain::x10);
     Load_calibration_data();
+    Load_config_data();
 }
 
 bool Fluorometer::Load_calibration_data(){
@@ -40,6 +41,24 @@ bool Fluorometer::Load_calibration_data(){
         if (!read_timing_status) Logger::Error("Failed to load OJIP calibration timing data from memory");
         return false;
     }
+    return true;
+}
+
+bool Fluorometer::Load_config_data(){
+    Logger::Debug("Loading OJIP config data...");
+    std::optional<bool> calibration = memory->Read_OJIP_calibration_toggle();
+    std::optional<bool> filtering = memory->Read_OJIP_filtering_toggle();
+
+    if(calibration && filtering){
+        Logger::Debug("OJIP config data loaded from memory");
+        use_calibration = calibration.value_or(true);
+        use_filtering = filtering.value_or(true);
+    }else{
+        if(!calibration.has_value()) Logger::Error("Failed to load OJIP calibration toggle from memory");
+        if(!calibration.has_value()) Logger::Error("Failed to load OJIP filtering toggle from memory");
+        return false;
+    }
+    
     return true;
 }
 
@@ -162,8 +181,9 @@ bool Fluorometer::Filtering(bool new_state){
     if(!Capture_done()){
         return false;
     }
+    
     use_filtering = new_state;
-    return true;
+    return memory->Write_OJIP_config(use_calibration, use_filtering);
 }
 
 bool Fluorometer::Calibration(){
@@ -175,7 +195,7 @@ bool Fluorometer::Calibration(bool new_state){
         return false;
     }
     use_calibration = new_state;
-    return true;
+    return memory->Write_OJIP_config(use_calibration, use_filtering);
 }
 
 bool Fluorometer::Is_calibrated(){

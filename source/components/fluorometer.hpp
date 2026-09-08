@@ -417,6 +417,14 @@ private:
     bool Load_calibration_data();
 
     /**
+     * @brief   Load config data from eeprom and check for validity
+     *
+     * @return true     Config data was loaded successfully
+     * @return false    Config data was not loaded, memory not accessible or data not valid (empty)
+     */
+    bool Load_config_data();
+
+    /**
      * @brief       Sets gain of detector
      *
      * @param gain  Gain of detector
