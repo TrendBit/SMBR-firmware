@@ -282,6 +282,34 @@ bool EEPROM_storage::Read_OJIP_calibration_timing(std::array<uint32_t, FLUOROMET
     return true; // Read succeeded and data is valid
 }
 
+bool EEPROM_storage::Erase_OJIP_calibration_values(){
+    if (Fill_chunked_data(
+        Record_name::OJIP_calibration_values, 
+        FLUOROMETER_CALIBRATION_SAMPLES * sizeof(uint16_t), 
+        0xff
+    )){
+        Logger::Debug("EEPROM values calibration clear succeeded.");
+        return true;
+    }else{
+        Logger::Error("EEPROM values calibration clear failed.");
+        return false;
+    }
+}
+
+bool EEPROM_storage::Erase_OJIP_calibration_timing(){
+    if (Fill_chunked_data(
+        Record_name::OJIP_calibration_timing, 
+        FLUOROMETER_CALIBRATION_SAMPLES * sizeof(uint32_t), 
+        0xff
+    )){
+        Logger::Debug("EEPROM timing calibration clear succeeded.");
+        return true;
+    }else{
+        Logger::Error("EEPROM timing calibration clear failed.");
+        return false;
+    }
+}
+
 bool EEPROM_storage::Read_spectrophotometer_calibration(std::array<float, 6> &calibration){
     auto record = Read_record(Record_name::SPM_nominal_calibration);
     if (record.has_value()) {

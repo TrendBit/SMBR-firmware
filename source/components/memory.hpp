@@ -130,6 +130,14 @@ public:
     bool Write_OJIP_calibration_values(std::array<uint16_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_adc);
 
     /**
+     * @brief   Erase OJIP calibration ADC data from EEPROM
+     *
+     * @return true     Data was erased successfully
+     * @return false    Data was not erased, memory not accessible
+     */
+    bool Erase_OJIP_calibration_values();
+
+    /**
      * @brief   Read OJIP calibration timing data from EEPROM
      *
      * @param calibration_timing Location where calibration timing data will be stored
@@ -146,6 +154,14 @@ public:
      * @return false        Data was not written, memory not accessible
      */
     bool Write_OJIP_calibration_timing(std::array<uint32_t, FLUOROMETER_CALIBRATION_SAMPLES> &calibration_timing);
+
+    /**
+     * @brief   Erase OJIP calibration timing data from EEPROM
+     *
+     * @return true     Data was erased successfully
+     * @return false    Data was not erased, memory not accessible
+     */
+    bool Erase_OJIP_calibration_timing();
 
     /**
      * @brief   Read spectrophotometer calibration data from EEPROM
