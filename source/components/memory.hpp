@@ -35,6 +35,7 @@ public:
         Reserved,
         OJIP_calibration_values,
         OJIP_calibration_timing,
+        OJIP_config_flags,
         SPM_nominal_calibration, // Spectrophotometer
         Cuvette_pump_max_flowrate,
         Aerator_max_flowrate,
@@ -64,7 +65,7 @@ private:
      *          In future should even contain in which EEPROM chip
      *          Array of pairs because constexpr std::map does not exist in c++20
      */
-    static constexpr std::array<std::pair<Record_name, Record>, 9> records = {
+    static constexpr std::array<std::pair<Record_name, Record>, 10> records = {
         std::make_pair(Record_name::Module_type,                    Record{0x0000, 1}),
         std::make_pair(Record_name::Instance_enumeration,           Record{0x0001, 1}),
         std::make_pair(Record_name::Reserved,                       Record{0x0002, 2}),
@@ -72,8 +73,9 @@ private:
         std::make_pair(Record_name::Aerator_max_flowrate,           Record{0x0204, 4}),
         std::make_pair(Record_name::Pumps_max_flowrate,             Record{0x0208, 32}),
         std::make_pair(Record_name::SPM_nominal_calibration,        Record{0x0300, 24}),
-        std::make_pair(Record_name::OJIP_calibration_values,        Record{0x0400, OJIP_ADC_SIZE_BYTES }),
-        std::make_pair(Record_name::OJIP_calibration_timing,        Record{0x0400 + OJIP_ADC_SIZE_BYTES, OJIP_TIMING_SIZE_BYTES }),
+        std::make_pair(Record_name::OJIP_config_flags,              Record{0x0400, 1}),
+        std::make_pair(Record_name::OJIP_calibration_values,        Record{0x0401, OJIP_ADC_SIZE_BYTES }),
+        std::make_pair(Record_name::OJIP_calibration_timing,        Record{0x0401 + OJIP_ADC_SIZE_BYTES, OJIP_TIMING_SIZE_BYTES }),
     };
 
 public:
@@ -162,6 +164,34 @@ public:
      * @return false    Data was not erased, memory not accessible
      */
     bool Erase_OJIP_calibration_timing();
+
+    /**
+     * @brief   Write OJIP configuration settings to EEPROM
+     *
+     * @param use_calibration    Enable or disable calibration usage
+     * @param use_filtering      Enable or disable filtering usage
+     * @return true              Configuration was written successfully
+     * @return false             Configuration was not written, memory not accessible
+     */
+    bool Write_OJIP_config(bool use_calibration, bool use_filtering);
+
+    /**
+     * @brief   Read OJIP calibration toggle from EEPROM
+     *
+     * @return true               Calibration is enabled
+     * @return false              Calibration is disabled
+     * @return std::nullopt       Data was not read, memory not accessible or data not valid
+     */
+    std::optional<bool> Read_OJIP_calibration_toggle();
+
+    /**
+     * @brief   Read OJIP filtering toggle from EEPROM
+     *
+     * @return true               Filtering is enabled
+     * @return false              Filtering is disabled
+     * @return std::nullopt       Data was not read, memory not accessible or data not valid
+     */
+    std::optional<bool> Read_OJIP_filtering_toggle();
 
     /**
      * @brief   Read spectrophotometer calibration data from EEPROM

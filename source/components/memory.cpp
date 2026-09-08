@@ -310,6 +310,46 @@ bool EEPROM_storage::Erase_OJIP_calibration_timing(){
     }
 }
 
+bool EEPROM_storage::Write_OJIP_config(bool use_calibration, bool use_filtering){
+    uint8_t data = {0b10000000| (use_calibration)| (use_filtering << 1)};
+    std::vector<uint8_t> data_vec = {data};
+    return Write_record(Record_name::OJIP_config_flags, data_vec);
+}
+
+std::optional<bool> EEPROM_storage::Read_OJIP_calibration_toggle(){
+    auto opt = Read_record(Record_name::OJIP_config_flags);
+    if (!opt) {
+        return std::nullopt;
+    }
+
+    auto& value = opt.value();
+    
+    if (value.size() == 0){
+        return std::nullopt;
+    }
+    if (value[0] == 0){
+        return std::nullopt;
+    }
+    return value[0] & 0x01;  // bit 0 = calibration
+}
+
+std::optional<bool> EEPROM_storage::Read_OJIP_filtering_toggle(){
+    auto opt = Read_record(Record_name::OJIP_config_flags);
+    if (!opt) {
+        return std::nullopt;
+    }
+
+    auto& value = opt.value();
+    
+    if (value.size() == 0){
+        return std::nullopt;
+    }
+    if (value[0] == 0x0){
+        return std::nullopt;
+    }
+    return value[0] & 0x02;  // bit 1 = filtering
+}
+
 bool EEPROM_storage::Read_spectrophotometer_calibration(std::array<float, 6> &calibration){
     auto record = Read_record(Record_name::SPM_nominal_calibration);
     if (record.has_value()) {
