@@ -1,5 +1,11 @@
 #include "fluorometer.hpp"
 
+#include "codes/codes.hpp"
+#include "fluorometer/get_calibration_state_response.hpp"
+#include "fluorometer/get_use_calibration_response.hpp"
+#include "fluorometer/get_use_filtering_response.hpp"
+#include "fluorometer/set_use_calibration.hpp"
+#include "fluorometer/set_use_filtering.hpp"
 #include "logger.hpp"
 #include "memory.hpp"
 #include "threads/fluorometer_thread.hpp"
@@ -972,6 +978,65 @@ bool Fluorometer::Receive(Application_message message){
             return true;
         }
 
+        case Codes::Message_type::Fluorometer_get_calibration_state_request: {
+            Logger::Notice("Fluorometer get calibration state request");
+
+            auto calibrated = Is_calibrated();
+            
+            Logger::Debug("OJIP Calibration: {}", (calibrated)?"loaded":"none");
+            App_messages::Fluorometer::Get_calibration_state_response response(calibrated);
+            Send_CAN_message(response);
+            return true;
+        }
+
+        case Codes::Message_type::Fluorometer_get_use_calibration_request: {
+            Logger::Notice("Fluorometer get calibration usage state request");
+
+            bool use_calibration_state = use_calibration;
+            
+            Logger::Debug("OJIP Calibration: {}", (use_calibration_state)?"used":"ignored");
+            App_messages::Fluorometer::Get_use_calibration_response response(use_calibration_state);
+            Send_CAN_message(response);
+            return true;
+        }
+
+        case Codes::Message_type::Fluorometer_get_use_filtering_request: {
+            Logger::Notice("Fluorometer get filtering usage state request");
+
+            bool use_filtering_state = use_filtering;
+            
+            Logger::Debug("OJIP Filtering: {}", (use_filtering_state)?"used":"skipped");
+            App_messages::Fluorometer::Get_use_filtering_response response(use_filtering_state);
+            Send_CAN_message(response);
+            return true;
+        }
+
+        case Codes::Message_type::Fluorometer_set_use_calibration: {
+            App_messages::Fluorometer::Set_use_calibration set_calibration;
+
+            if (!set_calibration.Interpret_data(message.data)){
+                Logger::Error("Fluorometer_set_use_calibration interpretation failed");
+                return false;
+            }
+
+            Logger::Debug("Fluorometer calibration usage set to: {}", set_calibration.state);
+            use_calibration = set_calibration.state;
+            return true;
+        }
+
+        case Codes::Message_type::Fluorometer_set_use_filtering: {
+            App_messages::Fluorometer::Set_use_filtering set_filtering;
+
+            if (!set_filtering.Interpret_data(message.data)){
+                Logger::Error("Fluorometer_set_use_filtering interpretation failed");
+                return false;
+            }
+
+            Logger::Debug("Fluorometer filtering usage set to: {}", set_filtering.state);
+            use_filtering = set_filtering.state;
+            return true;
+        }
+        
         default:
             return false;
     }
