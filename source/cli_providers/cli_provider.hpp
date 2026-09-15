@@ -12,7 +12,16 @@ class CLI_provider {
         Base_module_cli* base_module_cli;
         
     public:
+        /**
+         * @brief Construct a new CLI_provider object without a base module cli
+         */
         CLI_provider();
+
+        /**
+         * @brief Construct a new CLI_provider object bound to the given base module cli
+         *
+         * @param base_module_cli   Pointer to the base module cli used for temperature readout registration
+         */
         CLI_provider(Base_module_cli* base_module_cli);
 
         /**
