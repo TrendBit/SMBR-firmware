@@ -278,16 +278,7 @@ public:
      * @return true     Filtering is enabled
      * @return false    Filtering is disabled
      */
-    bool Filtering();
-
-    /**
-     * @brief   Set filtering state
-     *
-     * @param new_state Desired filtering state to set
-     * @return true     Filtering state was set successfully
-     * @return false    Filtering state could not be set
-     */
-    bool Filtering(bool new_state);
+    bool Filtering() const;
 
     /**
      * @brief   Get current calibration state
@@ -295,8 +286,18 @@ public:
      * @return true     Calibration is enabled
      * @return false    Calibration is disabled
      */
-    bool Calibration();
+    bool Calibration() const;
 
+    /**
+     * @brief   Check if fluorometer is calibrated
+     *
+     * @return true     Fluorometer is calibrated
+     * @return false    Fluorometer is not calibrated
+     */
+    bool Is_calibrated() const;
+
+
+private:
     /**
      * @brief   Set calibration state
      *
@@ -307,13 +308,14 @@ public:
     bool Calibration(bool new_state);
 
     /**
-     * @brief   Check if fluorometer is calibrated
+     * @brief   Set filtering state
      *
-     * @return true     Fluorometer is calibrated
-     * @return false    Fluorometer is not calibrated
+     * @param new_state Desired filtering state to set
+     * @return true     Filtering state was set successfully
+     * @return false    Filtering state could not be set
      */
-    bool Is_calibrated();
-
+    bool Filtering(bool new_state);
+    
     /**
      * @brief   Erase calibration data from EEPROM
      *
@@ -326,8 +328,6 @@ public:
      * @brief   Perform calibration and save data into EEPROM
      */
     void Calibrate();
-
-private:
 
     /**
      * @brief   Read value from ADC connector to detector

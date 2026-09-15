@@ -179,7 +179,7 @@ Fluorometer_config::Gain Fluorometer::Gain(){
     }
 }
 
-bool Fluorometer::Filtering(){
+bool Fluorometer::Filtering() const {
     return use_filtering;
 }
 
@@ -192,7 +192,7 @@ bool Fluorometer::Filtering(bool new_state){
     return memory->Write_OJIP_config(use_calibration, use_filtering);
 }
 
-bool Fluorometer::Calibration(){
+bool Fluorometer::Calibration() const {
     return use_calibration;
 }
 
@@ -204,7 +204,7 @@ bool Fluorometer::Calibration(bool new_state){
     return memory->Write_OJIP_config(use_calibration, use_filtering);
 }
 
-bool Fluorometer::Is_calibrated(){
+bool Fluorometer::Is_calibrated() const {
     return calibration_data.calibrated;
 }
 
