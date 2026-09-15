@@ -43,14 +43,12 @@ Base_module::Base_module(Codes::Module module_type, Enumerator * const enumerato
         yellow_led.value()->Set(true);
     }
     module_check_thread = new Module_check_thread();
-    
-    register_temperature_readout("board",[this]()->std::optional<float>{
-        return this->Board_temperature();
-    });
 
     if(enumerator){
         module_check_thread->AttachCheck(new Invalid_instance_check(this,enumerator));
     }
+
+    base_module_cli = new Base_module_cli(this);
 }
 
 Codes::Module Base_module::Module_type() {
@@ -111,100 +109,13 @@ std::optional<float> Base_module::Version_voltage() const{
     return version_voltage;
 }
 
-void Base_module::register_temperature_readout(std::string readout_name, std::function<std::optional<float>()> getter_function){
-    this->temperature_readouts[readout_name] = std::move(getter_function);
-}
 
-void Base_module::Connect_to_cli(CLI_service& cli) const{    
-    cli.Bind("module_info",[this,&cli]()->void{
-        std::string result = "";
-        result += emio::format("Module type: {}\r\n", magic_enum::enum_name(this->module_type));
-        result += emio::format("Instance: {}\r\n", magic_enum::enum_name(this->Instance_enumeration()));
-        result += emio::format("Unique ID: ");
-        for(const auto& uid_part : UID()){
-            result += emio::format("{:x}",uid_part);
-        }
-        result += "\r\n";
-        cli.Print(result);
-    }, "Basic info about this module.");
+void Base_module::Connect_to_cli(CLI_service& cli) const{
+    Logger::Notice("Connecting to cli");
     
-    cli.Bind("temperatures", [this, &cli](std::vector<std::string> args)-> void{
-        if(args.size() == 0){
-            for(const auto& [name, getter] : this->temperature_readouts){
-                std::optional<float> temperature = getter();
-                if(temperature.has_value()){
-                    cli.Print_ln(emio::format("{}: {}°C",name,temperature.value()));
-                }else{
-                    cli.Print_ln(emio::format("{}: err",name));
-                }
-            }
-        }else{
-            for(const auto& arg : args){
-                //returns .end() if the key isn't in the map
-                auto map_iterator = this->temperature_readouts.find(arg); 
-                
-                if(map_iterator != this->temperature_readouts.end()){
-                    std::optional<float> temperature = map_iterator->second();
-                    if(temperature.has_value()){
-                        cli.Print_ln(emio::format("{}: {}°C",arg,temperature.value()));
-                    }else{
-                        cli.Print_ln(emio::format("{}: err",arg));
-                    }
-                }else{
-                    cli.Print_error("unknown temperature readout");
-                }
-                
-            }
-        }
-    }, "the current temperature of all, or selected installed sensors","[sensor sensor ...]?");
-
-    if(enumerator){
-        if( enumerator->Instance() != Codes::Instance::Exclusive){
-            cli.Bind("set_instance", [this, &cli](std::vector<std::string> args)->void{
-                if( not cli.Check_argument_count(args, 1, 1)){
-                    return;
-                }
-                
-                Codes::Instance selected_instance_parsed = Codes::Instance::Undefined;
-                const auto& arg = args[0];
-                if(arg == "1"){
-                    selected_instance_parsed = Codes::Instance::Instance_1;
-                }else if(arg == "2"){
-                    selected_instance_parsed = Codes::Instance::Instance_2;
-                }else if(arg == "3"){
-                    selected_instance_parsed = Codes::Instance::Instance_3;
-                }else if(arg == "4"){
-                    selected_instance_parsed = Codes::Instance::Instance_4;
-                }else if(arg == "5"){
-                    selected_instance_parsed = Codes::Instance::Instance_5;
-                }else if(arg == "6"){
-                    selected_instance_parsed = Codes::Instance::Instance_6;
-                }else if(arg == "7"){
-                    selected_instance_parsed = Codes::Instance::Instance_7;
-                }else if(arg == "8"){
-                    selected_instance_parsed = Codes::Instance::Instance_8;
-                }else if(arg == "9"){
-                    selected_instance_parsed = Codes::Instance::Instance_9;
-                }else if(arg == "10"){
-                    selected_instance_parsed = Codes::Instance::Instance_10;
-                }else if(arg == "11"){
-                    selected_instance_parsed = Codes::Instance::Instance_11;
-                }else if(arg == "12"){
-                    selected_instance_parsed = Codes::Instance::Instance_12;
-                }else{
-                    cli.Print_error("invalid instance");
-                    return;
-                }
-                
-                
-                if(not enumerator->Enumerate(selected_instance_parsed)){
-                    cli.Print_error("unable to enumerate instance");
-                }else{
-                    cli.Print_notice("success");
-                }
-            },"set the instance index of this module (only works for modules with instance other than Exclusive).","target_instance(1-12)");
-        }
-    }
+    if(base_module_cli){
+        this->base_module_cli->Connect_to_cli(cli);
+    } 
     
     this->Setup_cli(cli);
 }

@@ -20,6 +20,10 @@
 #include "components/fluorometer.hpp"
 #include "components/spectrophotometer.hpp"
 
+#include "cli_providers/spectrophotometer_cli.hpp"
+#include "cli_providers/fluorometer_cli.hpp"
+#include "cli_providers/bottle_temperature_cli.hpp"
+
 namespace fra = cpp_freertos;
 
 /**
@@ -70,6 +74,12 @@ private:
      */
     fra::MutexStandard * cuvette_mutex;
 
+    Spectrophotometer_cli* spectrophotometer_cli = nullptr;
+    
+    Fluorometer_cli* fluorometer_cli = nullptr;
+
+    Bottle_temperature_cli* bottle_temperature_cli = nullptr;
+    
 public:
     /**
      * @brief Construct a new Sensor_module object, calls constructor of Base_module with type of module
@@ -114,11 +124,6 @@ private:
      * @brief   Initializes module check procedures
      */
     void Setup_module_check();
-    
-    /**
-     * @brief   Initializes cli temperature readouts
-     */
-    void Setup_cli_temps();
     
     /**
      * @brief       Connect to the given cli

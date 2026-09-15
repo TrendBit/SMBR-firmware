@@ -20,6 +20,7 @@
 #include "config.hpp"
 #include "hal/gpio/gpio.hpp"
 #include "hal/adc/adc_channel.hpp"
+#include "cli_providers/base_module_cli.hpp"
 
 #include <unordered_map>
 #include <string>
@@ -43,6 +44,7 @@ class Enumerator;
  *          Every module class should be derived from this class
  */
 class Base_module {
+    friend class Base_module_cli;
 protected:
     /**
      * @brief Pointer to this class used for singleton pattern accessing of module type and instance enumeration
@@ -110,11 +112,8 @@ protected:
      * @brief   ADC channel reading version dividers voltage of module
      */
     ADC_channel * version_voltage_channel = nullptr;
-    
-    /**
-     * @brief   Holds registered temperature readouts
-     */
-    std::unordered_map<std::string, std::function<std::optional<float>()>> temperature_readouts;
+
+    Base_module_cli* base_module_cli = nullptr;
 
 protected:
     /**
@@ -140,15 +139,6 @@ protected:
      * @brief Method implemented by derived class, which should bind all of its commands to the given cli
      */
     virtual void Setup_cli(CLI_service& cli) const = 0;
-    
-    /**
-     * @brief Register the given getter_function as a temperature readout (generaly from a sensor) under the given 
-     *        name. It is later used to provide a structured readout of all installed sensors.
-     * 
-     * @param readout_name      Name under which the readout will be refered to.
-     * @param getter_function   A function that provides the readouts current value.
-     */
-    void register_temperature_readout(std::string readout_name, std::function<std::optional<float>()> getter_function);
     
 private:
     /**

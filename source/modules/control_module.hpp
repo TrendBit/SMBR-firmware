@@ -23,6 +23,9 @@
 #include "components/aerator.hpp"
 #include "components/mixer.hpp"
 
+#include "cli_providers/led_panel_cli.hpp"
+#include "cli_providers/heater_cli.hpp"
+
 /**
  * @brief Control module shield used for:
  *          - Temperature control
@@ -66,6 +69,10 @@ private:
      */
     Thermistor * const board_thermistor;
 
+    LED_panel_cli* led_panel_cli = nullptr;
+
+    Heater_cli* heater_cli = nullptr;
+
 public:
     /**
      * @brief Construct a new Control_module object, calls constructor of Base_module with type of module
@@ -108,11 +115,6 @@ private:
      * @brief   Initializes module check procedures
      */
     void Setup_module_check();
-    
-    /**
-     * @brief   Initializes cli temperature readouts
-     */
-    void Setup_cli_temps();
     
     /**
      * @brief       Connect to the given cli

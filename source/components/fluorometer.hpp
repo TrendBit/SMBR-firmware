@@ -64,6 +64,7 @@ typedef std::function<bool(etl::vector<uint32_t, FLUOROMETER_MAX_SAMPLES>&,uint,
  */
 class Fluorometer: public Component, public Message_receiver {
     friend class Fluorometer_thread;
+    friend class Fluorometer_cli;
 public:
 
     struct OJIP{

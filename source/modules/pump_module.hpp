@@ -18,6 +18,8 @@
 #include "components/adc/TLA2024_channel.hpp"
 #include "components/common_sensors/current_sensor.hpp"
 
+#include "cli_providers/pump_controller_cli.hpp"
+
 /**
  * @brief   Module responsible for control of additional pumps
  *          Module can be configure for 2 or 4 pumps based on configuration pin state
@@ -65,6 +67,8 @@ private:
      * @brief   Component responsible for control of pumps connected to module
      */
     Pump_controller * pump_controller;
+
+    Pump_controller_cli * pump_controller_cli = nullptr;
     
     /**
      * @brief       Connect to the given cli

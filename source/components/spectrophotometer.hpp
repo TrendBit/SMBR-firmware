@@ -39,7 +39,7 @@ class Spectrophotometer_thread;
  */
 class Spectrophotometer: public Component, public Message_receiver{
     friend class Spectrophotometer_thread;
-
+    friend class Spectrophotometer_cli;
 public:
     /**
      * @brief   Enumeration of all channels of spectrophotometer
